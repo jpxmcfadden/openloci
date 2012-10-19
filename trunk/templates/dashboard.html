@@ -1,0 +1,53 @@
+{use_macro file="Dataface_Main_Template.html"}
+	{fill_slot name="main_column"}
+        <h1>Welcome to OpenLoci</h1>
+        
+        <p>Please navigate by using the tabs above.</p>
+		
+
+		<br>ADMIN SETTINGS
+		<ul>
+			<li><img src="{$ENV.DATAFACE_URL}/images/table.gif"/>
+				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=admin_users"> Edit the Users Table</a>
+			</li>
+			<li><img src="{$ENV.DATAFACE_URL}/images/table.gif"/>
+				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=admin_rate_codes"> Edit the Rate Codes Table</a>
+			</li>
+			<li><img src="{$ENV.DATAFACE_URL}/images/table.gif"/>
+				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=admin_county_tax"> Edit the County / Tax Table</a>
+			</li>
+		</ul>
+		
+            <!--ul>
+                <li><img src="{$ENV.DATAFACE_URL}/images/add_icon.gif"/>
+                    <a href="{$ENV.DATAFACE_SITE_HREF}?-table=customers&-action=new">
+                        Create New Customer</a>
+                </li>
+                <li><img src="{$ENV.DATAFACE_URL}/images/edit.gif"/> 
+                   Edit existing customer: 
+                   <select onchange="window.location.href=this.options[this.selectedIndex].value">
+                    <option value="">Select ...</option>
+                    {foreach from=$customers item=customers}
+                        <option value="{$customers->getURL('-action=edit')}">
+                            {$customers->getTitle()}
+                        </option>
+                    
+                    {/foreach}
+                </select>
+                </li>
+                <li><img src="{$ENV.DATAFACE_URL}/images/file.gif"/> 
+                    Embed your customer in a webpage:
+                    <select onchange="window.location.href=this.options[this.selectedIndex].value">
+                    <option value="">Select ...</option>
+                    {foreach from=$bibliographies item=bibliography}
+                        <option value="{$customers->getURL('-action=view')}#embed">
+                            {$bibliography->getTitle()}
+                        </option>
+                    
+                {/foreach}
+                </select>
+                </li>
+                
+            </ul-->
+	{/fill_slot}
+{/use_macro}
