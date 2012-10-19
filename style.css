@@ -1,0 +1,58 @@
+/*Set nowrap for all table lists*/
+.listing {
+	white-space:nowrap;
+}
+
+/*Temp fix until can figure out how to modify the actual content*/
+.dataface-view-description {
+	display: none;
+}
+
+/*Temp fix until can figure out how to modify the actual content*/
+.Dataface_GlanceList-oneLineDescription-posted-by {
+	display: none;
+}
+
+/*Sets the attributes in the list view*/
+.unmarked_link {
+	font-style: normal;
+}
+
+/*Stop bolding dates*/
+.date  {
+	font-weight: normal;
+	font-size: 90%;
+}
+
+.datetime {
+	font-weight: normal;
+	font-size: 90%;
+}
+
+/*
+.dataface-view-status {
+	display: none;
+}
+*/
+
+.rate_codes {
+	float: left;
+}
+
+.rate_codes th {
+	text-align: left;
+    background: transparent;
+    border-top: 0px solid #8cacbb;
+    border-bottom: 0px solid #8cacbb;
+    border-right: 0px solid #8cacbb;
+    font-weight: normal;
+    padding: 0em 1em 0em 1em;
+}
+
+/*
+.Dataface_collapsible_sidebar {
+	color: #cc9900;
+	padding-left: 0;
+	width: 80%;
+}
+*/

@@ -1,0 +1,6 @@
+NOTES:
+
+Modifications to Xataface files:
+
+	../xataface/Dataface/ResultControler.php
+		See: http://xataface.com/forum/viewtopic.php?f=4&t=5079 -- fix the Title drop-down list
