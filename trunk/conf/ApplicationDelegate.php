@@ -73,10 +73,19 @@ class conf_ApplicationDelegate {
 	}
 
 //I don't think this works in here... I think it may need to be in each tables delegate class
-	function beforeInsert($record){
-		$username = Dataface_AuthenticationTool::getInstance()->getLoggedInUserName();
-		$record->setValue('creator', $username);
-	}
+//	function beforeInsert($record){
+//		$username = Dataface_AuthenticationTool::getInstance()->getLoggedInUserName();
+//		$record->setValue('creator', $username);
+//	}
+
+	//function beforeSave(&$record){
+		//Add lock()
+	//}
+	
+	//function afterSave(&$record){
+		//Add unlock() -- verify with an echo or something
+	//}
+
 
 	function block__custom_javascripts(){
 		echo '<script src="javascripts.js" type="text/javascript" language="javascript"></script>';
