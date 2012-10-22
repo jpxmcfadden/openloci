@@ -3,9 +3,6 @@
 class tables_employees {
 
 	function getTitle(&$record){
-	//	echo "!" . $record->val('employee_id') . "!";
-	//	$rec = df_get_record('dataface__record_mtimes', array('recordid'=>"employees?employee_id=1"));
-	//	echo "FOO: ". date('Y-m-d h:i:s', $rec->display('mtime'));
 		return $record->val('first_name').' '.$record->val('last_name');
 	}
 
@@ -25,39 +22,32 @@ class tables_employees {
 	//	return $record->strval('email').' ( send email)';
 	//}
 
-
-	//Set the hidden timestamp field to the page load time.
-	function field__timestamp(&$record){
 	//function timestamp__default(){
-		//$recid = $record->getID();
-		//$rec = df_get_record('employees', array('recordid'=>$recid));
-		//echo $record->val('timestamp');
-		//if(!timestamp)
-		//	echo "C";
-		//if($record->val('timestamp')) echo "F";
-		//return time();
-		//if($record->val('timestampp') == "")
-		//echo $record->getPublicLink();
-		
-		return time();
-	}
+	//function field__timestamp(&$record){
 	
-	//Check if the data has been saved after we have already loaded the page, before overwriting
-	//If so, return an error!
-	//This doesn't work yet!!:::Problems with above field__ function... always updates timestamp on load, which includes right beforeSave... so it always passes.
-	function beforeSave($record){
-		$recid = $record->getID();
-		$rec = df_get_record('dataface__record_mtimes', array('recordid'=>$recid));
-		if($rec > $record->val('timestamp')){
-			//$msg = date('Y-m-d h:i:s', $rec->display('mtime'));
-			//$msg = "Last Updated Time: ".$rec->display('mtime')." | Page Accessed: ".$record->val('timestamp');
-			$msg = "\nThis page has been modified recently.\n\n This page was loaded @ ".date('Y-m-d h:i:s',$record->val('timestamp'))."\nThis page was modified @ ".date('Y-m-d h:i:s', $rec->display('mtime'))."\n\nPlease try again. == ".$record->val('timestamp');
-			return PEAR::raiseError($msg,DATAFACE_E_NOTICE);
+	//Create a new hidden timestamp field with the page load time at the end of the form.
+	function block__before_form_close_tag(){
+		echo '<input name="timestamp" id="timestamp" type="hidden" value="'.time().'" data-xf-field="timestamp" />';
+	}
+
+	//Check if the data has been saved after we have already loaded the page, before overwriting, if so, return an error!
+	function beforeSave(&$record){
+		$recid = $record->getID(); //Get the record ID
+		$rec = df_get_record('dataface__record_mtimes', array('recordid'=>$recid)); //Pull the last modified time from the dataface record
+		$timestamp = $_POST['timestamp'];
+		if($rec->display('mtime') > $timestamp) //Check to see if the last modified time is greater than the page load time
+		{
+			$msg = "ERROR: It appears that someone has recently modified this record, and your changes could not be saved. Here is the current record. Please re-enter your changes and try saving again.";
+			header('Location: '.$record->getURL('-action=edit').'&--msg='.urlencode($msg)); //Reload the page so that the fields update.
+			return PEAR::raiseError('',DATAFACE_E_NOTICE); //Return an error and don't save the record.
 		}
 	}
 
+	function afterSave(&$record)
+	{
+		//echo "foo";
+	}
 
-	
 	//function section__more(&$record){
 	//	return array(
 	//		'content' => '',
