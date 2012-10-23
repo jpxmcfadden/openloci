@@ -3,13 +3,10 @@ SOCIAL ENGINEERING
 
 TECHNICAL STUFF
 
-	Multi-user "locks"
-		- comparison of page loaded vs page updated check before insert into database
 	JOINs are just adding a duplicate view table... maybe make a manual view and deselect the _id field? - play with this. - SEE http://xataface.com/wiki/sql_delegate_method
 	Learn how to do "Details / View" layouts!
 	Change "subtitle?" on Employees to not be the "notes" section - TEMP FIX - disabled visibility in style sheet
 	Fix Main Template so that only using a block for added stylesheet- instead of copying the entire thing over
-	Preset Values - http://xataface.com/forum/viewtopic.php?f=4&t=6121
 	Select Customer -> Select Site ... if clicks on Site first, can we get it to auto-select the customer? should these two fields just be combined?
 	Go through database and change some columns to CHAR instead of VARCHAR.
 	Sanitize all inputs - widget:atts:maxlength / widget:atts:size
@@ -19,6 +16,8 @@ TECHNICAL STUFF
 	USERS: need to get rid of "Please Select" option from dropdown box if possible, or list info another way. Ideally radio buttons?
 	x Vendors > TaxID needs to be validation "required" when 1099 is selected.
 	!? Look into why "__validate" is slightly b0rked. - won't print params... only prints "errors" when using the $record. - VENDORS section (1099/TaxID)
+	Add show/hide field for checkbox in vendors section
+	When adding a new record, the page title defaults to the first item in the list.
 	
 FLOW / DATA / INFO
 	
