@@ -14,16 +14,41 @@ class tables_employees {
 		return '<a href="mailto:' . $record->strval('email') . '">' . $record->strval('email') . '</a>'; 
 	}
 	
-	//function address__renderCell(&$record){
-	//	return '<div style="white-space:nowrap">'.$record->strval('address').'</div>';
-	//}
-	
-	//function email__renderCell( &$record ){
-	//	return $record->strval('email').' ( send email)';
-	//}
 
-	//function timestamp__default(){
-	//function field__timestamp(&$record){
+	//DEFAULT VALUES
+	function state__default(){
+		return default_location_state();
+	}
+
+	function regular_hours__default(){
+		return "40.00";
+	}
+
+	function full_part__default(){
+		return "FT";
+	}
+
+	function pay_period__default(){
+		return "WK";
+	}
+
+	function direct_deposit__default(){
+		return "N";
+	}
+
+	function exemptions_federal__default(){
+		return "0";
+	}
+
+	function exemptions_state__default(){
+		return "0";
+	}
+
+	function exemptions_city__default(){
+		return "0";
+	}
+
+	
 	
 	//Create a new hidden timestamp field with the page load time at the end of the form.
 	function block__before_form_close_tag(){
@@ -57,5 +82,14 @@ class tables_employees {
 	//	);
 	//}
 
+	//function field__timestamp(&$record){
+	//function address__renderCell(&$record){
+	//	return '<div style="white-space:nowrap">'.$record->strval('address').'</div>';
+	//}
+	//function email__renderCell( &$record ){
+	//	return $record->strval('email').' ( send email)';
+	//}
+
+	
 }
 ?>

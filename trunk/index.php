@@ -31,6 +31,10 @@ function myRole(){
 	return $user->val('role'); 
 }
 
+function default_location_state(){
+	$app =& Dataface_Application::getInstance(); 
+	return $app->_conf['_default_location'];
+}
 
 //$app->addHeadContent('<link rel="stylesheet" type="text/css" href="styles.css"/>');
 //$app->addHeadContent('<style type="text/css">p{visibility:hidden;display:none;}</style>');
