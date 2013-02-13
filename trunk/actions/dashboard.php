@@ -3,7 +3,7 @@ class actions_dashboard {
 	function handle(&$params){
 	//	$bibs = df_get_records_array('customers', array());
 	//	df_display(array('customers'=>$bibs), 'dashboard.html');
-		df_display(array(), 'dashboard.html');
+		df_display(array(), 'dashboard_service.html');
 
 	/*
 		$app =& Dataface_Application::getInstance(); 
