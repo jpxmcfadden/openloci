@@ -13,8 +13,11 @@ class conf_ApplicationDelegate {
      * @see Dataface_AuthenticationTool
      */
     function getPermissions(&$record){
-        if ( !isUser() ) return Dataface_PermissionsTool::NO_ACCESS();
-        return Dataface_PermissionsTool::getRolePermissions(myRole());
+		if ( !isUser() )
+			return Dataface_PermissionsTool::NO_ACCESS();
+		if ( isAdmin() )
+			return Dataface_PermissionsTool::ALL();
+		return Dataface_PermissionsTool::getRolePermissions(myRole());
     }
 
 
@@ -52,6 +55,7 @@ class conf_ApplicationDelegate {
 			
 			foreach($app->_conf['_tables'] as $values) {
 			}
+			
 					
 		}
 		//Unset *all* tables from showing when not logged in.
@@ -60,23 +64,22 @@ class conf_ApplicationDelegate {
 			$app =& Dataface_Application::getInstance(); 
 
 			//Get database name from conf.ini
-			$dbname = $app->_conf[_database][name];
+			//$dbname = $app->_conf[_database][name];
 			
 			//List all tables from database and unset them
-			$sql = "SHOW TABLES FROM $dbname";
-			$result = mysql_query($sql);
-			while ($row = mysql_fetch_row($result)) {
-				unset($app->_conf['_tables'][$row[0]]);
-			}
-			mysql_free_result($result);
+		//	$result = mysql_query("SHOW TABLES FROM $dbname");
+		//	while ($row = mysql_fetch_row($result)) {
+		//		unset($app->_conf['_tables'][$row[0]]);
+		//	}
+		//	mysql_free_result($result);
 		}
 	}
 
-//I don't think this works in here... I think it may need to be in each tables delegate class
-//	function beforeInsert($record){
-//		$username = Dataface_AuthenticationTool::getInstance()->getLoggedInUserName();
-//		$record->setValue('creator', $username);
-//	}
+	//I don't think this works in here... I think it may need to be in each tables delegate class
+	//function beforeInsert($record){
+	//	$username = Dataface_AuthenticationTool::getInstance()->getLoggedInUserName();
+	//	$record->setValue('creator', $username);
+	//}
 
 	//function beforeSave(&$record){
 		//Add lock()
@@ -87,10 +90,6 @@ class conf_ApplicationDelegate {
 	//}
 
 
-	function block__custom_javascripts(){
-		echo '<script src="javascripts.js" type="text/javascript" language="javascript"></script>';
-	}	
-	
 	function after_action_new($params=array()){
 		$record =& $params['record'];
 		header('Location: '.$record->getURL('-action=view').'&--msg='.urlencode('Record successfully added.'));
@@ -103,6 +102,13 @@ class conf_ApplicationDelegate {
 		exit;
 	}
 	
+	function block__custom_stylesheets(){
+	}
+	
+	function block__custom_javascripts(){
+		echo '<script src="javascripts.js" type="text/javascript" language="javascript"></script>';
+		echo '<link href="style.css" rel="stylesheet" type="text/css"/>';
+	}	
 }
 
 

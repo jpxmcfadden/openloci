@@ -1,7 +1,19 @@
-/*Set nowrap for all table lists*/
+#xf-logo {
+	background-image: url(images/openloci_logo2.png);
+	background-color: black;
+	width: 175px;
+	height: 70px;
+}
+
+/* Set nowrap for all table lists */
 .listing {
 	white-space:nowrap;
 }
+
+/* Stop Xataface from auto-lowercasing all tabs/actions */
+.contentViews li a { text-transform: none; }
+.contentActions { text-transform: none; }
+
 
 /*Temp fix until can figure out how to modify the actual content*/
 .dataface-view-description {
@@ -36,17 +48,22 @@
 */
 
 .rate_codes {
-	float: left;
+/*	float: left;
+	border: 1px solid black;
+	*/
 }
 
 .rate_codes th {
 	text-align: left;
+/*
+	border: 1px solid black;
     background: transparent;
     border-top: 0px solid #8cacbb;
     border-bottom: 0px solid #8cacbb;
     border-right: 0px solid #8cacbb;
     font-weight: normal;
     padding: 0em 1em 0em 1em;
+*/
 }
 
 /*
@@ -56,3 +73,21 @@
 	width: 80%;
 }
 */
+
+.view_add  {
+	border-collapse:collapse;
+	/*border: 0px solid black;*/
+}
+
+.view_add  td  {
+	border: 1px solid black;
+	padding-right: 5px;
+	padding-left: 5px;
+}
+
+.view_add  th  {
+	border-right: 0px solid black;
+	padding-right: 5px;
+	padding-left: 5px;
+	text-align: left;
+}

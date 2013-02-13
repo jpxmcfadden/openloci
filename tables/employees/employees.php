@@ -8,7 +8,7 @@ class tables_employees {
 
 	function titleColumn(){
 		return 'CONCAT(last_name,", ",first_name)';
-	}	
+	}
 
 	function email__htmlValue(&$record){
 		return '<a href="mailto:' . $record->strval('email') . '">' . $record->strval('email') . '</a>'; 
@@ -48,6 +48,9 @@ class tables_employees {
 		return "0";
 	}
 
+	function active__default(){
+		return "Y";
+	}
 	
 	
 	//Create a new hidden timestamp field with the page load time at the end of the form.
