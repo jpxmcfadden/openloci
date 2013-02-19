@@ -1,0 +1,40 @@
+Name / Key Code
+Part/Serial #
+Brand
+Description
+
+Quantity in stock
+Unit type (lbs, gallons, etc)
+
+
+Location -> ability to transfer from 1 location to another
+	- Create a "Locations" table to store location names
+	- "view the inventory of this item for any of the trucks it is on"
+
+	
+Connect to call slip that it's for w/ relationship
+
+
+Purchase Info:
+Vendor - Be able to get list of vendors purchased from
+List Cost
+Sell Cost / Markup (do some math here)
+
+Last cost - cost for last time purchased for renewing inventory
+IPO (inventory po) # - for last purchase order
+Last received date
+(Low priority: Average cost over time - with option to reset to last purchase? - have a variable that keeps last date to average from)
+
+"Each month I go through all inventory items and adjust the list cost based on either the last unit cost or the wt avg cost (whichever is higher).  Freon is an exception.  I don’t adjust the list cost on Freon." - get clarification on this.
+
+
+-----------------------------------------
+Purchase order:
+
+For inventory? (Checkbox - Transient) -> One way make it so that another box shows up for call slip assignment.
+[conv??]
+
+
+Option - Add to previous inventory item (aka buy more) w/ lookup to the inventory table. If selected, auto populate the other fields & add to the inventory list. If "None" add a new inventory item.
+
+("receive" and "post" -- need to find more about this, goes w/ accounting)

@@ -121,10 +121,7 @@ Array (
 			[__id__] => new 
 			[__order__] => 999999 )
 	[__loaded__] => 1
-	)	
-			
-			
-			
+	)			
 			
 			
 Pulling data from the form beforeSave (using grid widget)			
