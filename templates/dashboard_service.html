@@ -1,0 +1,19 @@
+{use_macro file="Dataface_Main_Template.html"}
+	{fill_slot name="main_column"}
+        <h1>Welcome to the OpenLoci Service Module</h1>
+        
+        <p>Please navigate by using the tabs above, or menu options below.</p>
+		
+		<br>SERVICE
+		<ul>
+			<li><img src="{$ENV.DATAFACE_URL}/images/table.gif"/>
+				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=new&-table=call_slips"> Create a New Call Slip</a>
+			</li>
+			<li><img src="{$ENV.DATAFACE_URL}/images/table.gif"/>
+				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=calendar_display&-table=call_slips"> Dispatch Board</a>
+			</li>
+		</ul>
+
+
+	{/fill_slot}
+{/use_macro}

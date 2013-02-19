@@ -1,0 +1,63 @@
+Call Slip Fields
+
+
+Add:
+Add site instructions from site table - only in view?
+*Time Logs - Ability to enter in multiple at once? Is this a good idea or not?... transient select menu for type, if not a call_slip save category number to table, if it is a call slip, create a text box and type in the number of the call_id and save that to the table.
+
+
+
+Rates / Billing / Labor Charges
+
+
+
+Screen 1
+
+	Site - Only select active sites / **Create "Active/Inactive" on sites / customers records.
+	*Site Info - *pull and populate from site record*	Contact / Phone / Site Instructions / Full Address
+	*Alt - Alternate Billing (name of customer who normally pays) --- *not going to implement this yet - Avi
+
+	Status
+	Cost
+	Contract ID - get only active contracts - expire after today's date!
+	Type ? -- T/M --
+	*C Dates ?
+	*Cr. Hold ?
+	*Zone ?
+	*Days
+	*Hours
+
+	Job#
+	PO#
+	Problem Code
+	Call Instructions
+	
+	*Priority
+	*Overtime - if customer has authorized
+	Scheduled - Date / Time / Tech - in TMS, y/n and links to the dispatch board
+	*Rechedule - causes call slip to be tagged with a different color
+	**unschedule** - option to unschedule a call - maybe have an option for "call complete" vs "call incomplete" / "voided"!!
+	
+	
+Screen 2
+
+	Call Date / Time
+	Tech Name
+	Dispach Date / Time - Arrived & Departed
+	Bin History - stuff the tech wrote (tech notes)
+
+
+*******	
+Screen 3
+	
+	Rate Type - Show rate chart
+	Table - tech + time + amount
+	
+Screen 4
+
+	Materials
+
+Screen 5
+	
+	Invoice
+	
