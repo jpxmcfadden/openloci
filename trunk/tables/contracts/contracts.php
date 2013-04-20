@@ -25,5 +25,20 @@ class tables_contracts {
 //		);
 //	}
 
+	function contract_amount__htmlValue($record){
+		$bc = $record->val('billing_cycle');
+		$bills = sizeof($bc);
+		$charge_per_bill = round($record->val('contract_amount') / $bills, 2);
+		return '$' . $record->val('contract_amount') . ' (Billed in increments of $' . $charge_per_bill . ', per the Billing Cycle)';
+	}
+
+	//To get this to show on the view page check out: http://xataface.com/forum/viewtopic.php?t=4220, or just create a Table View
+	//function charge_per_bill__htmlValue($record){
+	//	$bc = $record->val('billing_cycle');
+	//	$bills = sizeof($bc);
+	//	$charge_per_bill = round($record->val('contract_amount') / $bills, 2);
+	//	return $charge_per_bill;
+	//}
+	
 }
 ?>

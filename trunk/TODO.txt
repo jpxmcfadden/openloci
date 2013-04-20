@@ -61,37 +61,37 @@ MEL -->	! Accounts Recievable - Ask M.
 				Ability to view or print Reconciliation Report
 				Post after reconciliation is in balance
 		
+		Accounts Payable (invoice)
+			-- not entry -- Discount if pay by the 10th / Discount % - off pre-tax amount -- links with Vendors
+			Other Stuff - SEE "SOFTWARE - Accounts Payable.doc" pages 1 & 2, for details.
+			
+		Vendors
+			Distribution Code - general ledger code most commonly used for that vendor - when pulled into payables, this code is carried over
+			! Terms - most are Net 30 (payable 30 days from invoice), need info on other options... need more information here on what to do about this.
+			! Due Days - number of days until invoice is due - is this auto?
+			x Discount % - % dicount vendor offers (if payed by a certain time) - this links with Accounts Payable
+			
+			Vendor History - shows all invoices entered, and either open or paid - SEE "SOFTWARE - Vendor.doc" page 5, for more info on this.
+				- relationship link to vendor.
+		
+		
 
 	Service
 
 		Call Slips:
 			Inventory sale cost - add the ability to override (field in grid - using JS)
-			Time Logs -> Rates - add the ability to override (if needed)
+			Invoice ---- ADD an option to include an ATTN under "Bill To" above billing address.
+					---- ADD an option to include information below the materials
+					---- ADD an option for "Fuel" or somesuch... "Misc additionals"
+					---- ADD "Total Cost"
+			Add options to:	close a call slip
+							set status
 
 	
 		Customer
-BETH -->	Preventative Maintenance (PM) / Contracts - Maybe this should be integrated with "Sites"?
-			!x Contract Type - clarification / is this needed? - SEE "SOFTWARE - Service.doc" page 8, for details on types.
-				Are these the ones we want? Seems not. Currenly only have "PM", what else?
-			!x Billed to Date / Total Due
+BETH -->	!x Billed to Date / Total Due
 				How does this work in the current system?
 				AUTO - w/ manual button to confirm (check if correct?), but modifyable?
 			! Total Contract Amt - what is this? do we need?
 			! Adjustments - do we need?
-			Billing cycle (shows how much / which months money is due)
-				Possibly: Check boxes (Multiple SELECT - always open field?) for each month. Auto divide contract amt / #of months.
 			Some sort of history (Year / Term / Price) - Possibly needs option to "Close the year"
-
-			
-	Accounts Payable (invoice)
-		-- not entry -- Discount if pay by the 10th / Discount % - off pre-tax amount -- links with Vendors
-		Other Stuff - SEE "SOFTWARE - Accounts Payable.doc" pages 1 & 2, for details.
-		
-	Vendors
-		Distribution Code - general ledger code most commonly used for that vendor - when pulled into payables, this code is carried over
-		! Terms - most are Net 30 (payable 30 days from invoice), need info on other options... need more information here on what to do about this.
-		! Due Days - number of days until invoice is due - is this auto?
-		x Discount % - % dicount vendor offers (if payed by a certain time) - this links with Accounts Payable
-		
-		Vendor History - shows all invoices entered, and either open or paid - SEE "SOFTWARE - Vendor.doc" page 5, for more info on this.
-			- relationship link to vendor.
