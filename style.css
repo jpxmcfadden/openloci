@@ -91,3 +91,53 @@
 	padding-left: 5px;
 	text-align: left;
 }
+
+
+.invoice_tab  {
+	border-collapse:collapse;
+	width: 7in;
+	border: 0px solid black;
+}
+
+.invoice_tab  td  {
+	border: 0px solid black;
+}
+
+.invoice_tab  th  {
+	border-bottom: 1px solid black;
+	text-align: left;
+}
+
+.invoice_div  {
+	width: 7in;
+	text-align: right;
+}
+
+.invoice_select {
+	border-collapse:collapse;
+	border: 1px solid black;
+}
+
+.invoice_select td{
+	border-right: 1px solid black;
+	border-bottom: 1px solid black;
+	padding: 2px;
+}
+
+.invoice_select th{
+	border-right: 1px solid black;
+	border-bottom: 1px solid black;
+	padding: 2px;
+}
+
+
+/*Hides certain fields that we only want to pop up on a selection*/
+/*#custom_rph_form_row {display: none;}*/
+
+
+/*For printing invoices*/
+.print {display: none;}
+.invoice {
+	font-size: 14px;
+}
+

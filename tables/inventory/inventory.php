@@ -27,6 +27,7 @@ class tables_inventory {
 		return $result;
 	}
 */	
+
 	
 }
 

@@ -54,13 +54,13 @@ class tables_employees {
 	
 	
 	//Create a new hidden timestamp field with the page load time at the end of the form.
-	function block__before_form_close_tag(){
-		echo '<input name="timestamp" id="timestamp" type="hidden" value="'.time().'" data-xf-field="timestamp" />';
-	}
+	//function block__before_form_close_tag(){
+	//	echo '<input name="timestamp" id="timestamp" type="hidden" value="'.time().'" data-xf-field="timestamp" />';
+	//}
 
 	//Check if the data has been saved after we have already loaded the page, before overwriting, if so, return an error!
 	function beforeSave(&$record){
-		$recid = $record->getID(); //Get the record ID
+	/*	$recid = $record->getID(); //Get the record ID
 		$rec = df_get_record('dataface__record_mtimes', array('recordid'=>$recid)); //Pull the last modified time from the dataface record
 		$timestamp = $_POST['timestamp'];
 		if($rec->display('mtime') > $timestamp) //Check to see if the last modified time is greater than the page load time
@@ -69,11 +69,12 @@ class tables_employees {
 			header('Location: '.$record->getURL('-action=edit').'&--msg='.urlencode($msg)); //Reload the page so that the fields update.
 			return PEAR::raiseError('',DATAFACE_E_NOTICE); //Return an error and don't save the record.
 		}
+		*/
 	}
 
 	function afterSave(&$record)
 	{
-		//echo "foo";
+	//	echo '<script type="text/javascript" language="javascript">alert("saved!");</script>';
 	}
 
 	//function section__more(&$record){

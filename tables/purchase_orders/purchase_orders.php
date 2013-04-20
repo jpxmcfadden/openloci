@@ -36,6 +36,12 @@ class tables_purchase_orders {
 		);
 	}
 	
+	//This is for Call Slip Invoices
+	//function field__foo($record){
+	//	$foo = 1;
+	//	return $foo;
+	//}
+	
 }
 
 ?>

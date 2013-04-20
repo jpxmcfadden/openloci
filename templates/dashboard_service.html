@@ -4,15 +4,40 @@
         
         <p>Please navigate by using the tabs above, or menu options below.</p>
 		
-		<br>SERVICE
-		<ul>
-			<li><img src="{$ENV.DATAFACE_URL}/images/table.gif"/>
-				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=new&-table=call_slips"> Create a New Call Slip</a>
-			</li>
-			<li><img src="{$ENV.DATAFACE_URL}/images/table.gif"/>
-				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=calendar_display&-table=call_slips"> Dispatch Board</a>
-			</li>
-		</ul>
+
+
+		<br><b>CALL SLIPS</b><br>
+			<ul>
+				<li><img src="{$ENV.DATAFACE_URL}/images/table.gif"/>
+					<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=call_slips"> View Call Slips</a>
+				</li>
+				<li><img src="{$ENV.DATAFACE_URL}/images/table.gif"/>
+					<a href="{$ENV.DATAFACE_SITE_HREF}?-action=new&-table=call_slips"> Create a New Call Slip</a>
+				</li>
+				<li><img src="{$ENV.DATAFACE_URL}/images/table.gif"/>
+					<a href="{$ENV.DATAFACE_SITE_HREF}?-action=invoice"> Batch Print Invoices </a>(Ready: {$call_slips})
+				</li>
+			</ul>
+
+		<br><b>DISPATCH</b><br>
+			<ul>
+				<li><img src="{$ENV.DATAFACE_URL}/images/table.gif"/>
+					<a href="{$ENV.DATAFACE_SITE_HREF}?-action=calendar_display&-table=call_slips"> Dispatch Board</a>
+				</li>
+			</ul>
+
+		<br><b>CONTRACTS</b><br>
+			<ul>
+				<li><img src="{$ENV.DATAFACE_URL}/images/table.gif"/>
+					<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=contracts"> View Contracts</a>
+				</li>
+				<li><img src="{$ENV.DATAFACE_URL}/images/table.gif"/>
+					<a href="{$ENV.DATAFACE_SITE_HREF}?-action=new&-table=contracts"> Create New Contract</a>
+				</li>
+				<li><img src="{$ENV.DATAFACE_URL}/images/table.gif"/>
+					<a href="{$ENV.DATAFACE_SITE_HREF}?-action=generate_ccs"> Generate Contract Call Slips</a> (**Save what has already been generated and add a check w/ yes/no)
+				</li>
+			</ul>
 
 
 	{/fill_slot}

@@ -13,8 +13,8 @@ class tables_customers {
 	}
 */
 	
-	function state__default(){
-		return "FL";
+	function billing_state__default(){
+		return default_location_state();
 	}
 
 	

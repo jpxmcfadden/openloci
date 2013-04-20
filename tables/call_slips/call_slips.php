@@ -2,6 +2,24 @@
 
 class tables_call_slips {
 
+	function getPermissions(&$record){
+		//First check if the user is logged in.
+		if( isUser() ){
+			//Check status, determine if record should be uneditable.
+			if ( isset($record) ){
+				if(	$record->val('status') == 'RDY' ||
+					$record->val('status') == 'SNT' ||
+					$record->val('status') == 'PPR' ||
+					$record->val('status') == 'PRE' ||
+					$record->val('status') == 'CMP'
+				)
+				return Dataface_PermissionsTool::getRolePermissions('NO_EDIT_DELETE');
+			}
+		}
+		else
+			return Dataface_PermissionsTool::NO_ACCESS();
+	}
+
 	//private $inventory_values = array(); //Create a class variable to store the values from the grid field
 	//private $cs_id = '';
 	private $cs_modify_inventory = array(); //Create a class variable to store the values for modifying the inventory
@@ -17,7 +35,7 @@ class tables_call_slips {
 		//return 'CONCAT(call_id)';
 	}
 
-
+	
 	/*function rel_call_slip_purchase_orders__permissions($record){
 		return array(
 			'add new related record' => 0,
@@ -45,6 +63,81 @@ class tables_call_slips {
 		function block__after_inventory_widget() { echo "</div>"; }	
 
 
+	//This is for Call Slip Invoices
+	function field__company($record){
+		return company_name();
+	}
+
+	function field__company_address_1($record){
+		$address = company_address();
+		return $address['address'];
+	}
+	
+	function field__company_address_2($record){
+		$address = company_address();
+		return $address['city'] . ', ' . $address['state'] . ' ' . $address['zip'];
+	}
+
+	function field__company_phone($record){
+		return company_phone();
+	}
+	
+	function field__company_fax($record){
+		return company_fax();
+	}
+
+	function field__date_today($record){
+		return date('m/d/Y');
+	}
+	
+	function field__billing_address_1($record){
+		$rec = df_get_record('customers', array('customer_id'=>$record->val('customer_id')));
+		$billing_address = $rec->val('billing_address');
+		return $billing_address;
+	}
+	
+	function field__billing_address_2($record){
+		$rec = df_get_record('customers', array('customer_id'=>$record->val('customer_id')));
+		$billing_address = $rec->val('billing_city') . ' ' . $rec->val('billing_state') . ' ' . $rec->val('billing_zip');;
+		return $billing_address;
+	}
+
+	function field__site_address($record){
+		$rec = df_get_record('customer_sites', array('site_id'=>$record->val('site_id')));
+		$billing_address = $rec->val('site_city') . ' ' . $rec->val('site_state') . ' ' . $rec->val('site_zip');
+		return $billing_address;
+	}
+	
+	function field__time_log_total($record){
+		$total = 0;
+		$employeeRecords = $record->getRelatedRecords('time_logs');
+		foreach ($employeeRecords as $cs_er){
+			$arrive = Dataface_converters_date::datetime_to_string($cs_er['start_time']);
+			$depart = Dataface_converters_date::datetime_to_string($cs_er['end_time']);
+			$hours = number_format(((strtotime($depart) - strtotime($arrive)) / 3600),1);
+			$total += ($hours * $cs_er['rate_per_hour']);
+		}
+		return number_format($total,2);
+	}
+	
+	function field__materials_total($record){
+		$total = 0;
+		
+			$purchaseorderRecords = $record->getRelatedRecords('call_slip_purchase_orders');
+			foreach ($purchaseorderRecords as $cs_pr){
+				$subtotal_sale = $cs_pr['cost_sale'] * $cs_pr['quantity'];
+				$total += $subtotal_sale;
+			}
+		
+			$inventoryRecords = $record->getRelatedRecords('call_slip_inventory');
+			foreach ($inventoryRecords as $cs_ir){
+				$subtotal_sale = $cs_ir['sell_cost'] * $cs_ir['quantity'];
+				$total += $subtotal_sale;
+			}
+
+		return number_format($total,2);
+	}
+	
 	//This was silly and is now deprecated.
 	//For the case where no contract is selected, save as value as '-1' instead of '0'
 	//This alleviates issues with renaming via in the valuelist (0 is predefined)
@@ -73,12 +166,21 @@ class tables_call_slips {
        return "----<div class=\"formHelp\">A Call ID will be assigned after the first SAVE.</div>";		
 	}
 
+
+	//Display datetime format as: "Month Day, Year - Hour(12):Minutes AM/PM" or "Month Year" for PMs
+	function call_datetime__display($record) {
+		if($record->val('type') == "PM")
+			return date('F Y', strtotime($record->strval('call_datetime')));
+		return date('F d, Y - g:i A', strtotime($record->strval('call_datetime')));
+		//return date('Y-m-d g:i A', strtotime($record->strval('call_datetime')));
+   }
+
 	
 	
 	//Add attitional details to the view tab - include employee work history
 	function section__billing(&$record){
 
-		$childString = "";
+	$childString = "";
 
 	
 		//Hours Worked
@@ -129,7 +231,7 @@ class tables_call_slips {
 				$subtotal_list = $cs_pr['cost_list'] * $cs_pr['quantity'];
 				$subtotal_sale = $cs_pr['cost_sale'] * $cs_pr['quantity'];
 				if($cs_pr['cost_list'] == 0)
-					$markup = "";
+					$markup = "---";
 				else
 					$markup = number_format(100 * $cs_pr['cost_sale'] / $cs_pr['cost_list'] - 100) . '%';
 
@@ -152,9 +254,9 @@ class tables_call_slips {
 				//Pull the item name / cost out of the 'inventory' table
 				$rec = df_get_record('inventory', array('inventory_id'=>$cs_ir['inventory_id']));
 
-				$subtotal_list = $rec->display('purchase_cost') * $cs_ir['quantity'];
-				$subtotal_sale = $rec->display('sell_cost') * $cs_ir['quantity'];
-				if($rec->display('purchase_cost') == 0)
+				$subtotal_list = $cs_ir['purchase_cost'] * $cs_ir['quantity'];
+				$subtotal_sale = $cs_ir['sell_cost'] * $cs_ir['quantity'];
+				if($cs_ir['purchase_cost'] == 0)
 					$markup = "";
 				else
 					$markup = number_format(100 * $cs_ir['sell_cost'] / $cs_ir['purchase_cost'] - 100) . '%';
@@ -186,9 +288,7 @@ class tables_call_slips {
 			'order' => 10
 		);
 	}
-	
 
-	
 	//CALENDAR MODULE FUNCTIONS
 	function getBgColor($record){
 		if ( $record->val('technician') == 1) return 'blue';
@@ -206,21 +306,12 @@ class tables_call_slips {
 	}
 	
 	function calendar__decorateEvent(Dataface_Record $record, &$event){
-		$rec_site = df_get_record('sites', array('site_id'=>$record->val('site_id')));
+		$rec_site = df_get_record('customer_sites', array('site_id'=>$record->val('site_id')));
 		$rec_empl = df_get_record('employees', array('employee_id'=>$record->val('technician')));
 		$event['title'] = "\nTech: " . $rec_empl->val('first_name') . " " . $rec_empl->val('last_name') . "\nSite: " . $rec_site->val('address');
 	}
 
-	//function init() {
-	//	echo "foo";
-	//	$app =& Dataface_Application::getInstance(); 
-	//	$app->_conf['_modules'] = 'modules_calendar=modules/calendar/calendar.php';
-	//}
-	
-	
 	function inventory__validate(&$record, $value, &$params){
-		//echo '<pre>';print_r($value); echo '</pre><br>';
-
 		//Empty the error message
 		$params['message'] = '';
 
@@ -338,7 +429,6 @@ class tables_call_slips {
 		//print_r($this->cs_modify_inventory);
 		return 1;
 	}
-
 
 	function beforeSave(&$record){
 		//$response =& Dataface_Application::getResponse();
