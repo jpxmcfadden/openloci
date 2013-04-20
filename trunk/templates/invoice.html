@@ -1,0 +1,63 @@
+{use_macro file="Dataface_Main_Template.html"}
+	{fill_slot name="main_column"}
+
+		<script type="text/javascript">
+			{literal}
+			function toggle_all(form, toggle) {
+				var myForm = document.forms[form];
+				for( var i=0; i < myForm.length; i++ ) { 
+					if(toggle) {
+						myForm.elements[i].checked = "checked";
+					}
+					else {
+						myForm.elements[i].checked = "";
+					}
+				}
+			}
+			
+			function confirm_submit(form,el) {
+				if(confirm("Are you sure?"))
+					document.forms[form].elements[el].value = "yes";
+				else
+					document.forms[form].elements[el].value = "no";
+			}
+			{/literal}
+			</script>
+	
+		<h1>Batch Print Invoices</h1>
+		<p>The following invoices will be printed:</p>
+		
+		{if $invoice_headers}
+			<form name="select_print" onSubmit='confirm_submit("select_print","confirm_print")'>
+				<input type="hidden" name="-action" value="invoice">
+				<input type="hidden" name="confirm_print">
+							
+				<table class="listing resultList">
+					<tr>
+						<th><input type="checkbox" checked onchange=toggle_all("select_print",this.checked)></th>
+						<th>Call Slip ID</th>
+						<th>Customer</th>
+						<th>Site</th>
+					</tr>
+					{$i = 0}
+					{foreach from=$invoice_headers item=list}
+						{if $i%2 == 0}
+							<tr class="listing odd">
+						{else}
+							<tr class="listing even">
+						{/if}
+							<td><input type="checkbox" checked name="{$list.id}"></td>
+							<td>{$list.id}</td>
+							<td>{$list.customer}</td>
+							<td>{$list.site}</td>
+						</tr>
+						{assign var="i" value=$i+1}
+					{/foreach}
+				</table>
+				<input type="submit" value="Print">
+			</form>
+		{else}
+			<p class="portalMessage">There are currently no invoices ready for printing. <a href="index.php?-table=dashboard"> Return to Dashboard.</a></p>
+		{/if}
+	{/fill_slot}
+{/use_macro}

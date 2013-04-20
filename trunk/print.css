@@ -1,0 +1,18 @@
+.no_print {
+	display: none;
+}
+
+.print {
+	display:block;
+	page-break-after: always;
+}
+
+/*.print:last_child {
+	display:block;
+	page-break-after: avoid;
+}*/
+
+/*
+#top-section{display: none;}
+.fineprint{display: none;}
+*/
