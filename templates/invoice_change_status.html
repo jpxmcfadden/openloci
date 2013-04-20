@@ -1,0 +1,33 @@
+{use_macro file="Dataface_Main_Template.html"}
+	{fill_slot name="main_column"}
+
+		<script type="text/javascript">
+			{literal}
+			function confirm_submit(form,el) {
+				if(confirm("Are you sure?"))
+					document.forms[form].elements[el].value = "yes";
+				else
+					document.forms[form].elements[el].value = "no";
+			}
+			{/literal}
+			</script>
+	
+		<div class="no_print">
+			<h1>Batch Print Invoices (Status Change)</h1>
+			<p>Do you wish to change the status of the printed invoices to "<b>Printed / Sent</b>"?<br>
+			<span class="formHelp">&nbsp;*If the call slips printed properly, you will typically want to say <b>Yes</b> here.</span>
+			</p>
+			
+			<form name="select_print" onSubmit='confirm_submit("select_print","confirm_status")'>
+				<input type="hidden" name="-action" value="invoice">
+				<input type="hidden" name="confirm_status">
+				<input type="hidden" name="invoice_selected" value="{$invoice_selected}">
+
+				<input type="submit" name="status_yes" value="Yes"> <input type="submit" name="status_no" value="No">
+			</form>
+		</div>
+
+		{$print_script}
+
+	{/fill_slot}
+{/use_macro}

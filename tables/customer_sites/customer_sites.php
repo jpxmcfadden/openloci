@@ -1,17 +1,17 @@
 <?php
 
-class tables_sites {
+class tables_customer_sites {
 
-	function getTitle(&$record){
-		return $record->val('address');
-	}
+//	function getTitle(&$record){
+//		return $record->val('address');
+//	}
 
-	function titleColumn(){
-		return 'address';
-	}
+//	function titleColumn(){
+//		return 'address';
+//	}
 	
-	function state__default(){
-		return "FL";
+	function site_state__default(){
+		return default_location_state();
 	}
 
 
