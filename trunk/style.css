@@ -5,6 +5,25 @@
 	height: 70px;
 }
 
+.portalErrorMessage,
+.system-message,  /* These two last ones are reST error indicators */
+#error-handling {
+    background-color: #ffa07b;
+    border: 1px solid #ff0000;
+    color: Black;
+    font-size: 85%;
+    font-weight: bold;
+    margin: 1em 0em 0em 0em;
+    margin-right: 2em;
+    padding: 0.5em 1em 0.5em 3em;
+    vertical-align: middle;
+    background-image: url(xataface/images/delete.gif);
+    background-repeat: no-repeat;
+    background-position: 5px 50%;
+
+}
+
+
 /* Set nowrap for all table lists */
 .listing {
 	white-space:nowrap;
@@ -92,6 +111,26 @@
 	text-align: left;
 }
 
+.journal_post_sub_tab{
+	width: 100%;
+	border-collapse:collapse;
+	border: 0px solid black;
+}
+.journal_post_sub_tab th{
+	background-color: transparent;
+	border: 0px solid black;
+	border-bottom: 1px solid black;
+	border-right: 1px solid black;
+}
+.journal_post_sub_tab td{
+	/*width: 100%;*/
+	background-color: transparent;
+	border: 0px solid black;
+	border-right: 1px solid black;
+}
+.journal_post_sub_tab_upper {
+	border-top: 1px solid black;
+}
 
 .invoice_tab  {
 	border-collapse:collapse;

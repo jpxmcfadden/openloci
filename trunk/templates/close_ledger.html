@@ -1,0 +1,29 @@
+{use_macro file="Dataface_Main_Template.html"}
+	{fill_slot name="main_column"}
+
+		<h1>General Ledger: Close Month</h1>
+		<br>
+		
+		<form name="select_date">
+			<input type="hidden" name="-action" value="generate_ccs">
+			
+			Select The Month and Year
+			<select name="month">
+				{foreach from=$cur_date[0] item=month_list}
+					<option value="{$month_list}" {if $month_list == $cur_date[2]}selected="selected"{/if}> {$month_list} </option>
+				{/foreach}
+			</select>
+
+			<select name="year">
+				{foreach from=$cur_date[1] item=year_list}
+					<option value="{$year_list}" {if $year_list == $cur_date[3]}selected="selected"{/if}> {$year_list} </option>
+				{/foreach}
+			</select>
+
+			<input type="submit" value="Submit">
+			
+			<p class="formHelp" style="text-indent: 16em;">*Default is <b>next</b> month</p>
+		</form>
+
+	{/fill_slot}
+{/use_macro}

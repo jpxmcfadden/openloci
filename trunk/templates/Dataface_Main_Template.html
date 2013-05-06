@@ -223,7 +223,7 @@
 		
 		{if $ENV.APPLICATION_OBJECT->numErrors() > 0 }
 			{block name="before_errors"}
-			<div class="portalMessage">
+			<div class="portalErrorMessage">
 				<h5>{translate id="scripts.GLOBAL.HEADING_ERRORS"}Errors{/translate}</h5>
 				<ul>
 					{block name="error"}
