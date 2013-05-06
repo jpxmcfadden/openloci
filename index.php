@@ -7,6 +7,7 @@
 	//if ( !isset($_REQUEST['-sort']) and @$_REQUEST['-table'] == 'call_slips' ){ $_REQUEST['-sort'] = $_GET['-sort'] = 'call_datetime desc'; }
 	if ( !isset($_REQUEST['-sort']) and @$_REQUEST['-table'] == 'call_slips' ){ $_REQUEST['-sort'] = $_GET['-sort'] = 'call_id desc'; }
 	if ( !isset($_REQUEST['-sort']) and @$_REQUEST['-table'] == 'purchase_orders' ){ $_REQUEST['-sort'] = $_GET['-sort'] = 'purchase_id desc'; }
+	if ( !isset($_REQUEST['-sort']) and @$_REQUEST['-table'] == 'chart_of_accounts' ){ $_REQUEST['-sort'] = $_GET['-sort'] = 'account_number'; }
 
 
 require_once "xataface/dataface-public-api.php";

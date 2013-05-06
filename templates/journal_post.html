@@ -1,0 +1,118 @@
+{use_macro file="Dataface_Main_Template.html"}
+	{fill_slot name="main_column"}
+
+		<script type="text/javascript">
+			{literal}
+			function toggle_all(form, toggle) {
+				var myForm = document.forms[form];
+				for( var i=0; i < myForm.length; i++ ) { 
+					if(toggle) {
+						myForm.elements[i].checked = "checked";
+					}
+					else {
+						myForm.elements[i].checked = "";
+					}
+				}
+			}
+			
+			function confirm_submit(form,el) {
+				if(confirm("Are you sure?"))
+					document.forms[form].elements[el].value = "yes";
+				else
+					document.forms[form].elements[el].value = "no";
+			}
+			{/literal}
+			</script>
+	
+		<h1>Review and Post Journal Entries</h1>
+		
+		{if $confirm}
+			<p class="portalMessage">The following journal entries have been posted. <a href="index.php?-table=dashboard"> Return to Dashboard.</a></p>
+			
+			<table class="listing resultList">
+				<tr>
+					<th>ID</th>
+					<th>Date</th>
+					<th>Description</th>
+				</tr>
+				{$i = 0}
+				{foreach from=$headers item=list}
+					{if $i%2 == 0}
+						<tr class="listing odd">
+					{else}
+						<tr class="listing even">
+					{/if}
+						<td valign="top"><a href="index.php?-table=general_ledger&-action=browse&-recordid=general_ledger?ledger_id={$list.id}">{$list.id}</a></td>
+						<td valign="top">{$list.date}</td>
+						<td valign="top">{$list.description}</td>
+					</tr>
+					{assign var="i" value=$i+1}
+				{/foreach}
+			</table>			
+
+		{elseif $headers}
+			<p>Select the following journal entries to be posted:</p>
+
+			<!--form name="select_post" onSubmit='confirm_submit("select_post","confirm_post")'-->
+			<form name="select_post">
+				<input type="hidden" name="-action" value="journal_post">
+				<input type="hidden" name="confirm_post" value="true">
+							
+				<table class="listing resultList">
+					<tr>
+						<th><input type="checkbox" checked onchange=toggle_all("select_post",this.checked)></th>
+						<th>ID</th>
+						<th>Date</th>
+						<th>Description</th>
+						<th>Details</th>
+					</tr>
+					{$i = 0}
+					{foreach from=$headers item=list}
+						{if $i%2 == 0}
+							<tr class="listing odd">
+						{else}
+							<tr class="listing even">
+						{/if}
+							<td><input type="checkbox" checked name="{$list.id}"></td>
+							<td valign="top"><a href="index.php?-table=general_ledger&-action=browse&-recordid=general_ledger?ledger_id={$list.id}">{$list.id}</a></td>
+							<td valign="top">{$list.date}</td>
+							<td valign="top">{$list.description}</td>
+							<td valign="top">
+								<table class="journal_post_sub_tab">
+									<tr>
+										<th>Account</th>
+										<th>Debit</th>
+										<th>Credit</th>
+									</tr>
+									{foreach from=$list.entries item=entries}
+										<tr>
+											<td>{$entries.account}</td>
+											<td>{$entries.debit}</td>
+											<td>{$entries.credit}</td>
+										</tr>
+									{/foreach}
+									<tr class="journal_post_sub_tab_upper">
+										{if $list.total_debit == $list.total_credit}
+											{assign var=color value='lightgreen'}
+										{else}
+											{assign var=color value='#ff7070'}
+										{/if}
+											
+										<td></td>
+										<td style="background-color: {$color};">{$list.total_debit}</td>
+										<td style="background-color: {$color};">{$list.total_credit}</td>
+									</tr>
+								</table>
+								<br>
+							</td>
+						</tr>
+						{assign var="i" value=$i+1}
+					{/foreach}
+				</table>
+				<input type="submit" value="Post">
+			</form>
+		{else}
+			<p class="portalMessage">There are currently no journal entries ready for posting. <a href="index.php?-table=dashboard"> Return to Dashboard.</a></p>
+		{/if}
+	{/fill_slot}
+{/use_macro}

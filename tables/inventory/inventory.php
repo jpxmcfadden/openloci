@@ -2,6 +2,11 @@
 
 class tables_inventory {
 
+	//function getPermissions(&$record){
+	//	$role = "READ ONLY";
+	//	return Dataface_PermissionsTool::getRolePermissions($role);
+	//}
+
 /*	function block__after_rate_label_widget(){
 		echo '<table class="rate_codes"><tr><td>';
 	}

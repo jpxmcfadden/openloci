@@ -44,49 +44,51 @@ class conf_ApplicationDelegate {
 
 		//Check if the request is to save a record.
 		if(isset($query['--session:save'])){
-			//Get the record ID
-			$recid = $record->getID();
+			//Check if any records exist (this will only be false if there are no records in a table)
+			if(isset($record)){
+				//Get the record ID
+				$recid = $record->getID();
 
-			//Get the version that is being attempted to be saved from the "record_version" field.
-			$loaded_version = $_POST['record_version'];
-			
-			//Pull the record version from the record versioning table
-			$v_record = df_get_record('_record_versioning', array('record_id'=>'='.$recid));
-			
-			//Check to see if the version record exists
-			if(isset($v_record)){
-			
-				//Check to see if we're trying to save an out of date version
-				if($v_record->val('version') == $loaded_version){ //If not out of date, update the record version and save the record.
-					$v_record->setValue('version',($v_record->val('version')+1));
+				//Get the version that is being attempted to be saved from the "record_version" field.
+				$loaded_version = $_POST['record_version'];
+				
+				//Pull the record version from the record versioning table
+				$v_record = df_get_record('_record_versioning', array('record_id'=>'='.$recid));
+				
+				//Check to see if the version record exists
+				if(isset($v_record)){
+				
+					//Check to see if we're trying to save an out of date version
+					if($v_record->val('version') == $loaded_version){ //If not out of date, update the record version and save the record.
+						$v_record->setValue('version',($v_record->val('version')+1));
+						$v_record->save(null, true);
+					}
+					else{ //If out of date, throw an error message and don't save the record.
+
+						//Setting '--no-query' causes Xataface to not process the query.
+						//This is a little hack to stop the record from being saved.
+						$query['--no-query'] = true;
+						
+						//Error Message
+						$msg .= "ERROR: It appears that this record has been modified since you opened it. Your changes could not be saved, and the most recently updated record has been loaded. Please re-enter your changes and try saving again.";
+						
+						//Redirect back to 'edit' with the error message.
+						$location = $record->getURL('-action=edit'); //<-- this will take you back to the record's "view" tab when a record is saved
+						header('Location: '.$record->getURL('-action=edit').'&--msg='.urlencode($msg)); //Reload the page so that the fields update.
+
+					}
+					
+				}
+				else{ //If the version record doesn't already exist, create a new versioning record.
+
+					$v_record = new Dataface_Record('_record_versioning', array());
+					$v_record->setValues(array('record_id'=>$recid,'version'=>0));
 					$v_record->save(null, true);
-				}
-				else{ //If out of date, throw an error message and don't save the record.
-
-					//Setting '--no-query' causes Xataface to not process the query.
-					//This is a little hack to stop the record from being saved.
-					$query['--no-query'] = true;
 					
-					//Error Message
-					$msg .= "ERROR: It appears that this record has been modified since you opened it. Your changes could not be saved, and the most recently updated record has been loaded. Please re-enter your changes and try saving again.";
-					
-					//Redirect back to 'edit' with the error message.
-					$location = $record->getURL('-action=edit'); //<-- this will take you back to the record's "view" tab when a record is saved
-					header('Location: '.$record->getURL('-action=edit').'&--msg='.urlencode($msg)); //Reload the page so that the fields update.
-
 				}
-				
-			}
-			else{ //If the version record doesn't already exist, create a new versioning record.
-
-				$v_record = new Dataface_Record('_record_versioning', array());
-				$v_record->setValues(array('record_id'=>$recid,'version'=>0));
-				$v_record->save(null, true);
-				
-			}
-		
-		}
 			
+			}
+		}	
 			
 			
 		//If user is logged in, select which tables are shown

@@ -3,6 +3,8 @@ SOCIAL ENGINEERING
 
 TECHNICAL STUFF
 
+	**IF DATES ARE ENTERED INCORRECTLY (correct is currently "Y-m-d") THE RECORD DOESN'T SEEM TO SAVE RIGHT** FIX THIS!!!!
+
 	Change "subtitle?" on Employees to not be the "notes" section - TEMP FIX - disabled visibility in style sheet
 	Fix Main Template so that only using a block for added stylesheet- instead of copying the entire thing over
 	Select Customer -> Select Site ... if clicks on Site first, can we get it to auto-select the customer? should these two fields just be combined?
@@ -48,7 +50,7 @@ MEL -->	! Accounts Recievable - Ask M.
 			**?!?!?** - "Need the ability to close out P/R on a monthly, quarterly and annual basis."
 			- "When an employee makes personal purchase through Airite’s vendor accounts, we setup a tool deduction on the employee’s check to get reimburse for the purchase.  I will need the ability to set up and view the history."
 			
-		?? General Ledger ??
+		General Ledger
 			Ability to Create Recurring Journal Entries
 			Ability to Prepare Manual Journal Entries
 			Ability to print General Ledger Reports by Detail Report or Batch
@@ -60,6 +62,9 @@ MEL -->	! Accounts Recievable - Ask M.
 				You can prepare reconciliation based by check number, or manually by check date, amount, etc.
 				Ability to view or print Reconciliation Report
 				Post after reconciliation is in balance
+
+		Chart of Accounts
+			*Code to insure that account numbers are unique* - Auto assign!
 		
 		Accounts Payable (invoice)
 			-- not entry -- Discount if pay by the 10th / Discount % - off pre-tax amount -- links with Vendors
@@ -80,6 +85,7 @@ MEL -->	! Accounts Recievable - Ask M.
 
 		Call Slips:
 			Inventory sale cost - add the ability to override (field in grid - using JS)
+			validate inventory >= 0 (right now will take negative numbers)
 			Invoice ---- ADD an option to include an ATTN under "Bill To" above billing address.
 					---- ADD an option to include information below the materials
 					---- ADD an option for "Fuel" or somesuch... "Misc additionals"
