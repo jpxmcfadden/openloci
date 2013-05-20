@@ -8,7 +8,8 @@ class tables_general_ledger {
 			//Check status, determine if record should be uneditable.
 			if ( isset($record) ){
 				if(	$record->val('post_status') == 'Posted')
-					return Dataface_PermissionsTool::getRolePermissions('NO_EDIT_DELETE');
+					return Dataface_PermissionsTool::getRolePermissions('NO_EDIT_DELETE'); //If status:Posted, no editing
+				return Dataface_PermissionsTool::getRolePermissions('NO_DELETE'); //No Deleting, ever.
 			}
 		}
 		else
@@ -46,23 +47,27 @@ class tables_general_ledger {
 
 		$jr = $record->getRelatedRecords('general_ledger_journal');
 		foreach ($jr as $journalRecord){
-			$ar = df_get_record('chart_of_accounts', array('account_id'=>$journalRecord['account_id']));
-			$accountRecord = $ar->vals();
-			$childString .= '<tr><td>' . $accountRecord['account_number'] .
-							'</td><td>' . $accountRecord['account_name'] .
-							'</td><td>' . $journalRecord['debit'] .
-							'</td><td>' . $journalRecord['credit'] .
-							'</td></tr>';
-			$debit_total += $journalRecord['debit'];
-			$credit_total += $journalRecord['credit'];
+			//Check to make sure the account exists (i.e. if the journal line was removed)
+			if($journalRecord['account_id'] != 0){
+				$ar = df_get_record('chart_of_accounts', array('account_id'=>$journalRecord['account_id']));
+				$accountRecord = $ar->vals();
+				$childString .= '<tr><td>' . $accountRecord['account_number'] .
+								'</td><td>' . $accountRecord['account_name'] .
+								'</td><td>' . $journalRecord['debit'] .
+								'</td><td>' . $journalRecord['credit'] .
+								'</td></tr>';
+				$debit_total += $journalRecord['debit'];
+				$credit_total += $journalRecord['credit'];
+			}
 		}
-			if($debit_total == $credit_total)
-				$background = 'style="background-color: lightgreen"';
-			else
-				$background = 'style="background-color: #ff7070"';
 		
-			$childString .= "<tr><td></td><td></td><td $background><b>".number_format($debit_total,2)."</b></td><td $background><b>".number_format($credit_total,2).'</b></td></tr>';
-			$childString .= '</table><br>';
+		if($debit_total == $credit_total)
+			$background = 'style="background-color: lightgreen"';
+		else
+			$background = 'style="background-color: #ff7070"';
+		
+		$childString .= "<tr><td></td><td></td><td $background><b>".number_format($debit_total,2)."</b></td><td $background><b>".number_format($credit_total,2).'</b></td></tr>';
+		$childString .= '</table><br>';
 
 		
 		
@@ -77,7 +82,6 @@ class tables_general_ledger {
 	function section__status(&$record){
 		$app =& Dataface_Application::getInstance(); 
 		$query =& $app->getQuery();
-
 		$childString = '';
 
 		//If the "Change Status To: Pending" button has been pressed.
@@ -98,7 +102,7 @@ class tables_general_ledger {
 			$childString .= '<form name="status_change">';
 			$childString .= '<input type="hidden" name="-table" value="'.$query['-table'].'">';
 			$childString .= '<input type="hidden" name="-action" value="'.$query['-action'].'">';
-			$childString .= '<input type="hidden" name="-recordid" value="'.$query['-recordid'].'">';
+			$childString .= '<input type="hidden" name="-recordid" value="'.$record->getID().'">';
 
 			$childString .= $msg;
 
@@ -109,9 +113,9 @@ class tables_general_ledger {
 			$childString .= '<form>';
 			$childString .= '<input type="hidden" name="-table" value="'.$query['-table'].'">';
 			$childString .= '<input type="hidden" name="-action" value="'.$query['-action'].'">';
-			$childString .= '<input type="hidden" name="-recordid" value="'.$query['-recordid'].'">';
-
-			$childString .= '<input type="hidden" name="-pending" value="'.$query['-recordid'].'">';
+			$childString .= '<input type="hidden" name="-recordid" value="'.$record->getID().'">';
+			
+			$childString .= '<input type="hidden" name="-pending" value="'.$record->getID().'">';
 			$childString .= '<input type="submit" value="Change Status to: Pending">';
 
 			$childString .= '</form>';
@@ -132,6 +136,61 @@ class tables_general_ledger {
 		);
 	}
 
+	function journal__validate(&$record, $value, &$params){
+		//echo "<pre>";
+		//print_r($value);
+		//echo "</pre>";
+
+		//Empty the error message
+		$params['message'] = '';
+		
+		//Get rid of the last set in the array - it isn't needed for our use and causes issues
+		unset($value['__loaded__']);
+
+		//Running total for debit/credit
+		$total = 0;
+		
+		//Run through each journal entry to insure that it is correct
+		foreach ($value as $x){
+			//Skip empty lines - do nothing (unless a debit/credit has been assigned, and then return an error)
+			if($x['account_id'] == ''){
+				//Case where the 'item_name' field has been left empty, but a quantity has been given
+				if(($x['debit'] || $x['debit'])){
+					$params['message'] .= 'CANNOT PROCESS JOURNAL ENTRY: A Debit/Credit has been given, but an Account has not been assigned.';
+					return false;
+				}
+			}
+			
+			//Process non-empty lines
+			else{
+				//Case where a user has entered an account, but no further data.
+				if($x['account_id'] != '' && !($x['debit'] || $x['credit'])){
+					$params['message'] .= 'CANNOT PROCESS JOURNAL ENTRY: An Account has been given, but no Debit/Credit information has been assigned.';
+					return false;
+				}
+			
+				//Case where a user has entered data into both the Debit and Credit fields.
+				if($x['debit'] && $x['credit']){
+					$params['message'] .= 'CANNOT PROCESS JOURNAL ENTRY: Data cannot be entered into both Debit and Credit fields for the same Account.';
+					return false;
+				}
+			
+				//Total up debits and credits
+				$total += ($x['debit'] - $x['credit']);
+			}
+		}
+
+		//Case where debits & credits do not match (i.e. total != 0)
+		if($total != 0){
+			$params['message'] .= 'CANNOT PROCESS JOURNAL ENTRY: The journal entry is out of balance.';
+			return false;
+		}
+
+		//If no errors have occured, move along.
+		return true;
+	}
+	
+	
 	
 	function beforeSave(&$record){
 	}

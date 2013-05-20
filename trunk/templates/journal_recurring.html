@@ -24,10 +24,10 @@
 			{/literal}
 			</script>
 	
-		<h1>Review and Post Journal Entries</h1>
+		<h1>Apply Recurring Journal Entries</h1>
 		
 		{if $confirm == "true"}
-			<p class="portalMessage">The following journal entries have been posted. <a href="index.php?-table=dashboard"> Return to Dashboard.</a></p>
+			<p class="portalMessage">The following journal entries have been created. <a href="index.php?-table=dashboard"> Return to Dashboard.</a></p>
 			
 			<table class="listing resultList">
 				<tr>
@@ -37,33 +37,31 @@
 				</tr>
 				{$i = 0}
 				{foreach from=$headers item=list}
-					{if $list.posted == "true"}
 						{if $i%2 == 0}
 							<tr class="listing odd">
 						{else}
 							<tr class="listing even">
 						{/if}
 							<td valign="top"><a href="index.php?-table=general_ledger&-action=browse&-recordid=general_ledger?ledger_id={$list.id}">{$list.id}</a></td>
-							<td valign="top"><a href="index.php?-table=general_ledger&-action=browse&-recordid=general_ledger?ledger_id={$list.id}">{$list.date}</a></td>
-							<td valign="top"><a href="index.php?-table=general_ledger&-action=browse&-recordid=general_ledger?ledger_id={$list.id}">{$list.description}</a></td>
+							<td valign="top">{$list.date}</td>
+							<td valign="top">{$list.description}</td>
 						</tr>
 						{assign var="i" value=$i+1}
-					{/if}
 				{/foreach}
 			</table>			
 
 		{elseif $headers}
-			<p>Select the following journal entries to be posted:</p>
+			<p>The following journal entries will be created:</p>
 
 			<!--form name="select_post" onSubmit='confirm_submit("select_post","confirm_post")'-->
 			<form name="select_post">
-				<input type="hidden" name="-action" value="journal_post">
-				<input type="hidden" name="confirm_post" value="true">
+				<input type="hidden" name="-action" value="journal_recurring">
+				<input type="hidden" name="confirm" value="true">
 							
 				<table class="listing resultList">
 					<tr>
-						<th><input type="checkbox" checked onchange=toggle_all("select_post",this.checked)></th>
-						<th>ID</th>
+						<!--th><input type="checkbox" checked onchange=toggle_all("select_post",this.checked)></th-->
+						<!--th>ID</th-->
 						<th>Date</th>
 						<th>Description</th>
 						<th>Details</th>
@@ -75,10 +73,10 @@
 						{else}
 							<tr class="listing even">
 						{/if}
-							<td><input type="checkbox" checked name="{$list.id}"></td>
-							<td valign="top"><a href="index.php?-table=general_ledger&-action=browse&-recordid=general_ledger?ledger_id={$list.id}">{$list.id}</a></td>
-							<td valign="top"><a href="index.php?-table=general_ledger&-action=browse&-recordid=general_ledger?ledger_id={$list.id}">{$list.date}</a></td>
-							<td valign="top"><a href="index.php?-table=general_ledger&-action=browse&-recordid=general_ledger?ledger_id={$list.id}">{$list.description}</a></td>
+							<!--td><input type="checkbox" checked name="{$list.id}"></td-->
+							<!--td valign="top"><a href="index.php?-table=general_ledger&-action=browse&-recordid=general_ledger?ledger_id={$list.id}">{$list.id}</a></td-->
+							<td valign="top">{$list.date}</td>
+							<td valign="top">{$list.description}</td>
 							<td valign="top">
 								<table class="journal_post_sub_tab">
 									<tr>
@@ -111,10 +109,10 @@
 						{assign var="i" value=$i+1}
 					{/foreach}
 				</table>
-				<input type="submit" value="Post">
+				<input type="submit" value="Apply">
 			</form>
 		{else}
-			<p class="portalMessage">There are currently no journal entries ready for posting. <a href="index.php?-table=dashboard"> Return to Dashboard.</a></p>
+			<p class="portalMessage">There are currently no active recurring journal entries. <a href="index.php?-table=dashboard"> Return to Dashboard.</a></p>
 		{/if}
 	{/fill_slot}
 {/use_macro}

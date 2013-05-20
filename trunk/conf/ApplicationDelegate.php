@@ -179,7 +179,8 @@ class conf_ApplicationDelegate {
 	}
 	
 	function block__custom_javascripts(){
-		echo '<script src="javascripts.js" type="text/javascript" language="javascript"></script>';
+	//	echo '<script src="javascripts.js" type="text/javascript" language="javascript"></script>';
+		Dataface_JavascriptTool::getInstance()->import('submithandler.js');
 	}	
 }
 

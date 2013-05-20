@@ -4,14 +4,14 @@ class actions_dashboard {
 
 		if(1){
 			$jpp = df_get_records_array('general_ledger', array('post_status'=>'Pending'));
-			foreach($jpp as $i=>$record){}
-			df_display(array("journal_pending"=>($i+1)), 'dashboard.html');
+			df_display(array("journal_pending"=>(count($jpp))), 'dashboard.html');
 		}
-		
 		if(0){
+		
 			$css = df_get_records_array('call_slips', array('status'=>'RDY'));
-			foreach($css as $i=>$record){}
-			df_display(array("call_slips"=>($i+1)), 'dashboard_service.html');
+			df_display(array("call_slips"=>(count($css))), 'dashboard_service.html');
+			//foreach($css as $i=>$record){}
+			//df_display(array("call_slips"=>($i+1)), 'dashboard_service.html');
 		}
 
 	/*
