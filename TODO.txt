@@ -51,8 +51,6 @@ MEL -->	! Accounts Recievable - Ask M.
 			- "When an employee makes personal purchase through Airite’s vendor accounts, we setup a tool deduction on the employee’s check to get reimburse for the purchase.  I will need the ability to set up and view the history."
 			
 		General Ledger
-			Ability to Create Recurring Journal Entries
-			Ability to Prepare Manual Journal Entries
 			Ability to print General Ledger Reports by Detail Report or Batch
 			Closing Procedure
 				Check for unposted batches
