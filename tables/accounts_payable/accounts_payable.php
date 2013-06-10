@@ -14,13 +14,13 @@ class tables_accounts_payable {
 		return date('Y-m-d');
 	}
 
-	function status__default(){
-		return "OPEN";
-	}
+	//function status__default(){
+	//	return "OPEN";
+	//}
 
-	function status__renderCell(&$record){
-		return '<b>'.$record->strval('status').'</b>';
-	}
+	//function status__renderCell(&$record){
+	//	return '<b>'.$record->strval('status').'</b>';
+	//}
 	
 	
 /*
@@ -43,5 +43,13 @@ class tables_accounts_payable {
 		);
 	}
 */
+
+	function afterSave(&$record){
+		$po_rec = df_get_record('purchase_orders', array('purchase_id'=>$record->val('purchase_order_id')));
+		$po_rec->setValue('assigned_voucher_id',$record->val('voucher_id'));
+		//$gen_inv->save(null, true);
+		$po_rec->save();
+		//return PEAR::raiseError('END',DATAFACE_E_NOTICE);
+	}
 }
 ?>

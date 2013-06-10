@@ -4,7 +4,8 @@ class actions_dashboard {
 
 		if(1){
 			$jpp = df_get_records_array('general_ledger', array('post_status'=>'Pending'));
-			df_display(array("journal_pending"=>(count($jpp))), 'dashboard.html');
+			$css = df_get_records_array('call_slips', array('status'=>'RDY'));
+			df_display(array("call_slips"=>(count($css)),"journal_pending"=>(count($jpp))), 'dashboard.html');
 		}
 		if(0){
 		

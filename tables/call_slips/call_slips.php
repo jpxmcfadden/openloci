@@ -13,7 +13,8 @@ class tables_call_slips {
 					$record->val('status') == 'PRE' ||
 					$record->val('status') == 'CMP'
 				)
-				return Dataface_PermissionsTool::getRolePermissions('NO_EDIT_DELETE');
+				//return Dataface_PermissionsTool::getRolePermissions('NO_EDIT_DELETE');
+				return Dataface_PermissionsTool::getRolePermissions('MASTER'); //This needs to be changed - When saving with the above line, it doesn't let save if converting to RDY etc. Need button anyway.
 			}
 		}
 		else
@@ -154,9 +155,9 @@ class tables_call_slips {
 	*/	
 	
 	//DEFAULT VALUES
-	function status__default(){
-		return "OPEN";
-	}
+	//function status__default(){
+	//	return "OPEN";
+	//}
 	
 	function call_datetime__default() {
        return date('Y-m-d g:i a');
@@ -289,6 +290,137 @@ class tables_call_slips {
 		);
 	}
 
+	
+	function section__status(&$record){
+		$app =& Dataface_Application::getInstance(); 
+		$query =& $app->getQuery();
+		$childString = '';
+
+		//If the "Change Status To: Complete" button has been pressed.
+		//Because both the $_GET and $query will be "" on a new record, check to insure that they are not empty.
+		if(($_GET['-status_change'] == $query['-recordid']) && ($query['-recordid'] != "")){
+			if($record->val('status') == "NCO")
+				$record->setValue('status',"CMP"); //Set status to Complete.
+			else
+				$record->setValue('status',"RDY"); //Set status to Ready.
+			$res = $record->save(null, true); //Save Record w/ permission check.
+			
+			//Check for errors.
+			if ( PEAR::isError($res) ){
+				// An error occurred
+				//throw new Exception($res->getMessage());
+				$msg = '<input type="hidden" name="--error" value="Unable to change status. This is most likely because you do not have the required permissions.">';
+			}
+			else {
+				if($record->val('status') == "CMP")
+					$msg = '<input type="hidden" name="--msg" value="Status Changed to: Job Completed">';
+				elseif($record->val('status') == "RDY")
+					$msg = '<input type="hidden" name="--msg" value="Status Changed to: Invoice Ready to Print / Send">';
+				else 
+					$msg = '<input type="hidden" name="--error" value="Something Broke: Status='.$record->val('status').'">';
+			}
+			
+			$childString .= '<form name="status_change">';
+			$childString .= '<input type="hidden" name="-table" value="'.$query['-table'].'">';
+			$childString .= '<input type="hidden" name="-action" value="'.$query['-action'].'">';
+			$childString .= '<input type="hidden" name="-recordid" value="'.$record->getID().'">';
+
+			$childString .= $msg;
+
+			$childString .= '</form>';
+			$childString .= '<script language="Javascript">document.status_change.submit();</script>';
+		}
+		elseif(	$record->val('status') == 'NCO' || $record->val('status') == 'CMP' ){
+			$childString .= '<form>';
+			$childString .= '<input type="hidden" name="-table" value="'.$query['-table'].'">';
+			$childString .= '<input type="hidden" name="-action" value="'.$query['-action'].'">';
+			$childString .= '<input type="hidden" name="-recordid" value="'.$record->getID().'">';
+			
+			$childString .= '<input type="hidden" name="-status_change" value="'.$record->getID().'">';
+
+			if($record->val('status') == "NCO")
+				$childString .= '<input type="submit" value="Change Status to: Job Completed">';
+			elseif($record->val('status') == "CMP")
+				$childString .= '<input type="submit" value="Change Status to: Invoice Ready to Print / Send">';
+
+			$childString .= '</form>';
+		}
+		//elseif(	$record->val('post_status') == 'Pending'){ //---can do this by linking to -action=ledger_post&selected="this_one"
+		//	$childString .= 'Post';
+		//}
+		else {
+			$childString .= "No further options available";
+		}
+		
+		//if(	$record->val('post_status') == '')
+		return array(
+			'content' => "$childString",
+			'class' => 'main',
+			'label' => 'Change Status',
+			'order' => 10
+		);
+	}
+	
+	
+/*	function section__status(&$record){
+		$app =& Dataface_Application::getInstance(); 
+		$query =& $app->getQuery();
+		$childString = '';
+
+		//If the "Change Status To: Pending" button has been pressed.
+		//Because both the $_GET and $query will be "" on a new record, check to insure that they are not empty.
+		if(($_GET['-stch'] == $query['-recordid']) && ($query['-recordid'] != "")){
+			$record->setValue('status',"CMP"); //Set status to Pending.
+			$res = $record->save(null, true); //Save Record w/ permission check.
+
+			//Check for errors.
+			if ( PEAR::isError($res) ){
+				// An error occurred
+				//throw new Exception($res->getMessage());
+				$msg = '<input type="hidden" name="--error" value="Unable to change status. This is most likely because you do not have the required permissions.">';
+			}
+			else
+				$msg = '<input type="hidden" name="--msg" value="Status Changed to: Job Complete">';
+			
+			$childString .= '<form name="status_change">';
+			$childString .= '<input type="hidden" name="-table" value="'.$query['-table'].'">';
+			$childString .= '<input type="hidden" name="-action" value="'.$query['-action'].'">';
+			$childString .= '<input type="hidden" name="-recordid" value="'.$record->getID().'">';
+
+			$childString .= $msg;
+
+			$childString .= '</form>';
+			$childString .= '<script language="Javascript">document.status_change.submit();</script>';
+		}
+		elseif(	$record->val('status') == 'NCO'){
+			$childString .= '<form>';
+			$childString .= '<input type="hidden" name="-table" value="'.$query['-table'].'">';
+			$childString .= '<input type="hidden" name="-action" value="'.$query['-action'].'">';
+			$childString .= '<input type="hidden" name="-recordid" value="'.$record->getID().'">';
+			
+			$childString .= '<input type="hidden" name="-stch" value="'.$record->getID().'">';
+			$childString .= '<input type="submit" value="Change Status to: Job Completed">';
+
+			$childString .= '</form>';
+		}
+		//elseif(	$record->val('post_status') == 'Pending'){ //---can do this by linking to -action=ledger_post&selected="this_one"
+		//	$childString .= 'Post';
+		//}
+		else {
+			$childString .= "No further options available";
+		}
+		
+		//if(	$record->val('post_status') == '')
+		return array(
+			'content' => "$childString",
+			'class' => 'main',
+			'label' => 'Change Status',
+			'order' => 20
+		);
+	}
+*/
+	
+	
 	//CALENDAR MODULE FUNCTIONS
 	function getBgColor($record){
 		if ( $record->val('technician') == 1) return 'blue';
@@ -335,7 +467,7 @@ class tables_call_slips {
 
 			//Process non-empty lines
 			else{
-				$params['message'] .= $x['inventory_id'] . ' -> ' . $x['quantity'] . '<br>';
+				//$params['message'] .= $x['inventory_id'] . ' -> ' . $x['quantity'] . '<br>';
 
 				//Pull data from the "call_slip_inventory" and "inventory" tables.
 				$cs_inv = df_get_record('call_slip_inventory', array('call_id'=>$csid, 'inventory_id'=>$x['inventory_id']));
@@ -377,7 +509,15 @@ class tables_call_slips {
 						$params['message'] .=	'CANNOT PROCESS INVENTORY: The current stock in inventory for "'. $item_name .'" is ' . $gen_inv_q . '.<br>' .
 												'You are trying to add ' . $mod_inv . ' which exceeds the amount in inventory.<br>';
 						return 0;
-					}			
+					}
+					
+					//Next check to make sure the quantity entered is not negative
+					//If it is, cause an error and go no further.
+					if($new_cs_i_q < 0){
+						$params['message'] .=	'CANNOT PROCESS INVENTORY: Negative inventory for "'. $item_name .'" cannot be added.<br>';
+						return 0;
+					}
+					
 
 					//Now, save the inventory modification to the class variable cs_modify_inventory. The actual inventory will be modified/saved in the beforeSave() function.
 					//We don't save here because 1) this function is actually run twice, and thus the inventory would be modified x2, and 2) other potential validation checks failing.
@@ -433,6 +573,11 @@ class tables_call_slips {
 	function beforeSave(&$record){
 		//$response =& Dataface_Application::getResponse();
 		//$rlist = 'a';
+		
+		if('status' == '')
+			$record->setValue('status','NCO');
+			
+		$record->setValue('call_datetime',date('Y-m-d g:i a'));
 
 		//*****************************************************************
 		//********************Inventory Management Code********************
@@ -442,7 +587,8 @@ class tables_call_slips {
 		foreach($this->cs_modify_inventory as $iid=>$modify){
 			$gen_inv = df_get_record('inventory', array('inventory_id'=>$iid));
 			$gen_inv->setValue('quantity',($gen_inv->val('quantity') + $modify));
-			$gen_inv->save(null, true);
+			//$gen_inv->save(null, true);
+			$gen_inv->save();
 			//return PEAR::raiseError('END',DATAFACE_E_NOTICE);
 		}
 
