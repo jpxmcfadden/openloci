@@ -2,37 +2,132 @@
 	{fill_slot name="main_column"}
         <h1>Welcome to OpenLoci</h1>
         
-        <p>Please navigate by using the tabs above.</p>
+        <!--p>Please navigate by using the tabs above.</p-->
+		<p> </p>
 		
-		<br>ACCOUNTING
+
+		<h3><u>SERVICE MENU</u></h3>
+
+		<br><b>CALL SLIPS</b><br>
+		<ul>
+			<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
+				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=call_slips"> View / Edit / Add Call Slips</a>
+			</li>
+			<li><img src="{$ENV.DATAFACE_URL}/images/topic_icon.gif"/>
+				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=invoice"> Batch Print Invoices </a>(Ready: {$call_slips})
+			</li>
+		</ul>
+
+		<br><b>CUSTOMERS</b><br>
+		<ul>
+			<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
+				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=customers"> View / Edit / Add Customers</a>
+			</li>
+			<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
+				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=customer_sites"> View / Edit / Add Sites</a>
+			</li>
+		</ul>
+		
+		
+		<br><b>CONTRACTS</b><br>
+		<ul>
+			<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
+				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=contracts"> View / Edit / Add Contracts</a>
+			</li>
+			<li><img src="{$ENV.DATAFACE_URL}/images/topic_icon.gif"/>
+				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=generate_ccs"> Generate Contract Call Slips</a> <!--(**Save what has already been generated and add a check w/ yes/no)-->
+			</li>
+		</ul>
+
+		<br><b>DISPATCH</b><br>
 		<ul>
 			<li><img src="{$ENV.DATAFACE_URL}/images/table.gif"/>
-				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=chart_of_accounts"> View the Chart of Accounts</a>
+				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=calendar_display&-table=call_slips"> Dispatch Board</a>
 			</li>
-			<li><img src="{$ENV.DATAFACE_URL}/images/table.gif"/>
-				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=general_ledger"> General Ledger</a>
+		</ul>
+
+		<br><br>
+
+		<p>-----------------------------------------------------------------------------------------------------------------------------</p>
+		
+		<h3><u>ACCOUNTING MENU</u></h3>
+		
+		<br><b>TABLES</b><br>
+		<ul>
+			<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
+				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=chart_of_accounts"> View / Edit the Chart of Accounts</a>
 			</li>
-			<li><img src="{$ENV.DATAFACE_URL}/images/table.gif"/>
-				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=general_ledger_recurring"> Recurring Journal Entries</a>
+			<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
+				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=general_ledger"> View / Edit the General Ledger</a>
 			</li>
-			<li><img src="{$ENV.DATAFACE_URL}/images/table.gif"/>
-				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=journal_recurring"> Apply Recurring Journal Entries </a>
+		</ul>
+		
+		<br><b>JOURNAL ENTRIES</b><br>
+		<ul>
+			<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
+				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=general_ledger_recurring"> View / Edit Recurring Journal Entries</a>
 			</li>
-			<li><img src="{$ENV.DATAFACE_URL}/images/table.gif"/>
+			<li><img src="{$ENV.DATAFACE_URL}/images/topic_icon.gif"/>
+				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=journal_recurring"> Generate Recurring Journal Entries </a>
+			</li>
+			<li><img src="{$ENV.DATAFACE_URL}/images/topic_icon.gif"/>
 				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=journal_post"> Post Journal Entries </a>(Pending: {$journal_pending})
 			</li>
-
 		</ul>
-		<br>ADMIN SETTINGS
+
+		<br><b>ACCOUNTS PAYABLE</b><br>
 		<ul>
-			<li><img src="{$ENV.DATAFACE_URL}/images/table.gif"/>
-				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=admin_users"> Edit the Users Table</a>
+			<li><img src="{$ENV.DATAFACE_URL}/images/topic_icon.gif"/> Post Accounts Payable (Pending: #)</a>
 			</li>
-			<li><img src="{$ENV.DATAFACE_URL}/images/table.gif"/>
-				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=admin_rate_codes"> Edit the Rate Codes Table</a>
+			<li><img src="{$ENV.DATAFACE_URL}/images/topic_icon.gif"/> Print Checks (Ready: #)</a>
 			</li>
-			<li><img src="{$ENV.DATAFACE_URL}/images/table.gif"/>
-				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=admin_county_tax"> Edit the County / Tax Table</a>
+		</ul>
+		
+		<br><b>ACCOUNTS RECEIVABLE</b><br>
+		<ul>
+			<li><img src="{$ENV.DATAFACE_URL}/images/topic_icon.gif"/> Post Accounts Receivable (Pending: #)</a>
+			</li>
+		</ul>
+
+		<br><b>REPORTS</b><br>
+		<ul>
+			<li><img src="{$ENV.DATAFACE_URL}/images/file.gif"/> Income Statement
+			</li>
+			<li><img src="{$ENV.DATAFACE_URL}/images/file.gif"/> Trial Balance
+			</li>
+			<li><img src="{$ENV.DATAFACE_URL}/images/file.gif"/> Balance Sheet
+			</li>
+			<li> <p style="color:lightgrey"> <img src="{$ENV.DATAFACE_URL}/images/file.gif"/> Statement of Cash Flows</p>
+			</li>
+			<li> <p style="color:lightgrey"> <img src="{$ENV.DATAFACE_URL}/images/file.gif"/> Statement of Changes in Equity</p>
+			</li>
+			<li><img src="{$ENV.DATAFACE_URL}/images/file.gif"/> Bank Reconcillation -- ??
+			</li>
+		</ul>
+		
+		<br><b>CLOSE</b><br>
+		<ul>
+			<li><img src="{$ENV.DATAFACE_URL}/images/topic_icon.gif"/> Month
+			</li>
+			<li><img src="{$ENV.DATAFACE_URL}/images/topic_icon.gif"/> Year
+			</li>
+		</ul>
+		
+		<br><br>
+		
+
+		<h3><u>ADMIN MENU</u></h3>
+
+		<br><b>ADMIN SETTINGS</b>
+		<ul>
+			<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
+				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=admin_users"> View / Edit the Users Table</a>
+			</li>
+			<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
+				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=rates"> View / Edit the Rates Table</a>
+			</li>
+			<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
+				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=admin_county_tax"> View / Edit the County / Tax Table</a>
 			</li>
 		</ul>
 		

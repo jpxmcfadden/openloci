@@ -6,12 +6,13 @@
 class conf_ApplicationDelegate {
 
 	function getPermissions(&$record){
+		//if ( isAdmin() )
+		//	return Dataface_PermissionsTool::ALL();
+
 		if ( !isUser() )
 			return Dataface_PermissionsTool::NO_ACCESS();
 		return Dataface_PermissionsTool::getRolePermissions(myRole());
 
-		//if ( isAdmin() )
-		//	return Dataface_PermissionsTool::ALL();
 	}
 
 	//Create a new hidden field with the record version at the end of the form.

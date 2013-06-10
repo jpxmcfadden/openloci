@@ -2,6 +2,11 @@
 
 class tables_purchase_orders {
 
+	function getTitle(&$record){
+		return $record->strval('purchase_id');
+	}
+
+
 	function valuelist__checkbox(){
 		return array(0=>'', 1=>'Yes');
 	}
