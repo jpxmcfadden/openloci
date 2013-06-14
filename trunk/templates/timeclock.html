@@ -1,0 +1,120 @@
+<html>
+	<head>
+		<script type="text/javascript">
+			{literal}
+				function timeclock(){
+					// Gets the current time
+					var now = new Date();
+					 
+					// Get the hours, minutes and seconds from the current time
+					var year = now.getFullYear();
+					var month = now.getMonth()+1;
+					var day = now.getDate();
+					var hour = now.getHours();
+					var minute = now.getMinutes();
+					var second = now.getSeconds();
+					 
+					// Format hours, minutes and seconds
+					if (month < 10) { month = "0" + month; }
+					if (day < 10) { day = "0" + day; }
+					if (hour < 10) { hour = "0" + hour; }
+					if (minute < 10) { minute = "0" + minute; }
+					if (second < 10) { second = "0" + second; }
+					 
+					// Gets the element we want to inject the clock into
+					var elem = document.getElementById('timeclock');
+		 
+					// Sets the elements inner HTML value to our clock data
+					elem.innerHTML = year + '-' + month + '-' + day + '  ' + hour + ':' + minute + ':' + second;
+				}
+				
+				//window.onload = function(){ setInterval('timeclock()', 200); }
+			{/literal}
+		</script>
+		<link href="style.css" rel="stylesheet" type="text/css"/>
+
+	</head>
+	<body>
+		<h1>OPENLOCI TIME CLOCK</h1>
+		<h1 id="timeclock">DATE-TIME</h1>
+		<script type="text/javascript"> {literal} setInterval('timeclock()', 200); {/literal} </script>
+		
+
+		{if $loginout == ""}
+			<table>
+				<tr>
+					<td>
+						<form name="loginout" method="post">
+							<input type="hidden" name="-action" value="timeclock">
+							<input type="hidden" name="loginout" value="login">
+							<input type="submit" value="LOGIN" style="height: 100px; width: 100px">
+						</form>
+					</td><td>
+						<form name="loginout" method="post">
+							<input type="hidden" name="-action" value="timeclock">
+							<input type="hidden" name="loginout" value="logout">
+							<input type="submit" value="LOGOUT" style="height: 100px; width: 100px">
+						</form>
+					</td>
+				</tr>
+			</table>
+		
+		{elseif $loginout == "Login_save"}
+			<p>You have been logged into the system @ {$save_time}</p>
+			<a href="index.php?-action=timeclock">Click Here</a> to return to the main screen.
+			{if $error}
+				<div class="portalErrorMessage">{$error}</div>
+			{/if}
+
+		{elseif $loginout == "Logout_save"}
+			<p>You have been logged out of the system @ {$save_time}</p>
+			<a href="index.php?-action=timeclock">Click Here</a> to return to the main screen.
+			{if $error}
+				<div class="portalErrorMessage">{$error}</div>
+			{/if}
+
+			
+		{elseif $loginout}
+			<p>{$loginout} Screen</p>
+			<p>1. Select your name from the dropdown list.
+			<br>2. Type in your password.
+			<br>3. Press the {$loginout} button.
+			</p>
+			
+			<!--form name="select_post" onSubmit='confirm_submit("select_post","confirm_post")'-->
+			<!--form name="timeclock" method="post"-->
+			<form name="timeclock" method="post">
+				<input type="hidden" name="-action" value="timeclock">
+
+				{if $error}
+					<div class="portalErrorMessage">{$error}</div>
+				{/if}
+
+				{if $loginout == "Login"} <input type="hidden" name="loginout" value="login"> 
+				{else if $loginout == "Logout"} <input type="hidden" name="loginout" value="logout">
+				{/if}
+				<input type="hidden" name="logged" value="true">
+				
+				Employee <select name="employee">
+					<option value="">Please Select...</option>
+					{foreach from=$employees item=employee}
+						<option value="{$employee.id}" {if $employee.id == $selected_employee}selected="selected"{/if}>{$employee.name}</option>
+					{/foreach}
+				</select>
+				
+				<br>
+				
+				Password <input type="password" name="pwd">
+				
+				<br>
+				
+				<input type="submit" value="{$loginout}">
+				
+			</form>
+		{else}
+			<p>There was an error.</p>
+		{/if}
+		
+		
+	</body>
+</html>
