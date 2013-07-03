@@ -26,7 +26,7 @@ class tables_chart_of_accounts {
 		return "Active";
 	}
 	
-	function beforeSave(&$record){
+	function beforeInsert(&$record){
 		switch($record->val('account_type')){
 			case "AST":
 				$acct_prefix = 1;
@@ -40,8 +40,11 @@ class tables_chart_of_accounts {
 			case "REV":
 				$acct_prefix = 4;
 				break;
-			case "EXP":
+			case "CGS":
 				$acct_prefix = 5;
+				break;
+			case "EXP":
+				$acct_prefix = 6;
 				break;
 		}
 		
