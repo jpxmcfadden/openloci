@@ -6,8 +6,8 @@
 class conf_ApplicationDelegate {
 
 	function getPermissions(&$record){
-		//if ( isAdmin() )
-		//	return Dataface_PermissionsTool::ALL();
+		if ( isAdmin() )
+			return Dataface_PermissionsTool::ALL();
 
 		if ( !isUser() )
 			return Dataface_PermissionsTool::NO_ACCESS();
