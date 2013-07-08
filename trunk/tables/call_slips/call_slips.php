@@ -37,6 +37,20 @@ class tables_call_slips {
 	}
 
 	
+	function type__display(&$record){
+		//Display PM as "Preventative Maintenance"
+		
+			//Pull the "type" valuelist
+			$list = $record->_table->_valuelistsConfig['type_list'];
+			
+			//Add PM to the list
+			$list["PM"]="Preventative Maintenance";
+			
+		//Return the type as per the list.
+		return $list[$record->val('type')];
+	}
+	
+	
 	/*function rel_call_slip_purchase_orders__permissions($record){
 		return array(
 			'add new related record' => 0,
@@ -160,7 +174,8 @@ class tables_call_slips {
 	//}
 	
 	function call_datetime__default() {
-       return date('Y-m-d g:i a');
+		return '<div class="formHelp">Call Date/Time will be assigned when the record is first saved.</div>';
+       //return date('Y-m-d g:i a');
 	}
 
 	function call_id__default() {
@@ -179,6 +194,7 @@ class tables_call_slips {
 	
 	
 	//Add attitional details to the view tab - include employee work history
+	//function section__billing(&$record){
 	function section__billing(&$record){
 
 	$childString = "";
@@ -574,10 +590,11 @@ class tables_call_slips {
 		//$response =& Dataface_Application::getResponse();
 		//$rlist = 'a';
 		
-		if('status' == '')
+		if($record->val('status') == '')
 			$record->setValue('status','NCO');
-			
-		$record->setValue('call_datetime',date('Y-m-d g:i a'));
+		
+		if($record->val('call_datetime') == '')
+			$record->setValue('call_datetime',date('Y-m-d g:i a'));
 
 		//*****************************************************************
 		//********************Inventory Management Code********************
@@ -613,5 +630,12 @@ class tables_call_slips {
 		//}
 	}
 
+	function beforeInsert(&$record){
+		//Copy "Site Instructions" from the Customer Site file.
+		$site_record = df_get_record('customer_sites', array('site_id'=>$record->val('site_id')));
+		$record->setValue('site_instructions', $site_record->val('site_instructions'));
+		//$record->setValue('status', "NCO");
+	}
+	
 }
 ?>

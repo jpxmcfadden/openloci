@@ -25,7 +25,7 @@ class tables_general_ledger_recurring {
 		return 'CONCAT("recurring_ledger_description")';
 	}
 	
-	function recurring_ledger_created__default() {
+	function recurring_ledger_start_date__default() {
        return date('Y-m-d');
 	}
 
