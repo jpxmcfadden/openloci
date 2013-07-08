@@ -2,9 +2,9 @@
 
 class tables_customer_sites {
 
-//	function getTitle(&$record){
-//		return $record->val('address');
-//	}
+	function getTitle(&$record){
+		return $record->val('site_address') . " (ID: " . $record->val('customer_site_id').")";
+	}
 
 //	function titleColumn(){
 //		return 'address';
@@ -15,6 +15,43 @@ class tables_customer_sites {
 	}
 
 
+	
+	function beforeInsert(&$record){
+	
+		//Assign the "Customer Site ID" field. (format xxxxx-yyyy, [customer_id]-[last_site+1])
+			//Start with 0000
+			$customer_site_id = "0000";
+
+			//Pull all site records for the current customer
+			$customer_site_records = df_get_records_array('customer_sites', array('customer_id'=>$record->val('customer_id')));
+
+			//Parse through previous site records and find the highest site #
+			// - In theory this *should* be the highest site_id, but we do this just in case
+			foreach($customer_site_records as $customer_site_record){
+				//Pull the last 4 digits
+				$site_section = substr($customer_site_record->val('customer_site_id'),-4);
+				
+				//If new > old, old = new
+				if($site_section > $customer_site_id)
+					$customer_site_id = $site_section;
+			}
+
+		//Increment value & Format string
+		$customer_site_id = $record->val("customer_id") . "-" . str_pad($customer_site_id + 1, 4, "0", STR_PAD_LEFT);
+
+		//Set
+		$record->setValue("customer_site_id", $customer_site_id);
+	}	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 //	function section__details(&$record){
 //		return array(
 //			'content' => '',
