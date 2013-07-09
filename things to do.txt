@@ -1,8 +1,6 @@
 Customer Sites
 	* allow for multiple contacts - person, phone, email, add "title"
-	Add button to transfer address
-	Checkbox in customer to auto create site based on address
-	Popup on saving new customer to create new site (checkbox here?)
+	Popup on saving new customer to create new site - tidy up 
 	
 	
 Call Slips
