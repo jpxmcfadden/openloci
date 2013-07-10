@@ -52,14 +52,17 @@ class tables_customers {
 	}	
 	
 	function block__after_markup_widget(){
-	//	echo '<br><br><input id="create_new" type=checkbox>Create a site from the billing address.';
+		//Create a hidden field to determine if we are going to auto-generate a site on save.
 		echo '<input type="hidden" name="create_new_site" value="" data-xf-field="create_new_site">';
-	//	echo '<input style="display:none" name="create_new_site" data-xf-field="create_new_site">';
 	}
 	
 	function afterInsert(&$record){
+		//If new customer is created, check to see if the user wants to auto-generate a new site based on the entered information.
+	
+		//Check if the user pressed "yes"
 		$new = $_POST['create_new_site'];
 		if($new == "yes"){
+			//Create the new site record.
 			$site_record = new Dataface_Record('customer_sites', array());
 			$site_record->setValues(array(
 				'customer_id'=>$record->val('customer_id'),
@@ -71,16 +74,21 @@ class tables_customers {
 				'site_fax'=>$record->val('cust_fax')
 			));
 			$res = $site_record->save();   // Doesn't check permissions
-			//  $res = $record->save(null, true);  // checks permissions
+			//$res = $record->save(null, true);  // checks permissions
+			
+			//Create the new associated contact records. -- This isn't working yet. Presumably b/c the "customer contacts" have not yet been saved, thus returning an empty array.
+			//$customer_contacts = $record->getRelatedRecords('customer_contacts',0,0,"customer_id=$record->val('customer_id')");
+			//$customer_contacts = $record->getRelatedRecords('customer_contacts'); print_r($customer_contacts);
+			//foreach ($customer_contacts as $contact_record){
+			//	$site_contact_record = new Dataface_Record('customer_site_contacts', array());
+			//	$site_contact_record = $contact_record;
+			//	print_r($contact_record); echo "<br><br>";
+			//	//$res = $site_contact_record->save();   // Doesn't check permissions
+			//}
 		}
-		
-		
 		//return PEAR::raiseError("|".$new."|",DATAFACE_E_NOTICE);
 	}
 	
-	//function markup__validate( &$record, $value, $params=array()){
-	//	return false;
-	//}
 	function block__custom_javascripts(){
 		Dataface_JavascriptTool::getInstance()->import('confirm_new_site.js');
 	}	

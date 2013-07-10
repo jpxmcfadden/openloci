@@ -1,8 +1,3 @@
-Customer Sites
-	* allow for multiple contacts - person, phone, email, add "title"
-	Popup on saving new customer to create new site - tidy up 
-	
-	
 Call Slips
 	* Add a section for "site notes" - auto get from site. Not entry in form.
 	Warantee Type: Like T&M but select which sections / things are billable
@@ -36,12 +31,8 @@ Call Slips
 		create new callslip based on & associated with original
 		cost is same / editable
 		copy all details
-	
-	
-Contracts & PM
-	Contract Amount - 'per year'
-	
 
+		
 Vendors
 	distribution code -> Add to Accts Payable when selected. (default section in php)
 	associated GL code (I think this is the same as distribution code, but was written as a seperate line in my notes)
