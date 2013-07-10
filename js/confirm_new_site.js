@@ -12,7 +12,7 @@ function getParameterByName( name )
     return decodeURIComponent(results[1].replace(/\+/g, " "));
 }
 
-//Disable multiple submit presses
+//Popup a dialog box, on creating a new customer, to ask the user if they want to go ahead and automatically create a customer site based on the customer information.
 jQuery(document).ready(function(){
 	//jQuery("form:first").submit(function(){
 	jQuery("input[type='submit']").click(function(){
