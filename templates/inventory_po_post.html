@@ -1,0 +1,125 @@
+{use_macro file="Dataface_Main_Template.html"}
+	{fill_slot name="main_column"}
+
+		<script type="text/javascript">
+			{literal}
+			function toggle_all(form, toggle) {
+				var myForm = document.forms[form];
+				for( var i=0; i < myForm.length; i++ ) { 
+					if(toggle) {
+						myForm.elements[i].checked = "checked";
+					}
+					else {
+						myForm.elements[i].checked = "";
+					}
+				}
+			}
+			
+			function confirm_submit(form,el) {
+				if(confirm("Are you sure?"))
+					document.forms[form].elements[el].value = "yes";
+				else
+					document.forms[form].elements[el].value = "no";
+			}
+			{/literal}
+			</script>
+	
+		<h1>Review and Post Purchase Orders</h1>
+		
+		{if $confirm == "true"}
+			<p class="portalMessage">The following purchase orders have been posted. <a href="index.php?-table=dashboard"> Return to Dashboard.</a></p>
+			
+			<table class="listing resultList">
+				<tr>
+					<th>Purchase Order ID</th>
+					<th>Date</th>
+					<th>Vendor</th>
+					<th>Total</th>
+				</tr>
+				{$i = 0}
+				{foreach from=$headers item=list}
+					{if $list.posted == "true"}
+						{if $i%2 == 0}
+							<tr class="listing odd">
+						{else}
+							<tr class="listing even">
+						{/if}
+							<td valign="top"><a href="index.php?-table={$list.table}&-action=browse&-recordid={$list.table}?purchase_id={$list.id}">{$list.id}</a></td>
+							<td valign="top"><a href="index.php?-table={$list.table}&-action=browse&-recordid={$list.table}?purchase_id={$list.id}">{$list.date}</a></td>
+							<td valign="top"><a href="index.php?-table={$list.table}&-action=browse&-recordid={$list.table}?purchase_id={$list.id}">{$list.vendor}</a></td>
+							<td valign="top"><a href="index.php?-table={$list.table}&-action=browse&-recordid={$list.table}?purchase_id={$list.id}">{$list.total}</a></td>
+						</tr>
+						{assign var="i" value=$i+1}
+					{/if}
+				{/foreach}
+			</table>			
+
+		{elseif $headers}
+			<p>Select the following Purchase Orders to be posted:</p>
+
+			<!--form name="select_post" onSubmit='confirm_submit("select_post","confirm_post")'-->
+			<form name="select_post">
+				<input type="hidden" name="-action" value="inventory_po_post">
+				<input type="hidden" name="confirm_post" value="true">
+							
+				<table class="listing resultList">
+					<tr>
+						<th><input type="checkbox" checked onchange=toggle_all("select_post",this.checked)></th>
+						<th>Purchase Order ID</th>
+						<th>Date</th>
+						<th>Vendor</th>
+						<th>Item List</th>
+						<th>Tax</th>
+						<th>Shipping</th>
+						<th>Total</th>
+					</tr>
+					{$i = 0}
+					{foreach from=$headers item=list}
+						{if $i%2 == 0}
+							<tr class="listing odd">
+						{else}
+							<tr class="listing even">
+						{/if}
+							<td><input type="checkbox" checked name="{$list.id}"></td>
+							<td valign="top" style="text-align: right;"><a href="index.php?-table={$list.table}&-action=browse&-recordid={$list.table}?purchase_id={$list.id}">{$list.id}</a></td>
+							<td valign="top"><a href="index.php?-table={$list.table}&-action=browse&-recordid={$list.table}?purchase_id={$list.id}">{$list.date}</a></td>
+							<td valign="top"><a href="index.php?-table={$list.table}&-action=browse&-recordid={$list.table}?purchase_id={$list.id}">{$list.vendor}</a></td>
+							<td valign="top">
+								<table class="journal_post_sub_tab">
+									<tr>
+										<th>Item</th>
+										<th>Quantity</th>
+										<th>Purchase Price</th>
+										<th>Total (per item)</th>
+									</tr>
+									{foreach from=$list.entries item=entries}
+										<tr>
+											<td style="text-align: left">{$entries.item}</td>
+											<td style="text-align: right">{$entries.quantity}</td>
+											<td style="text-align: right">${$entries.purchase_price}</td>
+											<td style="text-align: right">${$entries.total_per_item}</td>
+										</tr>
+									{/foreach}
+									<tr class="journal_post_sub_tab_upper">
+										<td></td>
+										<td></td>
+										<td></td>
+										<td style="text-align: right; background-color: lightgreen;">${$list.total_purchase}</td>
+									</tr>
+								</table>
+								<br>
+							</td>
+							<td valign="top"><a href="index.php?-table={$list.table}&-action=browse&-recordid={$list.table}?purchase_id={$list.id}">${$list.tax}</a></td>
+							<td valign="top"><a href="index.php?-table={$list.table}&-action=browse&-recordid={$list.table}?purchase_id={$list.id}">${$list.shipping}</a></td>
+							<td valign="top"><a href="index.php?-table={$list.table}&-action=browse&-recordid={$list.table}?purchase_id={$list.id}">${$list.total}</a></td>
+						</tr>
+						{assign var="i" value=$i+1}
+					{/foreach}
+				</table>
+				<input type="submit" value="Post">
+			</form>
+		{else}
+			<p class="portalMessage">There are currently no purchase orders ready for posting. <a href="index.php?-table=dashboard"> Return to Dashboard.</a></p>
+		{/if}
+	{/fill_slot}
+{/use_macro}
