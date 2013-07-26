@@ -38,13 +38,23 @@ ul
     list-style: none;
 }
 
+#selected-actions {
+	display: none;
+}
+
 
 .xf-RecordBrowserWidget-displayField { width: 400px}
 /*#people-firstname-wrapper .xf-RecordBrowserWidget-displayField { width: 400px}*/
 
 
+/*Add a notice class to the widget description (formHelp) class to make things stand out if desired*/
+.formHelp_notice {
+	color: #ffaaaa;
+}
 
-
+.formHelp:hover .formHelp_notice {
+	color: #ff0000;
+}
 
 
 /* Set nowrap for all table lists */
