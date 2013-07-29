@@ -5,8 +5,9 @@ class actions_dashboard {
 		if(1){
 			$jpp = df_get_records_array('general_ledger', array('post_status'=>'Pending'));
 			$ipo = df_get_records_array('purchase_order_inventory', array('post_status'=>'Pending'));
+			$spo = df_get_records_array('purchase_order_service', array('post_status'=>'Pending'));
 			$css = df_get_records_array('call_slips', array('status'=>'RDY'));
-			df_display(array("call_slips"=>(count($css)),"journal_pending"=>(count($jpp)),"ipo_pending"=>(count($ipo))), 'dashboard.html');
+			df_display(array("call_slips"=>(count($css)),"journal_pending"=>(count($jpp)),"ipo_pending"=>(count($ipo)),"spo_pending"=>(count($spo))), 'dashboard.html');
 		}
 		if(0){
 		

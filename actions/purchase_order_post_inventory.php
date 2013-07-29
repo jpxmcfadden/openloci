@@ -1,12 +1,13 @@
 <?php
 
-class actions_inventory_po_post {
+class actions_purchase_order_post_inventory {
 	
 	function handle(&$params){
 
 		$poTable = "purchase_order_inventory";
 		$poItemTable = "purchase_order_inventory_items";
-		
+		$po_type = "purchase_order_post_inventory";
+		$id_prefix = "I";
 	
 		//Permission check
 		if ( !isUser() )
@@ -46,13 +47,13 @@ class actions_inventory_po_post {
 			$headers[$i]['id'] = $record->val('purchase_id');
 			$headers[$i]['date'] = $rdate['month'].'-'.$rdate['day'].'-'.$rdate['year'];
 			$headers[$i]['vendor'] = $vendorRecord->val('vendor');
+			$headers[$i]['total'] = $record->val('total');
 
 //**************************************//
 			//If the Post button has been pressed, process the entries
 			if($confirm == "true"){
 				//Only modify selected records
 				if($_GET[$record->val('purchase_id')]=="on"){
-				
 					$record->setValue('post_status',"Posted"); //Set status to Pending.
 					$record->setValue('post_date',date('Y-m-d')); //Set post date.
 					$res = $record->save(); //Save Record w/o permission check.
@@ -95,7 +96,7 @@ class actions_inventory_po_post {
 											'purchase_date'=>$record->val('purchase_date'),
 											'vendor'=>$record->val('vendor_id'),
 											'purchase_price'=>$item_record->val('purchase_price'),
-											'quantity'=>$item_record->val('quantity')
+											'quantity_purchased'=>$item_record->val('quantity')
 										)
 									);
 									
@@ -121,7 +122,7 @@ class actions_inventory_po_post {
 				//Set the total purchase price of the PO to 0.
 				$total_purchase = 0;
 				
-				//Process all the journal entries in the ledger journal
+				//Pull all the item data
 				foreach($item_records as $j=>$item_record){
 						$inventory_record = df_get_record('inventory', array('inventory_id'=>$item_record->val('inventory_id')));
 							
@@ -136,13 +137,13 @@ class actions_inventory_po_post {
 				$headers[$i]['total_purchase'] = number_format($total_purchase,2);
 				$headers[$i]['tax'] = $record->val('tax')*$total_purchase . ' (' . $record->val('tax')*100 . '%)';
 				$headers[$i]['shipping'] = $record->val('shipping');
-				$headers[$i]['total'] = $record->val('total');
+				//$headers[$i]['total'] = $record->val('total');
 
 			}
 		}
 			
 		//Display the page
-		df_display(array("headers"=>$headers,"confirm"=>$confirm), 'inventory_po_post.html');
+		df_display(array("headers"=>$headers,"confirm"=>$confirm,"po_type"=>$po_type), 'purchase_order_post.html');
 
 
 		

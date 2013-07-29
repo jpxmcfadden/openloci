@@ -58,7 +58,10 @@
 				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=inventory"> View / Edit the Inventory</a>
 			</li>
 			<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
-				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=inventory_po_post"> Post Inventory Purchase Orders</a>(Pending: {$ipo_pending})
+				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=purchase_order_post_inventory"> Post Inventory Purchase Orders</a>(Pending: {$ipo_pending})
+			</li>
+			<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
+				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=purchase_order_post_service"> Post Service Purchase Orders</a>(Pending: {$spo_pending})
 			</li>
 		</ul>
 

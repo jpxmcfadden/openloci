@@ -1,19 +1,19 @@
 <?php
 
-class tables_purchase_order_inventory {
+class tables_purchase_order_service {
 
 	//Class Variables
-	private $total_item_purchase = array(); //Create a class variable to store the values for modifying the inventory
+	//private $total_item_purchase = array(); //Create a class variable to store the values for modifying the inventory
 
 
 	function getTitle(&$record){
-		return "Inventory Purchase Order #" . $record->strval('purchase_id');
+		return "Service Purchase Order #" . $record->strval('purchase_id');
 	}
 
 	function purchase_id__display(&$record){
-		return "I".$record->val('purchase_id');
+		return "S".$record->val('purchase_id');
 	}
-
+	
 	function purchase_date__default(){
 		return date('Y-m-d');
 	}
@@ -27,11 +27,11 @@ class tables_purchase_order_inventory {
 			$childString .= '<b><u>Item List</u></b><br><br>';
 			$childString .= '<table class="view_add"><tr><th>Item</th><th>Quantity</th><th>Purchase Price</th><th>Total (per item)</th></tr>';
 
-			$purchaseorderRecords = $record->getRelatedRecords('purchase_order_inventory_items');
+			$purchaseorderRecords = $record->getRelatedRecords('purchase_order_service_items');
 			$total_all_items = 0;
 			
 			foreach ($purchaseorderRecords as $purchaseorderRecord){
-				$inventory_record = df_get_record('inventory', array('inventory_id'=>$purchaseorderRecord['inventory_id']));
+				//$inventory_record = df_get_record('inventory', array('inventory_id'=>$purchaseorderRecord['inventory_id']));
 				$item_total = number_format($purchaseorderRecord['quantity'] * $purchaseorderRecord['purchase_price'],2);
 				//$total_all_items += $purchaseorderRecord['quantity'] * $purchaseorderRecord['purchase_price'];
 				$quantity = explode('.',$purchaseorderRecord['quantity']);
@@ -41,7 +41,7 @@ class tables_purchase_order_inventory {
 					$quantity[1] = '';
 
 				
-				$childString .= '<tr><td>' . $inventory_record->val('item_name') .
+				$childString .= '<tr><td>' . $purchaseorderRecord['item_name'] .
 								'</td><td style="text-align: right"><table style="width: 100%; border-collapse:collapse;"><tr>' .
 																						'<td style="border: 0px solid black; padding: 0; text-align: right; width: 100%;">' . $quantity[0] .
 																						'</td><td style="border: 0px solid black; padding: 0; text-align: left; width: 10px;">'.$quantity[1].'</td></tr></table>' .
@@ -96,7 +96,7 @@ class tables_purchase_order_inventory {
 		foreach ($value as $x){
 
 			//Skip empty lines - do nothing (unless a quantity has been assigned, and then return an error)
-			if($x['inventory_id'] == ''){
+			if($x['item_name'] == ''){
 				if($x['quantity']){ //Case where the 'item_name' field has been left empty, but a quantity has been given
 					$params['message'] .= $msg.'A quantity has been given, but an "Item" has not been assigned.';
 					return false;
