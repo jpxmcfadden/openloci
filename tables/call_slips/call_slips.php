@@ -20,6 +20,18 @@ class tables_call_slips {
 		else
 			return Dataface_PermissionsTool::NO_ACCESS();
 	}
+	
+	function block__before_type_widget(){
+		$app =& Dataface_Application::getInstance(); 
+		$record =& $app->getRecord();
+		//echo "<pre>"; print_r($record->vals()); echo "</pre>";
+		
+		if($record->val('type') == "PM"){
+			echo 'Preventative Maintenance<style>#type {display:none;}</style>';
+			
+		}
+	}
+	
 
 	//private $inventory_values = array(); //Create a class variable to store the values from the grid field
 	//private $cs_id = '';
