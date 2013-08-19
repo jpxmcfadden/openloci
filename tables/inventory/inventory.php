@@ -45,6 +45,32 @@ class tables_inventory {
 		return $quantity[0] . $quantity[1];
 	}
 	
+	function beforeSave(&$record){
+		//Calculate and Save Average
+			$purchase_history_records = $record->getRelatedRecords('inventory_purchase_history');
+
+			$purchase_total = 0;
+			$count = 0;
+
+			foreach($purchase_history_records as $purchase_history_record){
+				$count++;
+				$purchase_total += $purchase_history_record['purchase_price'];
+				if($count == 10)
+					break;
+			}
+
+			if($count > 0){
+				$average = number_format($purchase_total / $count, 2);
+				$record->setValue('average_purchase',$average);
+			}
+
+	}
+	
+	function beforeInsert(&$record){
+			$record->setValue('last_purchase',0);
+			$record->setValue('average_purchase',0);
+	}
+	
 }
 
 ?>

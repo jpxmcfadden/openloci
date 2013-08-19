@@ -84,9 +84,6 @@ class actions_purchase_order_post_inventory {
 							$inventory_record->setValue('quantity', $new_inventory_quantity);
 							$inventory_record->setValue('last_purchase', $item_record->val('purchase_price'));
 						
-							//Save Record
-								$res = $inventory_record->save(); //Save Record w/o permission check.
-						
 						//Create purchase history record
 							$purchase_history_record = new Dataface_Record('inventory_purchase_history', array());
 							$purchase_history_record->setValues(
@@ -100,8 +97,9 @@ class actions_purchase_order_post_inventory {
 										)
 									);
 									
-							//Save Record
-								$res = $purchase_history_record->save(null, true);
+						//Save Records
+							$res = $purchase_history_record->save(null, true);	//Save Purchase History first, because the Inventory record
+							$res = $inventory_record->save(null, true);			//calculates it's Average Purchase Price based on purchase history
 						
 						
 						
