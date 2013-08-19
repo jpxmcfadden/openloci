@@ -24,11 +24,14 @@ class tables_call_slips {
 	function block__before_type_widget(){
 		$app =& Dataface_Application::getInstance(); 
 		$record =& $app->getRecord();
-		//echo "<pre>"; print_r($record->vals()); echo "</pre>";
+		$query =& $app->getQuery();
+		//echo "<pre>"; print_r($query); echo "</pre>";
 		
-		if($record->val('type') == "PM"){
-			echo 'Preventative Maintenance<style>#type {display:none;}</style>';
+		if($query['-action'] != 'new'){ //We do this b/c when getRecord() is used on a "new record" it returns the data from the last saved record.
+			if($record->val('type') == "PM"){ //Check if type == "PK" and if so replace the dropdown menu with static text.
+				echo 'Preventative Maintenance<style>#type {display:none;}</style>';
 			
+			}
 		}
 	}
 	
@@ -245,70 +248,142 @@ class tables_call_slips {
 								<th>PO# / Inventory</th>
 								<th>Item</th>
 								<th>Quantity</th>
-								<th>List Cost</th>
-								<th>Sale Cost</th>
+								<th>Purchase Price</th>
 								<th>(Markup)</th>
-								<th>Total (List)</th>
-								<th>Total (Sale)</th>
+								<th>Sale Price</th>
+								<th>Total Sale</th>
 							</tr>';
 
-			$total_materials_cost_list = 0;
-			$total_materials_cost_sale = 0;
-							
+			$total_materials_sale = 0;
+
+			$customerRecord = df_get_record('customers', array('customer_id'=>$record->val('customer_id')));
+			$markupRecords = df_get_records_array('customer_markup_rates', array('markup_id'=>$record->val('markup')));
+			
+			//foreach ($markupRecords as $mr) {
+			//	echo "<pre>";
+			//		echo $mr->val('markup_percent') . " => " . $mr->val('from') . " - " . $mr->val('to');
+			//	echo "</pre>";
+			//}
+			
 			$purchaseorderRecords = $record->getRelatedRecords('call_slip_purchase_orders');
 			foreach ($purchaseorderRecords as $cs_pr){
-				$subtotal_list = $cs_pr['cost_list'] * $cs_pr['quantity'];
-				$subtotal_sale = $cs_pr['cost_sale'] * $cs_pr['quantity'];
-				if($cs_pr['cost_list'] == 0)
+				$purchase_price = $cs_pr['purchase_price'];
+				$sale_price = $cs_pr['sale_price']; //Pull sale price from record (will likely be null)
+				if(!isset($sale_price)){ //If it is null, calculate based on customer markup
+					foreach ($markupRecords as $mr) {
+						if($mr->val('to') == null)
+							$no_limit = true;
+						
+						if( ($purchase_price >= $mr->val('from')) && ($purchase_price <= $mr->val('to') || $no_limit == true) ){
+							$markup = $mr->val('markup_percent');
+							break;
+						}
+					}
+					
+					$sale_price = $purchase_price * (1+$markup);
+					$markup = $markup*100 . "%";
+					
+					$sale_color = "background-color: lightgreen;";
+					$markup_color = "background-color: #B0FFB0;";
+				}
+				else{
 					$markup = "---";
-				else
-					$markup = number_format(100 * $cs_pr['cost_sale'] / $cs_pr['cost_list'] - 100) . '%';
+					$sale_color = "background-color: lightpink;";
+					$markup_color = "background-color: #FFD6E1;";
+				}
+			
+				$subtotal_sale = $sale_price * $cs_pr['quantity'];
 
-				$childString .= '<tr><td style="text-align: right">PO #' . $cs_pr['purchase_id'] .
+				$childString .= '<tr><td style="text-align: right">PO# - S' . $cs_pr['purchase_id'] .
 								'</td><td>' . $cs_pr['item_name'] .
 								'</td><td style="text-align: right">' . $cs_pr['quantity'] .
-								'</td><td style="text-align: right">' . $cs_pr['cost_list'] .
-								'</td><td style="text-align: right">' . $cs_pr['cost_sale'] .
-								'</td><td style="text-align: right">' . $markup . 
-								'</td><td style="text-align: right">' . number_format($subtotal_list,2) .
-								'</td><td style="text-align: right">' . number_format($subtotal_sale,2) .
+								'</td><td style="text-align: right">$' . $cs_pr['purchase_price'] .
+								'</td><td style="text-align: right; ' . $markup_color. ' ">' . $markup . 
+								'</td><td style="text-align: right; ' . $sale_color. '">$' . number_format($sale_price,2) .
+								'</td><td style="text-align: right; ' . $sale_color. '">$' . number_format($subtotal_sale,2) .
 								'</td></tr>';
-				
-				$total_materials_cost_list += $subtotal_list;
-				$total_materials_cost_sale += $subtotal_sale;
+				$total_materials_sale += $subtotal_sale;
 			}
 		
 			$inventoryRecords = $record->getRelatedRecords('call_slip_inventory');
 			foreach ($inventoryRecords as $cs_ir){
 				//Pull the item name / cost out of the 'inventory' table
 				$rec = df_get_record('inventory', array('inventory_id'=>$cs_ir['inventory_id']));
+				
+				$purchase_price = $cs_ir['purchase_price'];
+				$sale_price = $cs_ir['sale_price']; //Pull sale price from record (will likely be null)
 
-				$subtotal_list = $cs_ir['purchase_cost'] * $cs_ir['quantity'];
-				$subtotal_sale = $cs_ir['sell_cost'] * $cs_ir['quantity'];
-				if($cs_ir['purchase_cost'] == 0)
-					$markup = "";
-				else
-					$markup = number_format(100 * $cs_ir['sell_cost'] / $cs_ir['purchase_cost'] - 100) . '%';
+				if(isset($sale_price)){
+					if($purchase_price != 0)
+						$markup = number_format(100 * $sale_price / $purchase_price, 0) . "%";
+					else
+						$markup = "---";
+					$sale_color = "background-color: lightsteelblue;";
+					$markup_color = "background-color: lightblue;";
+				}
+				elseif($rec->val('sale_method')=="overide"){
+					$sale_price = $rec->val('sale_overide');
+					if($purchase_price != 0)
+						$markup = number_format(100 * $sale_price / $purchase_price, 0) . "%";
+					else
+						$markup = "---";
+					$sale_color = "background-color: lightpink;";
+					$markup_color = "background-color: #FFD6E1;";
+				}
+				else{ //If it is null, calculate based on customer markup
+					foreach ($markupRecords as $mr) {
+						if($mr->val('to') == null)
+							$no_limit = true;
+						
+						if( ($purchase_price >= $mr->val('from')) && ($purchase_price <= $mr->val('to') || $no_limit == true) ){
+							$markup = $mr->val('markup_percent');
+							break;
+						}
+					}
+					
+					$sale_price = $purchase_price * (1+$markup);
+					$markup = $markup*100 . "%";
+					
+					$sale_color = "background-color: lightgreen;";
+					$markup_color = "background-color: #B0FFB0;";
+				}				
+				
+
+				$subtotal_sale = $sale_price * $cs_ir['quantity'];
+				//if($cs_ir['purchase_cost'] == 0)
+				//	$markup = "";
+				//else
+				//	$markup = number_format(100 * $cs_ir['sell_cost'] / $cs_ir['purchase_cost'] - 100) . '%';
 
 				$childString .= '<tr><td style="text-align: right">Inventory' .
 								'</td><td>' . $rec->display('item_name') .
 								'</td><td style="text-align: right">' . $cs_ir['quantity'] .
-								'</td><td style="text-align: right">' . $cs_ir['purchase_cost'] .
-								'</td><td style="text-align: right">' . $cs_ir['sell_cost'] . //$rec->display('sell_cost') . //--can do something here like if(inventory cost != this cost) different color
-								'</td><td style="text-align: right">' . $markup .
-								'</td><td style="text-align: right">' . number_format($subtotal_list,2) .
-								'</td><td style="text-align: right">' . number_format($subtotal_sale,2) .
+								'</td><td style="text-align: right">$' . $purchase_price .
+								'</td><td style="text-align: right; ' . $markup_color. '">' . $markup .
+								'</td><td style="text-align: right; ' . $sale_color. '">$' . $sale_price .
+								'</td><td style="text-align: right; ' . $sale_color. '">$' . number_format($subtotal_sale,2) .
 								'</td></tr>';
 
-				$total_materials_cost_list += $subtotal_list;
-				$total_materials_cost_sale += $subtotal_sale;
+				$total_materials_sale += $subtotal_sale;
 			}
 			
+			
+			
+			
 			$childString .= '<tr><td></td><td></td><td></td><td></td><td></td><td></td>' .
-							'<td style="text-align: right">' . number_format($total_materials_cost_list,2) . '</td>' .
-							'<td style="text-align: right"><b>' . number_format($total_materials_cost_sale,2) . '</b></td>' .
+							'<td style="text-align: right"><b>' . number_format($total_materials_sale,2) . '</b></td>' .
 							'</td></tr>';
 			$childString .= '</table><br>';
+			
+			$childString .= '<b>Key</b>';
+			$childString .= '<table class="view_add">
+								<tr>
+									<td style="text-align: right; background-color: lightgreen;">Auto Calculate</td>
+									<td style="text-align: right; background-color: lightsteelblue;">Call Slip Overide</td>
+									<td style="text-align: right; background-color: lightpink;">Inventory / PO Overide</td>
+								</tr>
+							</table>';
+
 
 		return array(
 			'content' => "$childString",
@@ -388,65 +463,6 @@ class tables_call_slips {
 			'order' => 10
 		);
 	}
-	
-	
-/*	function section__status(&$record){
-		$app =& Dataface_Application::getInstance(); 
-		$query =& $app->getQuery();
-		$childString = '';
-
-		//If the "Change Status To: Pending" button has been pressed.
-		//Because both the $_GET and $query will be "" on a new record, check to insure that they are not empty.
-		if(($_GET['-stch'] == $query['-recordid']) && ($query['-recordid'] != "")){
-			$record->setValue('status',"CMP"); //Set status to Pending.
-			$res = $record->save(null, true); //Save Record w/ permission check.
-
-			//Check for errors.
-			if ( PEAR::isError($res) ){
-				// An error occurred
-				//throw new Exception($res->getMessage());
-				$msg = '<input type="hidden" name="--error" value="Unable to change status. This is most likely because you do not have the required permissions.">';
-			}
-			else
-				$msg = '<input type="hidden" name="--msg" value="Status Changed to: Job Complete">';
-			
-			$childString .= '<form name="status_change">';
-			$childString .= '<input type="hidden" name="-table" value="'.$query['-table'].'">';
-			$childString .= '<input type="hidden" name="-action" value="'.$query['-action'].'">';
-			$childString .= '<input type="hidden" name="-recordid" value="'.$record->getID().'">';
-
-			$childString .= $msg;
-
-			$childString .= '</form>';
-			$childString .= '<script language="Javascript">document.status_change.submit();</script>';
-		}
-		elseif(	$record->val('status') == 'NCO'){
-			$childString .= '<form>';
-			$childString .= '<input type="hidden" name="-table" value="'.$query['-table'].'">';
-			$childString .= '<input type="hidden" name="-action" value="'.$query['-action'].'">';
-			$childString .= '<input type="hidden" name="-recordid" value="'.$record->getID().'">';
-			
-			$childString .= '<input type="hidden" name="-stch" value="'.$record->getID().'">';
-			$childString .= '<input type="submit" value="Change Status to: Job Completed">';
-
-			$childString .= '</form>';
-		}
-		//elseif(	$record->val('post_status') == 'Pending'){ //---can do this by linking to -action=ledger_post&selected="this_one"
-		//	$childString .= 'Post';
-		//}
-		else {
-			$childString .= "No further options available";
-		}
-		
-		//if(	$record->val('post_status') == '')
-		return array(
-			'content' => "$childString",
-			'class' => 'main',
-			'label' => 'Change Status',
-			'order' => 20
-		);
-	}
-*/
 	
 	
 	//CALENDAR MODULE FUNCTIONS
@@ -621,17 +637,6 @@ class tables_call_slips {
 			//return PEAR::raiseError('END',DATAFACE_E_NOTICE);
 		}
 
-		$inventoryRecords = $record->getRelatedRecords('call_slip_inventory');
-		foreach ($inventoryRecords as $cs_ir){
-			if ($cs_ir['sell_cost'] == ''){
-				$inv_rec = df_get_record('inventory', array('inventory_id'=>$cs_ir['inventory_id']));
-				$csi_rec = df_get_record('call_slip_inventory', array('csi_id'=>$cs_ir['csi_id']));
-				$csi_rec->setValue('sell_cost', $inv_rec->val('sell_cost'));
-				$csi_rec->setValue('purchase_cost', $inv_rec->val('purchase_cost'));
-				$csi_rec->save();
-			}
-		}
-		
 		//*********************************************************************
 		//********************END Inventory Management Code********************
 		//*********************************************************************

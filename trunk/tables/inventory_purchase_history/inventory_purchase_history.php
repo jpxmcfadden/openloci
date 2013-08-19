@@ -17,7 +17,9 @@ class tables_inventory_purchase_history {
 
 	function vendor__renderCell(&$record){
 		$vendor_record = df_get_record('vendors',array('vendor_id'=>$record->strval('vendor')));
-		return $vendor_record->val('vendor');
+		if(isset($vendor_record)) //Since vendor is not a required field, this requires a check. Otherwise if empty will return error.
+			return $vendor_record->val('vendor');
+		return "";
 	}
 	
 	function purchase_price__renderCell(&$record){
