@@ -43,7 +43,8 @@ ul
 }
 
 
-.xf-RecordBrowserWidget-displayField { width: 400px}
+/*Change the size of the lookup widget*/
+.xf-RecordBrowserWidget-displayField { width: 300px}
 /*#people-firstname-wrapper .xf-RecordBrowserWidget-displayField { width: 400px}*/
 
 
