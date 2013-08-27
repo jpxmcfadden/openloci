@@ -21,6 +21,17 @@ class tables_call_slips {
 			return Dataface_PermissionsTool::NO_ACCESS();
 	}
 	
+	function rel_call_slip_purchase_orders__permissions(&$record){
+		return array(
+				'add new related record'=>0,
+				'add existing related record'=>0,
+				'remove related record'=>0,
+				'delete related record'=>0
+			//	'reorder_related_records'=>1
+			);
+	}
+	
+	
 	function block__before_type_widget(){
 		$app =& Dataface_Application::getInstance(); 
 		$record =& $app->getRecord();
@@ -249,7 +260,7 @@ class tables_call_slips {
 								<th>Item</th>
 								<th>Quantity</th>
 								<th>Purchase Price</th>
-								<th>(Markup)</th>
+								<th>Markup</th>
 								<th>Sale Price</th>
 								<th>Total Sale</th>
 							</tr>';
@@ -283,24 +294,41 @@ class tables_call_slips {
 					$sale_price = $purchase_price * (1+$markup);
 					$markup = $markup*100 . "%";
 					
-					$sale_color = "background-color: lightgreen;";
-					$markup_color = "background-color: #B0FFB0;";
+					$sale_color = "";//"background-color: lightgreen;";
+					$markup_color = "";//"background-color: #B0FFB0;";
 				}
 				else{
-					$markup = "---";
 					$sale_color = "background-color: lightpink;";
 					$markup_color = "background-color: #FFD6E1;";
+
+					if($purchase_price > $sale_price){
+						$markup = "(" . number_format(100 * $purchase_price / $sale_price, 0) . "%)";
+						$markup_color = "background-color: #FFD6E1; color: #ff0000;";
+					}
+					elseif($purchase_price != 0)
+						$markup = number_format(100 * $sale_price / $purchase_price, 0) . "%";
+					else
+						$markup = "---";
+				}
+
+				if(isset($cs_pr['quantity_used'])){
+					$quantity = $cs_pr['quantity_used'];
+					$quantity_color = "background-color: lightpink;";
+				}
+				else{
+					$quantity = $cs_pr['quantity'];
+					$quantity_color = "";
 				}
 			
-				$subtotal_sale = $sale_price * $cs_pr['quantity'];
+				$subtotal_sale = $sale_price * $quantity;
 
 				$childString .= '<tr><td style="text-align: right">PO# - S' . $cs_pr['purchase_id'] .
 								'</td><td>' . $cs_pr['item_name'] .
-								'</td><td style="text-align: right">' . $cs_pr['quantity'] .
+								'</td><td style="text-align: right; ' . $quantity_color . '">' . $quantity .
 								'</td><td style="text-align: right">$' . $cs_pr['purchase_price'] .
 								'</td><td style="text-align: right; ' . $markup_color. ' ">' . $markup . 
 								'</td><td style="text-align: right; ' . $sale_color. '">$' . number_format($sale_price,2) .
-								'</td><td style="text-align: right; ' . $sale_color. '">$' . number_format($subtotal_sale,2) .
+								'</td><td style="text-align: right;">$' . number_format($subtotal_sale,2) .
 								'</td></tr>';
 				$total_materials_sale += $subtotal_sale;
 			}
@@ -318,8 +346,9 @@ class tables_call_slips {
 						$markup = number_format(100 * $sale_price / $purchase_price, 0) . "%";
 					else
 						$markup = "---";
-					$sale_color = "background-color: lightsteelblue;";
-					$markup_color = "background-color: lightblue;";
+
+					$sale_color = "background-color: lightpink;";
+					$markup_color = "background-color: #FFD6E1;";
 				}
 				elseif($rec->val('sale_method')=="overide"){
 					$sale_price = $rec->val('sale_overide');
@@ -327,8 +356,9 @@ class tables_call_slips {
 						$markup = number_format(100 * $sale_price / $purchase_price, 0) . "%";
 					else
 						$markup = "---";
-					$sale_color = "background-color: lightpink;";
-					$markup_color = "background-color: #FFD6E1;";
+
+					$sale_color = "background-color: lightsteelblue;";
+					$markup_color = "background-color: lightblue;";
 				}
 				else{ //If it is null, calculate based on customer markup
 					foreach ($markupRecords as $mr) {
@@ -344,8 +374,8 @@ class tables_call_slips {
 					$sale_price = $purchase_price * (1+$markup);
 					$markup = $markup*100 . "%";
 					
-					$sale_color = "background-color: lightgreen;";
-					$markup_color = "background-color: #B0FFB0;";
+					$sale_color = "";//"background-color: lightgreen;";
+					$markup_color = "";//"background-color: #B0FFB0;";
 				}				
 				
 
@@ -361,7 +391,7 @@ class tables_call_slips {
 								'</td><td style="text-align: right">$' . $purchase_price .
 								'</td><td style="text-align: right; ' . $markup_color. '">' . $markup .
 								'</td><td style="text-align: right; ' . $sale_color. '">$' . $sale_price .
-								'</td><td style="text-align: right; ' . $sale_color. '">$' . number_format($subtotal_sale,2) .
+								'</td><td style="text-align: right;">$' . number_format($subtotal_sale,2) .
 								'</td></tr>';
 
 				$total_materials_sale += $subtotal_sale;
@@ -378,9 +408,8 @@ class tables_call_slips {
 			$childString .= '<b>Key</b>';
 			$childString .= '<table class="view_add">
 								<tr>
-									<td style="text-align: right; background-color: lightgreen;">Auto Calculate</td>
-									<td style="text-align: right; background-color: lightsteelblue;">Call Slip Overide</td>
-									<td style="text-align: right; background-color: lightpink;">Inventory / PO Overide</td>
+									<td style="text-align: right; background-color: lightpink;">Overide (From Call Slip)</td>
+									<td style="text-align: right; background-color: lightsteelblue;">Overide (From Inventory)</td>
 								</tr>
 							</table>';
 
@@ -653,6 +682,6 @@ class tables_call_slips {
 		$record->setValue('site_instructions', $site_record->val('site_instructions'));
 		//$record->setValue('status', "NCO");
 	}
-	
+
 }
 ?>

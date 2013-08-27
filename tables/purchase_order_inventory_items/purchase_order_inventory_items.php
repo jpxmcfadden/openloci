@@ -1,6 +1,6 @@
 <?php
 
-class tables_purchase_order_inventory_list {
+class tables_purchase_order_inventory_items{
 
 	//This is for Call Slip Invoices
 	function field__total_cost($record){
