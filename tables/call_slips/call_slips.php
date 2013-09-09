@@ -244,24 +244,37 @@ class tables_call_slips {
 								<th>Arrive Time</th>
 								<th>Depart Time</th>
 								<th>Hours</th>
+								<th>Rate</th>
+								<th>Total</th>
 							</tr>';
 
-			$employeeRecords = $record->getRelatedRecords('time_logs');
-			foreach ($employeeRecords as $cs_er){
-				//Pull the employee name out of the 'employees' table
-				$rec = df_get_record('employees', array('employee_id'=>$cs_er['employee_id']));
+			$total_hours_sale = 0;
 
-				$arrive = Dataface_converters_date::datetime_to_string($cs_er['start_time']);
-				$depart = Dataface_converters_date::datetime_to_string($cs_er['end_time']);
-				//$hours = $cs_er['start_time']->diff($cs_er['end_time']);
+			$timelog_records = $record->getRelatedRecords('time_logs');
+			foreach ($timelog_records as $cs_tl){
+				//Pull the employee name out of the 'employees' table
+				$employee_record = df_get_record('employees', array('employee_id'=>$cs_tl['employee_id']));
+
+				//Convert arrive / depart times, & calculate 'hours'
+				$arrive = Dataface_converters_date::datetime_to_string($cs_tl['start_time']);
+				$depart = Dataface_converters_date::datetime_to_string($cs_tl['end_time']);
 				$hours = number_format(((strtotime($depart) - strtotime($arrive)) / 3600),1);
-				$childString .= '<tr><td>' . $rec->display('first_name') . ' ' . $rec->display('last_name') .
+
+				//Get "rate" details
+				$rate_record = df_get_record('rates', array('rate_id'=>$cs_tl['rate_id']));
+				$rate = $rate_record->val($cs_tl['rate_type']);
+				
+				$childString .= '<tr><td>' . $employee_record->display('first_name') . ' ' . $employee_record->display('last_name') .
 								'</td><td>' . $arrive .
 								"</td><td>" . $depart .
 								"</td><td>" . $hours .
+								"</td><td>" . $rate .
+								"</td><td>$" . number_format($rate * $hours,2) .
 								"</td></tr>";
+				$total_hours_sale += $rate * $hours;
 			}
 			
+			$childString .= '<tr><td></td><td></td><td></td><td></td><td></td><td>$<b>' . number_format($total_hours_sale,2) . '</b></td></tr>';
 			$childString .= '</table><br>';
 			
 		//Materials
@@ -286,89 +299,100 @@ class tables_call_slips {
 			$purchaseorderRecords = $record->getRelatedRecords('call_slip_purchase_orders');
 			foreach ($purchaseorderRecords as $cs_pr){
 				$purchase_price = $cs_pr['purchase_price'];
-				$sale_price = $cs_pr['sale_price']; //Pull sale price from record (will likely be null)
-				if(!isset($sale_price)){ //If it is null, calculate based on customer markup
-					foreach ($markupRecords as $mr) {
-						if($mr->val('to') == null)
-							$no_limit = true;
+				
+				//Calculate sale price based on customer markup - Normal
+				foreach ($markupRecords as $mr) {
+					if($mr->val('to') == null)
+						$no_limit = true;
 						
-						if( ($purchase_price >= $mr->val('from')) && ($purchase_price <= $mr->val('to') || $no_limit == true) ){
-							$markup = $mr->val('markup_percent');
-							break;
-						}
+					if( ($purchase_price >= $mr->val('from')) && ($purchase_price <= $mr->val('to') || $no_limit == true) ){
+						$markup = $mr->val('markup_percent');
+						break;
 					}
-					
-					$sale_price = $purchase_price * (1+$markup);
-					$markup = $markup*100 . "%";
-					
-					$sale_color = "";//"background-color: lightgreen;";
-					$markup_color = "";//"background-color: #B0FFB0;";
 				}
-				else{
-					$sale_color = "background-color: lightpink;";
-					$markup_color = "background-color: #FFD6E1;";
+					
+				$sale_price = number_format($purchase_price * (1+$markup),2,".","");
+				$markup = $markup*100 . "%";
+					
+				$sale_price_original = "";
+				$sale_color = "";
+				
+				//If however, the sale price is set in the PO record, re-calculate based on the overide
+				$sale_price_overide = $cs_pr['sale_price'];
+				if($sale_price_overide){
+					//$sale_price_original = '<span style="color: black;">[$' . $sale_price . ']</span>'; //To show auto-calculated sale price inline.
+					$sale_price = $sale_price_overide;
+					$sale_color = "color: royalblue;";
 
 					if($purchase_price > $sale_price){
-						$markup = "(" . number_format(100 * $purchase_price / $sale_price, 0) . "%)";
-						$markup_color = "background-color: #FFD6E1; color: #ff0000;";
+						$markup = '<span style="color: crimson;">' . number_format(-100 * ($purchase_price / $sale_price - 1), 0) . "%</span>";
 					}
 					elseif($purchase_price != 0)
-						$markup = number_format(100 * $sale_price / $purchase_price, 0) . "%";
+						$markup = number_format(100 * ($sale_price / $purchase_price - 1), 0) . "%";
 					else
 						$markup = "---";
 				}
 
+				//If quantity_used is set in the PO record (overide), use this value for the quantity, otherwise use the purchased quantity.
 				if(isset($cs_pr['quantity_used'])){
 					$quantity = $cs_pr['quantity_used'];
-					$quantity_color = "background-color: lightpink;";
+					$quantity_original = '<span style="color: black;">[' . $cs_pr['quantity'] . ']</span>';
+					$quantity_color = "color: royalblue;";
 				}
 				else{
 					$quantity = $cs_pr['quantity'];
+					$quantity_original = "";
 					$quantity_color = "";
 				}
 			
-				$subtotal_sale = $sale_price * $quantity;
+				$subtotal_sale = number_format($sale_price * $quantity,2);
+				$total_materials_sale += number_format($sale_price * $quantity,2,".","");
 
 				$childString .= '<tr><td style="text-align: right">' . (($cs_pr['post_status'] != "Posted") ? '[unposted] ' : "") . 'PO# - S' . $cs_pr['purchase_id'] .
 								'</td><td>' . $cs_pr['item_name'] .
-								'</td><td style="text-align: right; ' . $quantity_color . '">' . $quantity .
+								'</td><td style="text-align: right; ' . $quantity_color . '">' . $quantity_original . " " . $quantity .
 								'</td><td style="text-align: right">$' . $cs_pr['purchase_price'] .
 								'</td><td style="text-align: right; ' . $markup_color. ' ">' . $markup . 
-								'</td><td style="text-align: right; ' . $sale_color. '">$' . number_format($sale_price,2) .
-								'</td><td style="text-align: right;">$' . number_format($subtotal_sale,2) .
+								'</td><td style="text-align: right; ' . $sale_color. '">' . $sale_price_original . ' $' . number_format($sale_price,2) .
+								'</td><td style="text-align: right;">$' . $subtotal_sale .
 								'</td></tr>';
-				$total_materials_sale += $subtotal_sale;
+
 			}
 		
 			//Inventory
 			$inventoryRecords = $record->getRelatedRecords('call_slip_inventory');
 			foreach ($inventoryRecords as $cs_ir){
 				//Pull the item name / cost out of the 'inventory' table
-				$rec = df_get_record('inventory', array('inventory_id'=>$cs_ir['inventory_id']));
+				$inventory_record = df_get_record('inventory', array('inventory_id'=>$cs_ir['inventory_id']));
 				
 				$purchase_price = $cs_ir['purchase_price'];
 				$sale_price = $cs_ir['sale_price']; //Pull sale price from record (will likely be null)
 
+				//If the sale price is set in the callslip inventory record, calculate based on the overide
 				if(isset($sale_price)){
-					if($purchase_price != 0)
-						$markup = number_format(100 * $sale_price / $purchase_price, 0) . "%";
+					if($purchase_price < $sale_price)
+						$markup = number_format(100 * ($sale_price / $purchase_price - 1), 0) . "%";
+					elseif($purchase_price > $sale_price)
+						$markup = '<span style="color: crimson;">' . number_format(-100 * ($purchase_price / $sale_price - 1), 0) . "%</span>";
 					else
 						$markup = "---";
 
-					$sale_color = "background-color: lightpink;";
-					$markup_color = "background-color: #FFD6E1;";
+					$sale_color = "color: royalblue;";
 				}
-				elseif($rec->val('sale_method')=="overide"){
-					$sale_price = $rec->val('sale_overide');
-					if($purchase_price != 0)
-						$markup = number_format(100 * $sale_price / $purchase_price, 0) . "%";
+				//Otherwise, check if the inventory sale overide has been set, if so, calculate based on it
+				elseif($inventory_record->val('sale_method')=="overide"){
+					$sale_price = $inventory_record->val('sale_overide');
+					if($purchase_price < $sale_price)
+						$markup = number_format(100 * ($sale_price / $purchase_price - 1), 0) . "%";
+					elseif($purchase_price > $sale_price)
+						$markup = '<span style="color: crimson;">' . number_format(-100 * ($purchase_price / $sale_price - 1), 0) . "%</span>";
 					else
 						$markup = "---";
 
-					$sale_color = "background-color: lightsteelblue;";
-					$markup_color = "background-color: lightblue;";
+					$sale_color = "color: seagreen;";
 				}
-				else{ //If it is null, calculate based on customer markup
+				//Otherwise (most likely), calculate based on set customer markup rate
+				else{ 
 					foreach ($markupRecords as $mr) {
 						if($mr->val('to') == null)
 							$no_limit = true;
@@ -379,66 +403,79 @@ class tables_call_slips {
 						}
 					}
 					
-					$sale_price = $purchase_price * (1+$markup);
+					$sale_price = number_format($purchase_price * (1+$markup),2,".","");
 					$markup = $markup*100 . "%";
 					
-					$sale_color = "";//"background-color: lightgreen;";
-					$markup_color = "";//"background-color: #B0FFB0;";
+					$sale_color = "";
 				}				
 				
 
-				$subtotal_sale = $sale_price * $cs_ir['quantity'];
-				//if($cs_ir['purchase_cost'] == 0)
-				//	$markup = "";
-				//else
-				//	$markup = number_format(100 * $cs_ir['sell_cost'] / $cs_ir['purchase_cost'] - 100) . '%';
+				$subtotal_sale = number_format($sale_price * $cs_ir['quantity'],2);
+				$total_materials_sale += number_format($sale_price * $cs_ir['quantity'],2,".","");
 
 				$childString .= '<tr><td style="text-align: right">Inventory' .
-								'</td><td>' . $rec->display('item_name') .
+								'</td><td>' . $inventory_record->display('item_name') .
 								'</td><td style="text-align: right">' . $cs_ir['quantity'] .
 								'</td><td style="text-align: right">$' . $purchase_price .
 								'</td><td style="text-align: right; ' . $markup_color. '">' . $markup .
 								'</td><td style="text-align: right; ' . $sale_color. '">$' . $sale_price .
-								'</td><td style="text-align: right;">$' . number_format($subtotal_sale,2) .
+								'</td><td style="text-align: right;">$' . $subtotal_sale .
 								'</td></tr>';
 
-				$total_materials_sale += $subtotal_sale;
 			}
 			
 			//Additional Materials
 			$additional_materialsRecords = $record->getRelatedRecords('call_slip_additional_materials');
 			foreach ($additional_materialsRecords as $cs_amr){
 				
-				$total_materials_sale += $subtotal_sale;
+				$subtotal_sale = number_format($cs_amr['quantity'] * $cs_amr['sale_price'],2);
+				$total_materials_sale += number_format($cs_amr['quantity'] * $cs_amr['sale_price'],2,".","");
+				
+				$childString .= '<tr><td style="text-align: right">Additional Items' .
+								'</td><td>' . $cs_amr['item_name'] .
+								'</td><td style="text-align: right">' . $cs_amr['quantity'] .
+								'</td><td style="text-align: right">---' . //$purchase_price .
+								'</td><td style="text-align: right;">---' . //$markup_color. '">' . $markup .
+								'</td><td style="text-align: right;">$' . $cs_amr['sale_price'] .
+								'</td><td style="text-align: right;">$' . $subtotal_sale .
+								'</td></tr>';
+
 			}			
 			
 			$childString .= '<tr><td></td><td></td><td></td><td></td><td></td><td></td>' .
-							'<td style="text-align: right"><b>' . number_format($total_materials_sale,2) . '</b></td>' .
+							'<td style="text-align: right">$<b>' . number_format($total_materials_sale,2) . '</b></td>' .
 							'</td></tr>';
 			$childString .= '</table><br>';
 			
-			$childString .= '<b>Key</b>';
-			$childString .= '<table class="view_add">
-								<tr>
-									<td style="text-align: right; background-color: lightpink;">Overide (From Call Slip)</td>
-									<td style="text-align: right; background-color: lightsteelblue;">Overide (From Inventory)</td>
-								</tr>
-							</table>';
+			
+			//KEY
+			//$childString .= '<b>Key</b>';
+			//$childString .= '<table class="view_add">
+			//					<tr>
+			//						<td style="text-align: right; background-color: lightpink;">Overide (From Call Slip)</td>
+			//						<td style="text-align: right; background-color: lightsteelblue;">Overide (From Inventory)</td>
+			//					</tr>
+			//				</table>';
+
 
 			//Additional Charges (consumables / fuel)
 			if($record->val('charge_consumables') || $record->val('charge_fuel')){
-				$childString .= "<br><br><b><u>Additional Charges</u></b><br><br>";
+				$childString .= "<br><b><u>Additional Charges</u></b><br><br>";
 				$childString .= '<table class="view_add">';
 				$childString .= "<tr><th>Charge Type</th><th>Amount</th></tr>";
 
 				if($record->val('charge_consumables'))
-					$childString .= "<tr><td>Consumables</td><td>" . $record->val('charge_consumables') . "</td></tr>";
+					$childString .= "<tr><td>Consumables</td><td>$" . $record->val('charge_consumables') . "</td></tr>";
 				
 				if($record->val('charge_fuel') )
-					$childString .= "<tr><td>Fuel</td><td>" . $record->val('charge_fuel') . "</td></tr>";
+					$childString .= "<tr><td>Fuel</td><td>$" . $record->val('charge_fuel') . "</td></tr>";
 					
 				$childString .= '</table>';
 			}
+
+			//Total
+			
+			$childString .= '<br><br><u><b>Total:</b> $<b>' . number_format($total_hours_sale+$total_materials_sale+$record->val('charge_consumables')+$record->val('charge_fuel'),2) . '</b></u>';
 
 
 		return array(
