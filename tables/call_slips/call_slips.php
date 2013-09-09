@@ -53,8 +53,10 @@ class tables_call_slips {
 
 	//Set the record title
 	function getTitle(&$record){
-		return "Call Slip # ".$record->val('call_id');
-		//return $record->val('call_id');
+		//Pull the site address
+		$customer_record = df_get_record('customer_sites', array('site_id'=>$record->val('site_id')));
+
+		return "Call Slip # " . $record->strval('call_id') . " - " . $customer_record->strval('site_address');
 	}
 
 	function titleColumn(){
@@ -76,7 +78,13 @@ class tables_call_slips {
 		return $list[$record->val('type')];
 	}
 	
-	
+	//function charge_fuel__display(&$record){
+	//	if($record->val('charge_fuel') == null)
+	//		return "n/a";
+	//	else
+	//		return $record->val('charge_fuel');
+	//}
+
 	/*function rel_call_slip_purchase_orders__permissions($record){
 		return array(
 			'add new related record' => 0,
@@ -208,6 +216,9 @@ class tables_call_slips {
        return "----<div class=\"formHelp\">A Call ID will be assigned after the first SAVE.</div>";		
 	}
 
+	function charge_consumables__default() {
+       return "25.00";
+	}
 
 	//Display datetime format as: "Month Day, Year - Hour(12):Minutes AM/PM" or "Month Year" for PMs
 	function call_datetime__display($record) {
@@ -270,12 +281,8 @@ class tables_call_slips {
 			$customerRecord = df_get_record('customers', array('customer_id'=>$record->val('customer_id')));
 			$markupRecords = df_get_records_array('customer_markup_rates', array('markup_id'=>$record->val('markup')));
 			
-			//foreach ($markupRecords as $mr) {
-			//	echo "<pre>";
-			//		echo $mr->val('markup_percent') . " => " . $mr->val('from') . " - " . $mr->val('to');
-			//	echo "</pre>";
-			//}
 			
+			//Purchase Orders
 			$purchaseorderRecords = $record->getRelatedRecords('call_slip_purchase_orders');
 			foreach ($purchaseorderRecords as $cs_pr){
 				$purchase_price = $cs_pr['purchase_price'];
@@ -322,7 +329,7 @@ class tables_call_slips {
 			
 				$subtotal_sale = $sale_price * $quantity;
 
-				$childString .= '<tr><td style="text-align: right">PO# - S' . $cs_pr['purchase_id'] .
+				$childString .= '<tr><td style="text-align: right">' . (($cs_pr['post_status'] != "Posted") ? '[unposted] ' : "") . 'PO# - S' . $cs_pr['purchase_id'] .
 								'</td><td>' . $cs_pr['item_name'] .
 								'</td><td style="text-align: right; ' . $quantity_color . '">' . $quantity .
 								'</td><td style="text-align: right">$' . $cs_pr['purchase_price'] .
@@ -333,6 +340,7 @@ class tables_call_slips {
 				$total_materials_sale += $subtotal_sale;
 			}
 		
+			//Inventory
 			$inventoryRecords = $record->getRelatedRecords('call_slip_inventory');
 			foreach ($inventoryRecords as $cs_ir){
 				//Pull the item name / cost out of the 'inventory' table
@@ -397,8 +405,12 @@ class tables_call_slips {
 				$total_materials_sale += $subtotal_sale;
 			}
 			
-			
-			
+			//Additional Materials
+			$additional_materialsRecords = $record->getRelatedRecords('call_slip_additional_materials');
+			foreach ($additional_materialsRecords as $cs_amr){
+				
+				$total_materials_sale += $subtotal_sale;
+			}			
 			
 			$childString .= '<tr><td></td><td></td><td></td><td></td><td></td><td></td>' .
 							'<td style="text-align: right"><b>' . number_format($total_materials_sale,2) . '</b></td>' .
@@ -412,6 +424,21 @@ class tables_call_slips {
 									<td style="text-align: right; background-color: lightsteelblue;">Overide (From Inventory)</td>
 								</tr>
 							</table>';
+
+			//Additional Charges (consumables / fuel)
+			if($record->val('charge_consumables') || $record->val('charge_fuel')){
+				$childString .= "<br><br><b><u>Additional Charges</u></b><br><br>";
+				$childString .= '<table class="view_add">';
+				$childString .= "<tr><th>Charge Type</th><th>Amount</th></tr>";
+
+				if($record->val('charge_consumables'))
+					$childString .= "<tr><td>Consumables</td><td>" . $record->val('charge_consumables') . "</td></tr>";
+				
+				if($record->val('charge_fuel') )
+					$childString .= "<tr><td>Fuel</td><td>" . $record->val('charge_fuel') . "</td></tr>";
+					
+				$childString .= '</table>';
+			}
 
 
 		return array(
@@ -472,9 +499,26 @@ class tables_call_slips {
 
 			if($record->val('status') == "NCO")
 				$childString .= '<input type="submit" value="Change Status to: Job Completed">';
-			elseif($record->val('status') == "CMP")
-				$childString .= '<input type="submit" value="Change Status to: Invoice Ready to Print / Send">';
+			elseif($record->val('status') == "CMP"){
 
+				//Check if all purchase orders associated with the Call Slip have been posted.
+				//If so, allow to be set to RDY, else don't.
+
+				$purchaseorderRecords = $record->getRelatedRecords('call_slip_purchase_orders');
+				$po_not_posted = false;
+				foreach ($purchaseorderRecords as $cs_pr){
+					if($cs_pr['post_status'] != "Posted"){
+						$po_not_posted = true;
+						break;
+					}
+						
+				}
+				if($po_not_posted == true)
+					$childString .= '[Some Purchase Orders associated with this record have not yet been posted.]<br>
+									<input type="submit" value="Change Status to: Invoice Ready to Print / Send" disabled="disabled" style="color: grey;">';
+				else
+					$childString .= '<input type="submit" value="Change Status to: Invoice Ready to Print / Send">';
+			}
 			$childString .= '</form>';
 		}
 		//elseif(	$record->val('post_status') == 'Pending'){ //---can do this by linking to -action=ledger_post&selected="this_one"
