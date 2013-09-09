@@ -1,8 +1,3 @@
 NOTES:
 
 Modifications to Xataface files:
-
-	Added the following in xataface/Dataface/FormTool/grid.php @ line 31 to fix the issue with the "Add Existing Record" button. (Reported in bug tracker).
-		if ( !$record->checkPermission('add existing related record', array('relationship'=>$field['relationship']))){
-			$el->addExisting=false;
-		}
