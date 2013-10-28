@@ -2,6 +2,14 @@
 
 class tables_purchase_orders {
 
+
+	function __sql__(){
+	//	return "select poi.*, pos.* from foo f left join categories c on f.category_id=c.category_id";
+		return "select * from purchase_order_inventory";
+	}
+
+/*
+
 	function getTitle(&$record){
 		return $record->strval('purchase_id');
 	}
@@ -46,6 +54,8 @@ class tables_purchase_orders {
 	//	$foo = 1;
 	//	return $foo;
 	//}
+	
+*/
 	
 }
 
