@@ -15,7 +15,7 @@ class actions_purchase_order_post_inventory {
 
 			
 		//If the page has been submitted (Post button pressed), this will be "true", otherwise NULL.
-		$confirm = $_GET['confirm_post'];
+		$confirm = isset($_GET['confirm_post']) ? $_GET['confirm_post'] : null;
 
 		//Get the application instance - used for pulling the query data
 		$app =& Dataface_Application::getInstance();
@@ -44,7 +44,7 @@ class actions_purchase_order_post_inventory {
 			$rdate = $record->val('purchase_date');
 			$vendorRecord = df_get_record('vendors', array('vendor_id'=>$record->val('vendor_id')));
 						
-			$headers[$i]['id'] = $record->val('purchase_id');
+			$headers[$i]['id'] = $record->val('purchase_order_id');
 			$headers[$i]['date'] = $rdate['month'].'-'.$rdate['day'].'-'.$rdate['year'];
 			$headers[$i]['vendor'] = $vendorRecord->val('vendor');
 			$headers[$i]['total'] = $record->val('total');
@@ -53,7 +53,7 @@ class actions_purchase_order_post_inventory {
 			//If the Post button has been pressed, process the entries
 			if($confirm == "true"){
 				//Only modify selected records
-				if($_GET[$record->val('purchase_id')]=="on"){
+				if(isset($_GET[$record->val('purchase_order_id')]) && $_GET[$record->val('purchase_order_id')]=="on"){
 					$record->setValue('post_status',"Posted"); //Set status to Pending.
 					$record->setValue('post_date',date('Y-m-d')); //Set post date.
 					$res = $record->save(); //Save Record w/o permission check.
@@ -70,8 +70,8 @@ class actions_purchase_order_post_inventory {
 					//Special tag to denote which entries have been posted.
 					$headers[$i]['posted'] = "true";
 					
-					//Get associated journal entries
-					$query['purchase_id'] = $record->val('purchase_id');
+					//Get associated items
+					$query['purchase_order_id'] = $record->val('purchase_id');
 					//$query['account_id'] = '>0'; //Check to make sure the account exists (i.e. if the journal line was removed)
 					$item_records = df_get_records_array($poItemTable, $query);
 
@@ -89,7 +89,7 @@ class actions_purchase_order_post_inventory {
 							$purchase_history_record->setValues(
 										array(
 											'inventory_id'=>$item_record->val('inventory_id'),
-											'purchase_order_id'=>$record->val('purchase_id'),
+											'purchase_order_id'=>$record->val('purchase_order_id'),
 											'purchase_date'=>$record->val('purchase_date'),
 											'vendor'=>$record->val('vendor_id'),
 											'purchase_price'=>$item_record->val('purchase_price'),
@@ -113,7 +113,7 @@ class actions_purchase_order_post_inventory {
 //**************************************//			
 			else {
 				//Get associated item entries
-				$query['purchase_id'] = $record->val('purchase_id');// print_r($query); echo "<br><br>";
+				$query['purchase_order_id'] = $record->val('purchase_id');// print_r($query); echo "<br><br>";
 				//$query['inventory_id'] = '>0'; //Check to make sure the account exists (i.e. if the journal line was removed)
 				$item_records = df_get_records_array($poItemTable, $query);
 

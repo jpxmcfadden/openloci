@@ -2,6 +2,9 @@
 
 class tables_accounts_payable {
 
+//SQL to create VIEW: (SELECT purchase_order_id, assigned_voucher_id, vendor_id FROM `purchase_order_inventory` WHERE assigned_voucher_id IS NULL) UNION (SELECT purchase_order_id, assigned_voucher_id , vendor_id FROM `purchase_order_service` WHERE assigned_voucher_id IS NULL)
+
+
 	function getTitle(&$record){
 		return 'Invoice ID: ' . $record->val('invoice_id') . ' - Status: ' . $record->val('status');
 	}
@@ -21,7 +24,6 @@ class tables_accounts_payable {
 	//function status__renderCell(&$record){
 	//	return '<b>'.$record->strval('status').'</b>';
 	//}
-	
 	
 /*
 	function email__htmlValue(&$record){
@@ -45,7 +47,9 @@ class tables_accounts_payable {
 */
 
 	function afterSave(&$record){
-		$po_rec = df_get_record('purchase_orders', array('purchase_id'=>$record->val('purchase_order_id')));
+		
+		
+		$po_rec = df_get_record('accounts_payable_unassigned_purchase_orders', array('purchase_order_id_full'=>$record->val('purchase_order_id')));
 		$po_rec->setValue('assigned_voucher_id',$record->val('voucher_id'));
 		//$gen_inv->save(null, true);
 		$po_rec->save();

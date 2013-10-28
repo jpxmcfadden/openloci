@@ -2,236 +2,117 @@
 
 class tables_call_slips {
 
-	function getPermissions(&$record){
-		//First check if the user is logged in.
-		if( isUser() ){
-			//Check status, determine if record should be uneditable.
-			if ( isset($record) ){
-				if(	$record->val('status') == 'RDY' ||
-					$record->val('status') == 'SNT' ||
-					$record->val('status') == 'PPR' ||
-					$record->val('status') == 'PRE' ||
-					$record->val('status') == 'CMP'
-				)
-				//return Dataface_PermissionsTool::getRolePermissions('NO_EDIT_DELETE');
-				return Dataface_PermissionsTool::getRolePermissions('MASTER'); //This needs to be changed - When saving with the above line, it doesn't let save if converting to RDY etc. Need button anyway.
-			}
-		}
-		else
-			return Dataface_PermissionsTool::NO_ACCESS();
-	}
-	
-	function rel_call_slip_purchase_orders__permissions(&$record){
-		return array(
-				'add new related record'=>0,
-				'add existing related record'=>0,
-				'remove related record'=>0,
-				'delete related record'=>0
-			//	'reorder_related_records'=>1
-			);
-	}
-	
-	
-	function block__before_type_widget(){
-		$app =& Dataface_Application::getInstance(); 
-		$record =& $app->getRecord();
-		$query =& $app->getQuery();
-		//echo "<pre>"; print_r($query); echo "</pre>";
-		
-		if($query['-action'] != 'new'){ //We do this b/c when getRecord() is used on a "new record" it returns the data from the last saved record.
-			if($record->val('type') == "PM"){ //Check if type == "PK" and if so replace the dropdown menu with static text.
-				echo 'Preventative Maintenance<style>#type {display:none;}</style>';
-			
-			}
-		}
-	}
-	
-
-	//private $inventory_values = array(); //Create a class variable to store the values from the grid field
-	//private $cs_id = '';
+	//Class Variables
 	private $cs_modify_inventory = array(); //Create a class variable to store the values for modifying the inventory
 
-	//Set the record title
-	function getTitle(&$record){
-		//Pull the site address
-		$customer_record = df_get_record('customer_sites', array('site_id'=>$record->val('site_id')));
 
-		return "Call Slip # " . $record->strval('call_id') . " - " . $customer_record->strval('site_address');
-	}
-
-	function titleColumn(){
-		return 'CONCAT("Call Slip # ",call_id)';
-		//return 'CONCAT(call_id)';
-	}
-
-	
-	function type__display(&$record){
-		//Display PM as "Preventative Maintenance"
+	//Permissions
+		function getPermissions(&$record){
+			//First check if the user is logged in.
+			if( isUser() ){
+				//Check status, determine if record should be uneditable.
+				if ( isset($record) ){
+					if(	$record->val('status') == 'RDY' ||
+						$record->val('status') == 'SNT' ||
+						$record->val('status') == 'PPR' ||
+						$record->val('status') == 'PRE' ||
+						$record->val('status') == 'CMP'
+					)
+					//return Dataface_PermissionsTool::getRolePermissions('NO_EDIT_DELETE');
+					return Dataface_PermissionsTool::getRolePermissions('MASTER'); //This needs to be changed - When saving with the above line, it doesn't let save if converting to RDY etc. Need button anyway.
+				}
+			}
+			else
+				return Dataface_PermissionsTool::NO_ACCESS();
+		}
 		
+		function rel_call_slip_purchase_orders__permissions(&$record){
+			return array(
+					'add new related record'=>0,
+					'add existing related record'=>0,
+					'remove related record'=>0,
+					'delete related record'=>0
+				//	'reorder_related_records'=>1
+				);
+		}
+
+
+	//Set the record title
+		function getTitle(&$record){
+			//Pull the site address
+			$customer_record = df_get_record('customer_sites', array('site_id'=>$record->val('site_id')));
+
+			return "Call Slip # " . $record->strval('call_id') . " - " . $customer_record->strval('site_address');
+		}
+
+		function titleColumn(){
+			return 'CONCAT("Call Slip # ",call_id)';
+		}
+
+
+	//Default settings for fields
+		function call_datetime__default() {
+			return '<div class="formHelp">Call Date/Time will be assigned when the record is first saved.</div>';
+		   //return date('Y-m-d g:i a');
+		}
+
+		function call_id__default() {
+		   return "----<div class=\"formHelp\">A Call ID will be assigned after the first SAVE.</div>";		
+		}
+
+		function charge_consumables__default() {
+		   return "25.00";
+		}
+
+	//Visual Things
+		//Hide the "type" field if the record type is set as "PM"
+		function block__before_type_widget(){
+			$app =& Dataface_Application::getInstance(); 
+			$record =& $app->getRecord();
+			$query =& $app->getQuery();
+			
+			if($query['-action'] != 'new'){ //We do this b/c when getRecord() is used on a "new record" it returns the data from the last saved record.
+				if($record->val('type') == "PM"){ //Check if type == "PK" and if so replace the dropdown menu with static text.
+					echo 'Preventative Maintenance<style>#type {display:none;}</style>';
+				
+				}
+			}
+		}
+		
+		//Display PM as "Preventative Maintenance"
+		function type__display(&$record){
 			//Pull the "type" valuelist
 			$list = $record->_table->_valuelistsConfig['type_list'];
-			
+
 			//Add PM to the list
 			$list["PM"]="Preventative Maintenance";
-			
-		//Return the type as per the list.
-		return $list[$record->val('type')];
-	}
-	
-	//function charge_fuel__display(&$record){
-	//	if($record->val('charge_fuel') == null)
-	//		return "n/a";
-	//	else
-	//		return $record->val('charge_fuel');
-	//}
+				
+			//Return the type as per the list.
+			return $list[$record->val('type')];
+		}
 
-	/*function rel_call_slip_purchase_orders__permissions($record){
-		return array(
-			'add new related record' => 0,
-			'add existing related record' => 0,
-			'delete related record' => 0,
-			'remove related record' => 0
-		);
-	}*/
-
-	//function rel_call_slip_inventory__permissions($record){
-	//	return array(
-	//		'edit related records' => 0,
-	//	);
-	//}	
-
-
-	//Pretty things up a bit.
-		//function block__before_worktimes_widget() { echo '<div style="width: 700px">'; }
-		//function block__after_worktimes_widget() { echo "</div>"; }
-
-		//function block__before_purchase_order_widget() { echo '<div style="width: 600px">'; }
-		//function block__after_purchase_order_widget() { echo "</div>"; }
-
+		//Display datetime format as: "Month Day, Year - Hour(12):Minutes AM/PM" or "Month Year" for PMs
+		function call_datetime__display($record) {
+			if($record->val('type') == "PM")
+				return date('F Y', strtotime($record->strval('call_datetime')));
+			return date('F d, Y - g:i A', strtotime($record->strval('call_datetime')));
+			//return date('Y-m-d g:i A', strtotime($record->strval('call_datetime')));
+	   }
+	   
+		//Pretty things up a bit.
 		function block__before_inventory_widget() { echo '<div style="width: 600px">'; }
 		function block__after_inventory_widget() { echo "</div>"; }	
 
+		function block__before_purchase_orders_widget() { echo '<div style="width: 600px">'; }
+		function block__after_purchase_orders_widget() { echo "</div>"; }
 
-	//This is for Call Slip Invoices
-	function field__company($record){
-		return company_name();
-	}
-
-	function field__company_address_1($record){
-		$address = company_address();
-		return $address['address'];
-	}
-	
-	function field__company_address_2($record){
-		$address = company_address();
-		return $address['city'] . ', ' . $address['state'] . ' ' . $address['zip'];
-	}
-
-	function field__company_phone($record){
-		return company_phone();
-	}
-	
-	function field__company_fax($record){
-		return company_fax();
-	}
-
-	function field__date_today($record){
-		return date('m/d/Y');
-	}
-	
-	function field__billing_address_1($record){
-		$rec = df_get_record('customers', array('customer_id'=>$record->val('customer_id')));
-		$billing_address = $rec->val('billing_address');
-		return $billing_address;
-	}
-	
-	function field__billing_address_2($record){
-		$rec = df_get_record('customers', array('customer_id'=>$record->val('customer_id')));
-		$billing_address = $rec->val('billing_city') . ' ' . $rec->val('billing_state') . ' ' . $rec->val('billing_zip');;
-		return $billing_address;
-	}
-
-	function field__site_address($record){
-		$rec = df_get_record('customer_sites', array('site_id'=>$record->val('site_id')));
-		$billing_address = $rec->val('site_city') . ' ' . $rec->val('site_state') . ' ' . $rec->val('site_zip');
-		return $billing_address;
-	}
-	
-	function field__time_log_total($record){
-		$total = 0;
-		$employeeRecords = $record->getRelatedRecords('time_logs');
-		foreach ($employeeRecords as $cs_er){
-			$arrive = Dataface_converters_date::datetime_to_string($cs_er['start_time']);
-			$depart = Dataface_converters_date::datetime_to_string($cs_er['end_time']);
-			$hours = number_format(((strtotime($depart) - strtotime($arrive)) / 3600),1);
-			$total += ($hours * $cs_er['rate_per_hour']);
-		}
-		return number_format($total,2);
-	}
-	
-	function field__materials_total($record){
-		$total = 0;
+		function block__before_additional_materials_widget() { echo '<div style="width: 600px">'; }
+		function block__after_additional_materials_widget() { echo "</div>"; }
 		
-			$purchaseorderRecords = $record->getRelatedRecords('call_slip_purchase_orders');
-			foreach ($purchaseorderRecords as $cs_pr){
-				$subtotal_sale = $cs_pr['cost_sale'] * $cs_pr['quantity'];
-				$total += $subtotal_sale;
-			}
 		
-			$inventoryRecords = $record->getRelatedRecords('call_slip_inventory');
-			foreach ($inventoryRecords as $cs_ir){
-				$subtotal_sale = $cs_ir['sell_cost'] * $cs_ir['quantity'];
-				$total += $subtotal_sale;
-			}
 
-		return number_format($total,2);
-	}
-	
-	//This was silly and is now deprecated.
-	//For the case where no contract is selected, save as value as '-1' instead of '0'
-	//This alleviates issues with renaming via in the valuelist (0 is predefined)
-	/*function contract_id__pushValue(&$record){
-		$temp = $_POST['contract_id'];
-		if($temp != 0)
-			return $temp;
-		return -1;
 
-	//THIS IS BEING FLAKEY
-		//	if($record->strval('contract_id') == 0)
-		//		return -1;
-	}
-	*/	
-	
-	//DEFAULT VALUES
-	//function status__default(){
-	//	return "OPEN";
-	//}
-	
-	function call_datetime__default() {
-		return '<div class="formHelp">Call Date/Time will be assigned when the record is first saved.</div>';
-       //return date('Y-m-d g:i a');
-	}
-
-	function call_id__default() {
-       return "----<div class=\"formHelp\">A Call ID will be assigned after the first SAVE.</div>";		
-	}
-
-	function charge_consumables__default() {
-       return "25.00";
-	}
-
-	//Display datetime format as: "Month Day, Year - Hour(12):Minutes AM/PM" or "Month Year" for PMs
-	function call_datetime__display($record) {
-		if($record->val('type') == "PM")
-			return date('F Y', strtotime($record->strval('call_datetime')));
-		return date('F d, Y - g:i A', strtotime($record->strval('call_datetime')));
-		//return date('Y-m-d g:i A', strtotime($record->strval('call_datetime')));
-   }
-
-	
-	
-	//Add attitional details to the view tab - include employee work history
-	//function section__billing(&$record){
+	//Add attitional details to the view tab
 	function section__billing(&$record){
 
 	$childString = "";
@@ -575,27 +456,31 @@ class tables_call_slips {
 	}
 	
 	
-	//CALENDAR MODULE FUNCTIONS
-	function getBgColor($record){
-		if ( $record->val('technician') == 1) return 'blue';
-		if ( $record->val('technician') == 2) return 'blueviolet';
-		if ( $record->val('technician') == 3) return 'brown';
-		if ( $record->val('technician') == 4) return 'cadetblue';
-		if ( $record->val('technician') == 5) return 'chocolate';
-		if ( $record->val('technician') == 6) return 'cornflowerblue';
-		if ( $record->val('technician') == 7) return 'crimson';
-		if ( $record->val('technician') == 8) return 'darkcyan';
-		if ( $record->val('technician') == 9) return 'darkred';
-		if ( $record->val('technician') == 10) return 'green';
-		if ( $record->val('technician') == 11) return 'goldenrod';
-		else return 'rgb(0,0,0)';
-	}
-	
-	function calendar__decorateEvent(Dataface_Record $record, &$event){
-		$rec_site = df_get_record('customer_sites', array('site_id'=>$record->val('site_id')));
-		$rec_empl = df_get_record('employees', array('employee_id'=>$record->val('technician')));
-		$event['title'] = "\nTech: " . $rec_empl->val('first_name') . " " . $rec_empl->val('last_name') . "\nSite: " . $rec_site->val('address');
-	}
+	//Calendar Module Functions
+		function getBgColor($record){
+			if ( $record->val('technician') == 1) return 'blue';
+			if ( $record->val('technician') == 2) return 'blueviolet';
+			if ( $record->val('technician') == 3) return 'brown';
+			if ( $record->val('technician') == 4) return 'cadetblue';
+			if ( $record->val('technician') == 5) return 'chocolate';
+			if ( $record->val('technician') == 6) return 'cornflowerblue';
+			if ( $record->val('technician') == 7) return 'crimson';
+			if ( $record->val('technician') == 8) return 'darkcyan';
+			if ( $record->val('technician') == 9) return 'darkred';
+			if ( $record->val('technician') == 10) return 'green';
+			if ( $record->val('technician') == 11) return 'goldenrod';
+			else return 'rgb(0,0,0)';
+		}
+		
+		function calendar__decorateEvent(Dataface_Record $record, &$event){
+			$rec_site = df_get_record('customer_sites', array('site_id'=>$record->val('site_id')));
+			$rec_empl = df_get_record('employees', array('employee_id'=>$record->val('technician')));
+			$event['title'] = "\nTech: " . $rec_empl->val('first_name') . " " . $rec_empl->val('last_name') . "\nSite: " . $rec_site->val('address');
+		}
+
+
+
+	//PROCESSING
 
 	function inventory__validate(&$record, $value, &$params){
 		//Empty the error message
@@ -763,6 +648,105 @@ class tables_call_slips {
 		$record->setValue('site_instructions', $site_record->val('site_instructions'));
 		//$record->setValue('status', "NCO");
 	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	//These are for HTML Reports
+		function field__company($record){
+			return company_name();
+		}
+
+		function field__company_address_1($record){
+			$address = company_address();
+			return $address['address'];
+		}
+		
+		function field__company_address_2($record){
+			$address = company_address();
+			return $address['city'] . ', ' . $address['state'] . ' ' . $address['zip'];
+		}
+
+		function field__company_phone($record){
+			return company_phone();
+		}
+		
+		function field__company_fax($record){
+			return company_fax();
+		}
+
+		function field__date_today($record){
+			return date('m/d/Y');
+		}
+		
+		function field__billing_address_1($record){
+			$rec = df_get_record('customers', array('customer_id'=>$record->val('customer_id')));
+			$billing_address = $rec->val('billing_address');
+			return $billing_address;
+		}
+		
+		function field__billing_address_2($record){
+			$rec = df_get_record('customers', array('customer_id'=>$record->val('customer_id')));
+			$billing_address = $rec->val('billing_city') . ' ' . $rec->val('billing_state') . ' ' . $rec->val('billing_zip');;
+			return $billing_address;
+		}
+
+		function field__site_address($record){
+			$rec = df_get_record('customer_sites', array('site_id'=>$record->val('site_id')));
+			$billing_address = $rec->val('site_city') . ' ' . $rec->val('site_state') . ' ' . $rec->val('site_zip');
+			return $billing_address;
+		}
+		
+		function field__time_log_total($record){
+			$total = 0;
+			$employeeRecords = $record->getRelatedRecords('time_logs');
+			foreach ($employeeRecords as $cs_er){
+				$arrive = Dataface_converters_date::datetime_to_string($cs_er['start_time']);
+				$depart = Dataface_converters_date::datetime_to_string($cs_er['end_time']);
+				$hours = number_format(((strtotime($depart) - strtotime($arrive)) / 3600),1);
+				$total += ($hours * $cs_er['rate_per_hour']);
+			}
+			return number_format($total,2);
+		}
+		
+		function field__materials_total($record){
+			$total = 0;
+			
+				$purchaseorderRecords = $record->getRelatedRecords('call_slip_purchase_orders');
+				foreach ($purchaseorderRecords as $cs_pr){
+					$subtotal_sale = $cs_pr['cost_sale'] * $cs_pr['quantity'];
+					$total += $subtotal_sale;
+				}
+			
+				$inventoryRecords = $record->getRelatedRecords('call_slip_inventory');
+				foreach ($inventoryRecords as $cs_ir){
+					$subtotal_sale = $cs_ir['sell_cost'] * $cs_ir['quantity'];
+					$total += $subtotal_sale;
+				}
+
+			return number_format($total,2);
+		}
+	
+	
+
+
+
+
+
+
 
 }
 ?>

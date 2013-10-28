@@ -193,8 +193,20 @@ class tables_purchase_order_inventory {
 
 			$record->setValue('item_total', $total_item_purchase_price);
 			$record->setValue('total', $total);
+			
 		}
+		//If "shipping" if left blank, set to 0.00
+		if($record->val('shipping') == null)
+			$record->setValue('shipping', 0);
 	}
+
+	function afterInsert(&$record){
+		//PO Full ID: prefix+purchase_id
+		$record->setValue('purchase_order_id', "I".$record->val('purchase_id'));
+		$record->save();
+	}	
+	
+	
 	/*
 		//Create purchase history records for all items. -- Goes in Action.
 		//Get items list

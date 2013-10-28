@@ -182,6 +182,8 @@ class conf_ApplicationDelegate {
 	function block__custom_javascripts(){
 	//	echo '<script src="javascripts.js" type="text/javascript" language="javascript"></script>';
 		Dataface_JavascriptTool::getInstance()->import('submithandler.js');
+		Dataface_JavascriptTool::getInstance()->import('widget hide.js');
+	//echo '<script src="js/widget hide.js" type="text/javascript" language="javascript"></script>';
 	}	
 }
 
