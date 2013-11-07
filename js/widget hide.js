@@ -19,7 +19,6 @@ function change_field(field, value){
 	
 	//alert(document.forms[0][field].style.display);
 	
-	elements = document.getElementsByClassName('xf-RecordBrowserWidget-displayField');
 	//elements[1].readOnly = "false";
 	//document.forms[0][field].readOnly = "true";
 	//document.forms[0][field].readOnly = false;
@@ -27,9 +26,12 @@ function change_field(field, value){
 	//alert(document.forms[0][field].style.cursor);
 	//alert(elements[1].style.cursor);
 	//elements[1].readOnly = false;
-	elements[1].value = "foo";
-	
-	alert(document.getElementsByName(field)[0].nextSibling.value);
+	//elements[1].value = "foo";
 
+//	elements = document.getElementsByClassName('xf-RecordBrowserWidget-displayField');
+//	elements[1].style.display = "none";
+	
+//	alert(document.getElementsByName(field)[0].nextSibling.value);
+//	document.getElementsByName(field)[0].nextSibling.value = value;
 
 }

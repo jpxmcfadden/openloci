@@ -115,6 +115,8 @@ class tables_chart_of_accounts {
 
 	
 	function beforeInsert(&$record){
+		
+		//Convert Account Type to appropriate account number prefix
 		switch($record->val('account_type')){
 			case "AST":
 				$acct_prefix = 1;
@@ -136,15 +138,41 @@ class tables_chart_of_accounts {
 				break;
 		}
 		
-		$sql_query = "SELECT MAX(account_number) as m_a_n FROM `chart_of_accounts` WHERE account_number LIKE '$acct_prefix%'";
-		$max_account_number_query = mysql_query($sql_query, df_db());
-		$max_account_number_record = mysql_fetch_array($max_account_number_query);
-		$max_account_number = $max_account_number_record['m_a_n'];
+		//Get Account Type and Category
+		$act_type = $record->val('account_type');
+		$act_cat = $record->val('account_category');
+
+		//Get the last id entered for the selected Account Type and Category
+		$sql_query = "SELECT MAX(account_id) as m_a_id FROM `chart_of_accounts`WHERE (account_type='$act_type' AND account_category='$act_cat')";
+		$max_account_id_query = mysql_query($sql_query, df_db());
+		$max_account_id_record = mysql_fetch_array($max_account_id_query);
+		$max_account_id = $max_account_id_record['m_a_id'];
+
+		//Get the category record
+		$category_record = df_get_record('chart_of_accounts_categories', array('category_id'=>$act_cat));
+
+		//If an id for selected Account Type and Category already exists take the last 5 digits (unique acct #) and +1
+		if(isset($max_account_id)){
+			$act_id_record = df_get_record('chart_of_accounts', array('account_id'=>$max_account_id));
+			$act_n_unique = substr($act_id_record->val('account_number'),-5,5)+1;
+			//Make sue that the unique number is less than the max allotted (99999)
+			if($act_n_unique > 99999)
+				return PEAR::raiseError("Cannot Create New Account. Maximum number of accounts for account category: ".$category_record->val('category_name')." (99999) has been exceeded.",DATAFACE_E_NOTICE);
+		}
+		//Else set unique acct # to 1
+		else{
+			$act_n_unique = 1;
+		}
 		
-		$record->setValue('account_number',$max_account_number+1);
+		//Format the Account Number: -_---_----- == (acct_type (1) - category (3) - unique (5))
+		$act_n = $acct_prefix."-".sprintf("%03d",$category_record->val('category_number'))."-".sprintf("%05d",$act_n_unique);
+
+		//Set the new Account Number
+		$record->setValue('account_number',$act_n);
+		
+		//Set Status to Active
 		$record->setValue('account_status','Active');
  
-		//echo $record->val('account_number');
 		//return PEAR::raiseError("FIN",DATAFACE_E_NOTICE);
 	}
 	
