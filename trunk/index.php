@@ -11,8 +11,8 @@
 	if ( !isset($_REQUEST['-sort']) and @$_REQUEST['-table'] == 'general_ledger' ){ $_REQUEST['-sort'] = $_GET['-sort'] = 'ledger_id desc'; }
 
 
-require_once "xataface/dataface-public-api.php";
-df_init(__FILE__, "xataface");
+require_once "../xataface/dataface-public-api.php";
+df_init(__FILE__, "../xataface");
 $app =& Dataface_Application::getInstance();
 $app->display();
 
