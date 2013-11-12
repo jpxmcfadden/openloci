@@ -103,15 +103,56 @@ class tables_accounts_payable {
 	}
 
 
+	function beforeSave(&$record){
+		//Check if the PO field has been changed... if so, we need to null the po's assigned_voucher_id field
+		if($record->valueChanged('purchase_order_id') && $record->val('purchase_order_id') != NULL){
+			//Pull the purchase order type from the previously saved (snapshot) purchase_order_id field (first character)
+			$po_old = $record->getSnapshot(['purchase_order_id']);
+			$po_type = substr($po_old['purchase_order_id'],0,1);
+				
+			//Open record from appropriate table
+			if($po_type == 'S'){
+				$po_record = df_get_record('purchase_order_service', array('purchase_order_id'=>$po_old['purchase_order_id']));
+			}
+			elseif($po_type == 'I'){
+				$po_record = df_get_record('purchase_order_inventory', array('purchase_order_id'=>$po_old['purchase_order_id']));
+			}
+			else
+				return PEAR::raiseError("something went wrong..." . $po_type,DATAFACE_E_NOTICE);
+				
+			$po_record->setValue('assigned_voucher_id',NULL);
+			$po_record->save();	
+		}
+	}
 
 
 
 	function afterSave(&$record){
+		//After saving the record, assign the selected po's assigned_voucher_id field to the record id
+		if($record->val('purchase_order_id') != NULL){
+			//Pull the purchase order type from the purchase_order_id field (first character)
+			$po_type = substr($record->val('purchase_order_id'),0,1);
 			
-	//	$po_rec = df_get_record('accounts_payable_unassigned_purchase_orders', array('purchase_order_id_full'=>$record->val('purchase_order_id')));
-	//	$po_rec->setValue('assigned_voucher_id',$record->val('voucher_id'));
-	//	$po_rec->save();
-		//return PEAR::raiseError('END',DATAFACE_E_NOTICE);
+			//Open record from appropriate table
+			if($po_type == 'S'){
+				$po_record = df_get_record('purchase_order_service', array('purchase_order_id'=>$record->val('purchase_order_id')));
+			}
+			elseif($po_type == 'I'){
+				$po_record = df_get_record('purchase_order_inventory', array('purchase_order_id'=>$record->val('purchase_order_id')));
+			}
+			else
+				return PEAR::raiseError("something went wrong..." . $po_type,DATAFACE_E_NOTICE);
+				
+			//Assign and Save the record id to the assigned_voucher_id field.
+			$po_record->setValue('assigned_voucher_id',$record->val('voucher_id'));
+			$po_record->save();
+			
+		//	$po_rec = df_get_record('accounts_payable_unassigned_purchase_orders', array('purchase_order_id_full'=>$record->val('purchase_order_id')));
+		//	$po_record->setValue('assigned_voucher_id',$record->val('voucher_id'));
+		//	$po_rec->save();
+		//	return PEAR::raiseError($foo,DATAFACE_E_NOTICE);
+		}
 	}
+	
 }
 ?>
