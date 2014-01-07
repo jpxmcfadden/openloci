@@ -4,47 +4,50 @@ class tables_accounts_payable {
 
 //SQL to create VIEW: (SELECT purchase_order_id, assigned_voucher_id, vendor_id FROM `purchase_order_inventory` WHERE assigned_voucher_id IS NULL) UNION (SELECT purchase_order_id, assigned_voucher_id , vendor_id FROM `purchase_order_service` WHERE assigned_voucher_id IS NULL)
 
+	//Permissions
+	function getPermissions(&$record){
+		//First check if the user is logged in.
+		if( isUser() ){
+			//Check status, determine if record should be uneditable.
+			if ( isset($record) ){
+				if(	$record->val('post_status') == 'Posted')
+					return Dataface_PermissionsTool::getRolePermissions('NO_EDIT_DELETE');
+			}
+		}
+		else
+			return Dataface_PermissionsTool::NO_ACCESS();
+	}
+
 
 	function getTitle(&$record){
-		return 'Invoice ID: ' . $record->val('invoice_id') . ' - Status: ' . $record->val('status');
+		return 'Invoice ID: ' . $record->val('invoice_id') . ' - Status: ' . $record->val('post_status');
 	}
 
 	function titleColumn(){
-		return 'CONCAT("Invoice ID: ", invoice_id," - Status: ",status)';
+		return 'CONCAT("Invoice ID: ", invoice_id," - Status: ",post_status)';
 	}	
 
 	function voucher_date__default(){
 		return date('Y-m-d');
 	}
 
-	//function status__default(){
-	//	return "OPEN";
-	//}
-
-	//function status__renderCell(&$record){
-	//	return '<b>'.$record->strval('status').'</b>';
-	//}
-	
-/*
-	function email__htmlValue(&$record){
-		return '<a href="mailto:' . $record->strval('email') . '">' . $record->strval('email') . '</a>'; 
+	function customer_id__display(&$record){
+		if($record->val('customer_id') == NULL)
+			return "---";
+			
+		$customer_record = df_get_record('customers', array('customer_id'=>$record->val('customer_id')));
+		return $customer_record->val('customer');
 	}
-	
-	//function email__renderCell( &$record ){
-	//	return $record->strval('email').' ( send email)';
-	//}
 
-
-	
-	function section__more(&$record){
-		return array(
-			'content' => '',
-			'class' => 'main',
-			'label' => 'More Details',
-			'order' => 2
-		);
+	function site_id__display(&$record){
+		if($record->val('site_id') == NULL)
+			return "---";
+			
+		$site_record = df_get_record('customer_sites', array('site_id'=>$record->val('site_id')));
+		return $site_record->val('site_address');
 	}
-*/
+
+
 	function section__status(&$record){
 		$app =& Dataface_Application::getInstance(); 
 		$query =& $app->getQuery();
@@ -123,6 +126,27 @@ class tables_accounts_payable {
 			$po_record->setValue('assigned_voucher_id',NULL);
 			$po_record->save();	
 		}
+		
+		//Assign Vendor & Type (& for SPO, Customer / Site) from PO
+		//(no if isset(vendor) is potentially redundant, but easy & always assigns correct vendor in case of user changing the vendor after the PO is selected -- can add some error checking / notification functions here)
+			//Get the currently selected purchase order record
+			$po_type = substr($record->val('purchase_order_id'),0,1);
+			$record->setValue('type',$po_type);
+			
+			if($po_type == 'S')
+				$po_record = df_get_record('purchase_order_service', array('purchase_order_id'=>$record->val('purchase_order_id')));
+			elseif($po_type == 'I')
+				$po_record = df_get_record('purchase_order_inventory', array('purchase_order_id'=>$record->val('purchase_order_id')));
+			else
+				return PEAR::raiseError("something went wrong..." . $po_type,DATAFACE_E_NOTICE);
+			
+			//Assign & Save data
+			$record->setValue('vendor_id',$po_record->val('vendor_id'));
+			if($po_type == 'S'){
+				$cs_record = df_get_record('call_slips', array('call_id'=>$po_record->val('callslip_id')));
+				$record->setValue('customer_id',$cs_record->val('customer_id'));
+				$record->setValue('site_id',$cs_record->val('site_id'));
+			}			
 	}
 
 
@@ -130,8 +154,8 @@ class tables_accounts_payable {
 	function afterSave(&$record){
 		//After saving the record, assign the selected po's assigned_voucher_id field to the record id
 		if($record->val('purchase_order_id') != NULL){
-			//Pull the purchase order type from the purchase_order_id field (first character)
-			$po_type = substr($record->val('purchase_order_id'),0,1);
+			//Pull the purchase order type
+			$po_type = $record->val('type');
 			
 			//Open record from appropriate table
 			if($po_type == 'S'){
