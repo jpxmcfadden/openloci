@@ -5,6 +5,19 @@ class tables_purchase_order_inventory {
 	//Class Variables
 	private $total_item_purchase = array(); //Create a class variable to store the values for modifying the inventory
 
+	//Permissions
+	function getPermissions(&$record){
+		//First check if the user is logged in.
+		if( isUser() ){
+			//Check status, determine if record should be uneditable.
+			if ( isset($record) ){
+				if(	$record->val('post_status') == 'Posted')
+					return Dataface_PermissionsTool::getRolePermissions('NO_EDIT_DELETE');
+			}
+		}
+		else
+			return Dataface_PermissionsTool::NO_ACCESS();
+	}
 
 	function getTitle(&$record){
 		return "Inventory Purchase Order #" . $record->strval('purchase_id');

@@ -5,6 +5,19 @@ class tables_purchase_order_service {
 	//Class Variables
 	private $total_item_purchase = array(); //Create a class variable to store the values for modifying the inventory
 
+	//Permissions
+	function getPermissions(&$record){
+		//First check if the user is logged in.
+		if( isUser() ){
+			//Check status, determine if record should be uneditable.
+			if ( isset($record) ){
+				if(	$record->val('post_status') == 'Posted')
+					return Dataface_PermissionsTool::getRolePermissions('NO_EDIT_DELETE');
+			}
+		}
+		else
+			return Dataface_PermissionsTool::NO_ACCESS();
+	}
 
 	function getTitle(&$record){
 		return "Service Purchase Order #" . $record->strval('purchase_id');
@@ -16,6 +29,11 @@ class tables_purchase_order_service {
 	
 	function purchase_date__default(){
 		return date('Y-m-d');
+	}
+	
+	function callslip_id__display(&$record){
+		$callslip_record = df_get_record('call_slips', array('call_id'=>$record->val('callslip_id')));
+		return $callslip_record->getTitle();
 	}
 	
 	//Add attitional details to the view tab

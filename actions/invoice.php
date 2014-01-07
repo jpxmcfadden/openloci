@@ -16,11 +16,11 @@ class actions_invoice {
 			//header('Location: index.php?-action=login_prompt'); //Go to dashboard.
 
 		//Check if the form has been printed / status change confirmed / which invoices have been selected.
-		$print_inv = $_GET['confirm_print'];
-		$status_change = $_GET['confirm_status'];
-		$status_yes = $_GET['status_yes'];
-		$status_no = $_GET['status_no'];
-		$invoice_selected = $_GET['invoice_selected']; //This is for data persistance
+		$print_inv = isset($_GET['confirm_print']) ? $_GET['confirm_print'] : NULL;
+		$status_change = isset($_GET['confirm_status']) ? $_GET['confirm_status'] : NULL;
+		$status_yes = isset($_GET['status_yes']) ? $_GET['status_yes'] : NULL;
+		$status_no = isset($_GET['status_no']) ? $_GET['status_no'] : NULL;
+		$invoice_selected = isset($_GET['invoice_selected']) ? $_GET['invoice_selected'] : NULL; //This is for data persistance
 
 		//This will always be true, unless a user selects "no" in the confirmation popup for either option on the Status Change page. In that case, we don't need to preload all this data.
 		if(!isset($status_change) && !isset($status_no) && !isset($status_no)){
@@ -65,7 +65,7 @@ class actions_invoice {
 				$invoice_headers[$i]['site'] = $site['site_address'];
 
 				//Create invoices on print confirm
-				if($print_inv == "yes" && $_GET[$record->val('call_id')]=="on"){
+				if($print_inv == "yes" && isset($_GET[$record->val('call_id')]) && $_GET[$record->val('call_id')]=="on"){
 
 					//Save the selected invoices into a comma separated string - for use later with status changes
 					$invoice_selected .= $record->val('call_id').',';
@@ -311,13 +311,13 @@ function billing_materials(&$record, $nc = NULL){
 				//Pull the item name / cost out of the 'inventory' table
 				$rec = df_get_record('inventory', array('inventory_id'=>$cs_ir['inventory_id']));
 
-				$subtotal_sale = $cs_ir['sell_cost'] * $cs_ir['quantity'];
+				$subtotal_sale = $cs_ir['sale_price'] * $cs_ir['quantity'];
 
 				$childString .= '<tr>' .
 									'</td><td>' . $rec->display('item_name') .
 									'</td><td style="text-align: right">' . $cs_ir['quantity'];
 				if($nc!=1)
-					$childString .=	'</td><td style="text-align: right">' . $cs_ir['sell_cost'] .
+					$childString .=	'</td><td style="text-align: right">' . $cs_ir['sale_price'] .
 									'</td><td style="text-align: right">' . number_format($subtotal_sale,2);
 									
 				$childString .=		'</td>' .
@@ -338,6 +338,8 @@ function billing_materials(&$record, $nc = NULL){
 
 
 function billing_hours(&$record){
+	$childString = '';
+
 
 	//Hours Worked
 		$childString .= '<b><u>Hours</u></b><br><br>';
