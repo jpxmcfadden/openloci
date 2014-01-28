@@ -1,0 +1,47 @@
+{use_macro file="Dataface_Main_Template.html"}
+	{fill_slot name="main_column"}
+
+		<link rel="stylesheet" type="text/css" media="all" href="/openloci/../xataface/lib/jscalendar/calendar-win2k-2.css">
+		<script type="text/javascript" src="/openloci/../xataface/lib/jscalendar/calendar.js"></script>
+		<script type="text/javascript" src="/openloci/../xataface/lib/jscalendar/lang/calendar-en.js"></script>
+		<script type="text/javascript" src="/openloci/../xataface/lib/jscalendar/calendar-setup.js"></script>
+
+		<h1>Generate Contract Call Slips</h1>
+		<br>
+
+		<form name="select_date">
+			<input type="hidden" name="-action" value="generate_payroll">
+	
+			Select Payroll Period
+			<input df:cloneable="1" name="selected_date" id="f-calendar-field-1" type="text" value={$default_date}>
+			<a df:cloneable="1" href="#" id="f-calendar-trigger-1">
+				<img align="middle" border="0" src="/openloci/../xataface/lib/jscalendar/img.gif" alt="">
+			</a>
+
+			{literal}
+			<script type="text/javascript">
+				Calendar.setup({
+					"inputField":"f-calendar-field-1",
+					"button":"f-calendar-trigger-1",
+					"ifFormat":"%Y-%m-%d",
+					"daFormat":"%Y/%m/%d",
+					"firstDay":0,
+					"showsTime":false,
+					"showOthers":true,
+					"timeFormat":12,
+					"weekNumbers":true
+				});
+			</script>
+			{/literal}			
+
+			<br>
+			<span class="formHelp" style="text-indent: 16em;">*Default is <b>last</b> week</span>
+			
+			<br><br>
+			
+			<input type="submit" value="Submit">
+			
+		</form>
+
+	{/fill_slot}
+{/use_macro}
