@@ -38,19 +38,19 @@ function myRole(){
 
 function default_location_state(){
 	$app =& Dataface_Application::getInstance();
-	$record = df_get_record('_system_company_info', array('id'=>1));
+	$record = df_get_record('_company_info', array('id'=>1));
 	return $record->val('state');
 }
 
 function company_name(){
 	$app =& Dataface_Application::getInstance();
-	$record = df_get_record('_system_company_info', array('id'=>1));
+	$record = df_get_record('_company_info', array('id'=>1));
 	return $record->val('name');
 }
 
 function company_address(){
 	$app =& Dataface_Application::getInstance();
-	$record = df_get_record('_system_company_info', array('id'=>1));
+	$record = df_get_record('_company_info', array('id'=>1));
 	$c_address['address'] = $record->val('address');
 	$c_address['city'] = $record->val('city');
 	$c_address['state'] = $record->val('state');
@@ -60,25 +60,25 @@ function company_address(){
 
 function company_phone(){
 	$app =& Dataface_Application::getInstance();
-	$record = df_get_record('_system_company_info', array('id'=>1));
+	$record = df_get_record('_company_info', array('id'=>1));
 	return $record->val('phone');
 }
 
 function company_fax(){
 	$app =& Dataface_Application::getInstance();
-	$record = df_get_record('_system_company_info', array('id'=>1));
+	$record = df_get_record('_company_info', array('id'=>1));
 	return $record->val('fax');
 }
 
 function company_county(){
 	$app =& Dataface_Application::getInstance();
-	$record = df_get_record('_system_company_info', array('id'=>1));
+	$record = df_get_record('_company_info', array('id'=>1));
 	$record_county = df_get_record('admin_county_tax', array('county_id'=>$record->val('county')));
 	return $record_county->val('county');
 }
 
 function company_webaddress(){
 	$app =& Dataface_Application::getInstance();
-	$record = df_get_record('_system_company_info', array('id'=>1));
+	$record = df_get_record('_company_info', array('id'=>1));
 	return $record->val('web_address');
 }
