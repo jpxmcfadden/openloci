@@ -2,6 +2,20 @@
 
 class tables_employees {
 
+	//Set timelog edit permissions to use the timelog table's permission settings (unset related record permissions)
+	function rel_time_logs__permissions(&$record){
+		$perms = &Dataface_PermissionsTool::getRolePermissions(myRole());
+		unset($perms['edit related records']);
+		unset($perms['delete related record']);
+	}
+
+//function getPermissions($record){
+//	$perms = &Dataface_PermissionsTool::getRolePermissions(myRole());
+//	unset($perms['edit related records']);
+//	unset($perms['delete related record']);
+//	return Dataface_PermissionsTool::getRolePermissions(myRole());
+//}	
+
 	function getTitle(&$record){
 		return $record->val('first_name').' '.$record->val('last_name');
 	}
@@ -20,17 +34,17 @@ class tables_employees {
 		return default_location_state();
 	}
 
-	function regular_hours__default(){
-		return "40.00";
-	}
+//	function regular_hours__default(){
+//		return "40.00";
+//	}
 
 	function full_part__default(){
 		return "FT";
 	}
 
-	function pay_period__default(){
-		return "WK";
-	}
+//	function pay_period__default(){
+//		return "WK";
+//	}
 
 	function direct_deposit__default(){
 		return "N";
