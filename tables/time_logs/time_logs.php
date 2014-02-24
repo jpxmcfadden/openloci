@@ -3,6 +3,29 @@
 class tables_time_logs {
 	private $rate_type;
 
+	//Permissions
+		function getPermissions(&$record){
+		
+		//echo "<pre>";
+		//print_r($record->vals());
+		//echo "</pre>";
+
+		
+			//First check if the user is logged in.
+			if( isUser() ){
+				//Check status, determine if record should be uneditable.
+				if ( isset($record) ){
+					if(	$record->val('status') == "Locked")
+						return Dataface_PermissionsTool::getRolePermissions('NO_EDIT_DELETE');
+				}
+				return Dataface_PermissionsTool::getRolePermissions(myRole());
+			}
+			else
+				return Dataface_PermissionsTool::NO_ACCESS();
+		}
+	
+	
+	
 	function block__after_custom_rph_widget(){
 		$app =& Dataface_Application::getInstance();
 		$record =& $app->getRecord();

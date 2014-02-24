@@ -36,6 +36,13 @@ class tables_call_slips {
 				);
 		}
 
+		//Set timelog edit permissions to use the timelog table's permission settings (unset related record permissions)
+		function rel_time_logs__permissions(&$record){
+			$perms = &Dataface_PermissionsTool::getRolePermissions(myRole());
+			unset($perms['edit related records']);
+			unset($perms['delete related record']);
+		}
+
 
 	//Set the record title
 		function getTitle(&$record){
