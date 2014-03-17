@@ -1,7 +1,7 @@
 <?php
 
 class tables_payroll_income {
-
+	
 	function valuelist__repeat_list(){
 		$payroll_config = df_get_record('_payroll_config', array('config_id'=>1));
 				
