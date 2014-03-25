@@ -8,6 +8,7 @@
 	if ( !isset($_REQUEST['-sort']) and @$_REQUEST['-table'] == 'purchase_orders' ){ $_REQUEST['-sort'] = $_GET['-sort'] = 'purchase_id desc'; }
 	if ( !isset($_REQUEST['-sort']) and @$_REQUEST['-table'] == 'chart_of_accounts' ){ $_REQUEST['-sort'] = $_GET['-sort'] = 'account_number'; }
 	if ( !isset($_REQUEST['-sort']) and @$_REQUEST['-table'] == 'general_ledger' ){ $_REQUEST['-sort'] = $_GET['-sort'] = 'ledger_id desc'; }
+	if ( !isset($_REQUEST['-sort']) and @$_REQUEST['-table'] == 'payroll_period' ){ $_REQUEST['-sort'] = $_GET['-sort'] = 'payroll_period_id desc'; }
 
 
 		
