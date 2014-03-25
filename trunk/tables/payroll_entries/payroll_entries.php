@@ -8,12 +8,16 @@ class tables_payroll_entries {
 	function getTitle(&$record){
 		$employee_record = df_get_record('employees', array("employee_id"=>$record->val("employee_id")));
 		$payroll_period_record = df_get_record('payroll_period', array("payroll_period_id"=>$record->val("payroll_period_id")));
-		return $employee_record->val('first_name').' '.$employee_record->val('last_name').' - Payroll Period: '. $payroll_period_record->strval('period_start');
+			
+		return $employee_record->val('first_name').' '.$employee_record->val('last_name').' - Payroll Period: '. $payroll_period_record->strval('period_start');;
 	}
 
-//	function titleColumn(){
-//		return 'CONCAT(last_name,", ",first_name)';
+//	function block__before_record_actions(){
+//		//If this is being edited coming from the review process, provide a direct link back.
+//		if(isset($_GET['-review']))
+//			echo '<a href="index.php?-action=browse&-table=payroll_period&-recordid=' . $_GET['-review'] . '">Return to Payroll Review</a>';
 //	}
+	
 
 //Use this to set the default filter for payroll period.
 /*	function init(&$table){
@@ -112,6 +116,17 @@ class tables_payroll_entries {
 
 			} //End foreach
 			
+			//Pull all Pre-Tax Deductions, subtract from taxable income.
+			$addition_records = df_get_records_array('payroll_entries_deductions',array('payroll_entry_id'=>$record->val('payroll_entry_id'),'pre_tax'=>1));
+			foreach($addition_records as $addition_record){
+				//Subtract from taxable income.
+				$total_taxable_income -= ($addition_record->val('amount_base') + ($total_income * $addition_record->val('amount_multiply')));
+				
+				//Sanity check and fix
+				if($total_taxable_income < 0)
+					$total_taxable_income = 0;
+			}
+			
 			//End Table
 			$childString .= '<tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>';
 			$childString .= '<tr><td><b>Total Income</b></td><td></td><td></td><td></td><td></td><td style="text-align: right"><b>$'.number_format($total_income,2).'</b></td></tr>';
@@ -130,7 +145,7 @@ class tables_payroll_entries {
 			$childString .= '<br><br><b><u>Deductions</u></b><br><br>';
 			$childString .= '<table class="view_add"><tr>
 								<th>Description</th>
-								<th>Post Tax</th>
+								<th>Pre Tax</th>
 								<th>Amount Base</th>
 								<th>Amount Percent</th>
 								<th>Total</th>
@@ -148,7 +163,7 @@ class tables_payroll_entries {
 				$childString .= '<td>' . $type_record->val('name') . '</td>';
 
 				//Post Tax
-				if($addition_record->val('post_tax') == 1)
+				if($addition_record->val('pre_tax') == 1)
 					$childString .= "<td>Yes</td>";
 				else
 					$childString .= "<td></td>";
@@ -203,9 +218,9 @@ class tables_payroll_entries {
 				//Amount - Multiply
 				if($addition_record->val('amount_multiply') != null){
 					$childString .= '<td style="text-align: right">' . $addition_record->val('amount_multiply') . '</td>';
-					if($addition_record->val('post_tax') == 1)
-						$subtotal += $total_income * $addition_record->val('amount_multiply');
-					else
+					//if($addition_record->val('pre_tax') == 1)
+					//	$subtotal += $total_income * $addition_record->val('amount_multiply');
+					//else
 						$subtotal += $total_taxable_income * $addition_record->val('amount_multiply');
 				}
 				else
@@ -229,7 +244,7 @@ class tables_payroll_entries {
 		
 		//This may end up in a $0.01 difference between the above totals due to rounding.
 		$childString .= '<br><br>';
-		$childString .= '<table class="view_add"><tr><td style="border=0"></td><td><b>Net Pay:</b> $' . number_format(($total_income) - ($total_deductions),2) . "</td></tr></table><br><br>";
+		$childString .= '<table class="view_add"><tr><td style="border=0"><b>Net Pay:</b> $' . number_format(($total_income) - ($total_deductions),2) . "</td></tr></table><br><br>";
 
 		
 		return array(
