@@ -172,7 +172,7 @@ class actions_generate_payroll {
 					if(isset($payroll_data[$payroll_entry]['overtime_hours'])){
 						$entry = "pay_ot";
 						$payroll_data[$payroll_entry]['income'][$entry]['employee'] = $employee_id;
-						$payroll_data[$payroll_entry]['income'][$entry]['type'] = $payroll_config["wage_type"];
+						$payroll_data[$payroll_entry]['income'][$entry]['type'] = $payroll_config["wage_overtime_type"];
 						$payroll_data[$payroll_entry]['income'][$entry]['taxable'] = 1;
 						$payroll_data[$payroll_entry]['income'][$entry]['hours'] = $payroll_data[$payroll_entry]['overtime_hours'];
 						$payroll_data[$payroll_entry]['income'][$entry]['amount_base'] = "";
@@ -187,6 +187,7 @@ class actions_generate_payroll {
 						$payroll_data[$payroll_entry]['income'][$entry]['employee'] = $item_entry->val('employee_id');
 						$payroll_data[$payroll_entry]['income'][$entry]['type'] = $item_entry->val('type');
 						$payroll_data[$payroll_entry]['income'][$entry]['taxable'] = $entry_type->val('taxable');
+						$payroll_data[$payroll_entry]['income'][$entry]['hours'] = '';
 						$payroll_data[$payroll_entry]['income'][$entry]['amount_base'] = $item_entry->val('amount_base');
 						$payroll_data[$payroll_entry]['income'][$entry]['amount_multiply'] = $item_entry->val('amount_multiply');
 						$payroll_data[$payroll_entry]['income'][$entry]['account_number'] = $entry_type->val('account_number');
@@ -195,29 +196,26 @@ class actions_generate_payroll {
 				//Deduction Entries
 				
 					//FICA Deduction Entry
-						//***do this in review, so shows 0 otherwise***
-						//Check Annual Limit & Compare it to YTD - If employee has paid < the annual limit, create a deduction entry.
-						//$fica_annual_limit = $payroll_config["fica_annual_wage_limit"] * $payroll_config["fica_percent"];
-						//if($employee->val('ytd_fica') < $fica_annual_limit){
-						//}
 					$entry = "fica";
-						$entry_type = df_get_record('payroll_deductions_type', array("type_id"=>$payroll_config["fica_type"]));
+						$entry_type = df_get_record('payroll_deductions_type', array("type_id"=>$payroll_config["fica_deduction_type"]));
 						$payroll_data[$payroll_entry]['deductions'][$entry]['employee'] = $employee_id;
-						$payroll_data[$payroll_entry]['deductions'][$entry]['type'] = $payroll_config["fica_type"];
+						$payroll_data[$payroll_entry]['deductions'][$entry]['type'] = $payroll_config["fica_deduction_type"];
 						$payroll_data[$payroll_entry]['deductions'][$entry]['pre_tax'] = '';
 						$payroll_data[$payroll_entry]['deductions'][$entry]['amount_base'] = '';
 						$payroll_data[$payroll_entry]['deductions'][$entry]['amount_multiply'] = $payroll_config["fica_percent"];
 						$payroll_data[$payroll_entry]['deductions'][$entry]['account_number'] = $entry_type->val('account_number');
+						$payroll_data[$payroll_entry]['deductions'][$entry]['annual_limit'] = $entry_type->val('annual_limit');
 						
 					//Medicare Deduction Entry
 					$entry = "medicare";
-						$entry_type = df_get_record('payroll_deductions_type', array("type_id"=>$payroll_config["medicare_type"]));
+						$entry_type = df_get_record('payroll_deductions_type', array("type_id"=>$payroll_config["medicare_deduction_type"]));
 						$payroll_data[$payroll_entry]['deductions'][$entry]['employee'] = $employee_id;
-						$payroll_data[$payroll_entry]['deductions'][$entry]['type'] = $payroll_config["medicare_type"];
+						$payroll_data[$payroll_entry]['deductions'][$entry]['type'] = $payroll_config["medicare_deduction_type"];
 						$payroll_data[$payroll_entry]['deductions'][$entry]['pre_tax'] = '';
 						$payroll_data[$payroll_entry]['deductions'][$entry]['amount_base'] = '';
 						$payroll_data[$payroll_entry]['deductions'][$entry]['amount_multiply'] = $payroll_config["medicare_percent"];
 						$payroll_data[$payroll_entry]['deductions'][$entry]['account_number'] = $entry_type->val('account_number');
+						$payroll_data[$payroll_entry]['deductions'][$entry]['annual_limit'] = $entry_type->val('annual_limit');
 						
 					//Medicare Extra
 					
@@ -231,6 +229,7 @@ class actions_generate_payroll {
 						$payroll_data[$payroll_entry]['deductions'][$entry]['amount_base'] = '';
 						$payroll_data[$payroll_entry]['deductions'][$entry]['amount_multiply'] = '';
 						$payroll_data[$payroll_entry]['deductions'][$entry]['account_number'] = $entry_type->val('account_number');
+						$payroll_data[$payroll_entry]['deductions'][$entry]['annual_limit'] = $entry_type->val('annual_limit');
 					
 					//State Income Tax
 					$entry = "state";
@@ -241,6 +240,7 @@ class actions_generate_payroll {
 						$payroll_data[$payroll_entry]['deductions'][$entry]['amount_base'] = '';
 						$payroll_data[$payroll_entry]['deductions'][$entry]['amount_multiply'] = '';
 						$payroll_data[$payroll_entry]['deductions'][$entry]['account_number'] = $entry_type->val('account_number');
+						$payroll_data[$payroll_entry]['deductions'][$entry]['annual_limit'] = $entry_type->val('annual_limit');
 
 					//ADD CITY Income Tax HERE
 						
@@ -254,26 +254,31 @@ class actions_generate_payroll {
 						$payroll_data[$payroll_entry]['deductions'][$entry]['amount_base'] = $item_entry->val('amount_base');
 						$payroll_data[$payroll_entry]['deductions'][$entry]['amount_multiply'] = $item_entry->val('amount_multiply');
 						$payroll_data[$payroll_entry]['deductions'][$entry]['account_number'] = $entry_type->val('account_number');
+						$payroll_data[$payroll_entry]['deductions'][$entry]['annual_limit'] = $entry_type->val('annual_limit');
 					}
 					
 				//Contribution Entries  -- Auto Add: FICA, Medicare, FUTA, SUTA
 					//FICA Contribution Entry
 					$entry = "fica";
-						$entry_type = df_get_record('payroll_contributions_type', array("type_id"=>$payroll_config["fica_type"]));
+						$entry_type = df_get_record('payroll_contributions_type', array("type_id"=>$payroll_config["fica_contribution_type"]));
 						$payroll_data[$payroll_entry]['contributions'][$entry]['employee'] = $employee_id;
-						$payroll_data[$payroll_entry]['contributions'][$entry]['type'] = $payroll_config["fica_type"];
+						$payroll_data[$payroll_entry]['contributions'][$entry]['type'] = $payroll_config["fica_contribution_type"];
 						$payroll_data[$payroll_entry]['contributions'][$entry]['amount_base'] = '';
 						$payroll_data[$payroll_entry]['contributions'][$entry]['amount_multiply'] = $payroll_config["fica_percent"];
-//						$payroll_data[$payroll_entry]['contributions'][$entry]['account_number'] = $entry_type->val('account_number');
+						$payroll_data[$payroll_entry]['contributions'][$entry]['account_number_liability'] = $entry_type->val('account_number_liability');
+						$payroll_data[$payroll_entry]['contributions'][$entry]['account_number_expense'] = $entry_type->val('account_number_expense');
+						$payroll_data[$payroll_entry]['contributions'][$entry]['annual_limit'] = $entry_type->val('annual_limit');
 
 					//Medicare Contribution Entry
 					$entry = "medicare";
-						$entry_type = df_get_record('payroll_contributions_type', array("type_id"=>$payroll_config["medicare_type"]));
+						$entry_type = df_get_record('payroll_contributions_type', array("type_id"=>$payroll_config["medicare_contribution_type"]));
 						$payroll_data[$payroll_entry]['contributions'][$entry]['employee'] = $employee_id;
-						$payroll_data[$payroll_entry]['contributions'][$entry]['type'] = $payroll_config["medicare_type"];
+						$payroll_data[$payroll_entry]['contributions'][$entry]['type'] = $payroll_config["medicare_contribution_type"];
 						$payroll_data[$payroll_entry]['contributions'][$entry]['amount_base'] = '';
 						$payroll_data[$payroll_entry]['contributions'][$entry]['amount_multiply'] = $payroll_config["medicare_percent"];
-//						$payroll_data[$payroll_entry]['contributions'][$entry]['account_number'] = $entry_type->val('account_number');
+						$payroll_data[$payroll_entry]['contributions'][$entry]['account_number_liability'] = $entry_type->val('account_number_liability');
+						$payroll_data[$payroll_entry]['contributions'][$entry]['account_number_expense'] = $entry_type->val('account_number_expense');
+						$payroll_data[$payroll_entry]['contributions'][$entry]['annual_limit'] = $entry_type->val('annual_limit');
 
 					//FUTA Contribution Entry
 					$entry = "futa";
@@ -283,7 +288,9 @@ class actions_generate_payroll {
 						$payroll_data[$payroll_entry]['contributions'][$entry]['type'] = $uta_record->val("type_id");
 						$payroll_data[$payroll_entry]['contributions'][$entry]['amount_base'] = '';
 						$payroll_data[$payroll_entry]['contributions'][$entry]['amount_multiply'] =  $uta_record->val("percent");
-//						$payroll_data[$payroll_entry]['contributions'][$entry]['account_number'] = $entry_type->val('account_number');
+						$payroll_data[$payroll_entry]['contributions'][$entry]['account_number_liability'] = $entry_type->val('account_number_liability');
+						$payroll_data[$payroll_entry]['contributions'][$entry]['account_number_expense'] = $entry_type->val('account_number_expense');
+						$payroll_data[$payroll_entry]['contributions'][$entry]['annual_limit'] = $entry_type->val('annual_limit');
 					
 					//SUTA Contribution Entry
 					$entry = "suta";
@@ -293,8 +300,10 @@ class actions_generate_payroll {
 						$payroll_data[$payroll_entry]['contributions'][$entry]['type'] = $uta_record->val("type_id");
 						$payroll_data[$payroll_entry]['contributions'][$entry]['amount_base'] = '';
 						$payroll_data[$payroll_entry]['contributions'][$entry]['amount_multiply'] =  $uta_record->val("percent");
-//						$payroll_data[$payroll_entry]['contributions'][$entry]['account_number'] = $entry_type->val('account_number');
-				
+						$payroll_data[$payroll_entry]['contributions'][$entry]['account_number_liability'] = $entry_type->val('account_number_liability');
+						$payroll_data[$payroll_entry]['contributions'][$entry]['account_number_expense'] = $entry_type->val('account_number_expense');
+						$payroll_data[$payroll_entry]['contributions'][$entry]['annual_limit'] = $entry_type->val('annual_limit');
+						
 					//Contributions
 					$item_entries = df_get_records_array('payroll_contributions', $query);
 					foreach($item_entries as $entry => $item_entry){
@@ -304,19 +313,21 @@ class actions_generate_payroll {
 						$payroll_data[$payroll_entry]['contributions'][$entry]['type'] = $item_entry->val('type');
 						$payroll_data[$payroll_entry]['contributions'][$entry]['amount_base'] = $item_entry->val('amount_base');
 						$payroll_data[$payroll_entry]['contributions'][$entry]['amount_multiply'] = $item_entry->val('amount_multiply');
-						$payroll_data[$payroll_entry]['contributions'][$entry]['account_number'] = $entry_type->val('account_number');
+						$payroll_data[$payroll_entry]['contributions'][$entry]['account_number_liability'] = $entry_type->val('account_number_liability');
+						$payroll_data[$payroll_entry]['contributions'][$entry]['account_number_expense'] = $entry_type->val('account_number_expense');
+						$payroll_data[$payroll_entry]['contributions'][$entry]['annual_limit'] = $entry_type->val('annual_limit');
 					}
 			}
 
-echo "<pre>";
-print_r($payroll_data);
-echo "</pre>";
+//echo "<pre>";
+//print_r($payroll_data);
+//echo "</pre>";
 //echo "The payroll period from $period_start to $period_end has been created.<br>";
 
 			//Create new payroll period record
 			$payroll_period_record = new Dataface_Record('payroll_period', array()); //Create new record
 			$payroll_period_record->setValues(array('period_start'=>$period_start,'period_end'=>$period_end)); //Set data
-//			$check = $payroll_period_record->save(null, true); //Check Permissions & Save
+			$check = $payroll_period_record->save(null, true); //Check Permissions & Save
 
 
 			$payroll_entry = 0;
@@ -329,7 +340,7 @@ echo "</pre>";
 													'employee_id'=>$payroll_data[$payroll_entry]["employee_id"],
 													'period_number'=>$payroll_data["month_period_number"]
 													));
-//				$check = $payroll_entry_record->save(null, true); //Check Permissions & Save
+				$check = $payroll_entry_record->save(null, true); //Check Permissions & Save
 
 				//Create Contribution / Deduction / Income Entry Records
 				$sections = array('contributions', 'deductions', 'income');
@@ -343,17 +354,31 @@ echo "</pre>";
 																'employee_id'=>$payroll_data[$payroll_entry]["employee_id"],
 																'type'=>$section_entry['type'],
 																'amount_base'=>$section_entry['amount_base'],
-																'amount_multiply'=>$section_entry['amount_multiply'],
-																'account_number'=>$section_entry['account_number']
+																'amount_multiply'=>$section_entry['amount_multiply']
 																));
 							if($section == "income"){
-								$payroll_entry_section_record->setValues(array('taxable'=>$section_entry['taxable']));
-								$payroll_entry_section_record->setValues(array('hours'=>$section_entry['hours']));
+								$payroll_entry_section_record->setValues(array(
+																'taxable'=>$section_entry['taxable'],
+																'hours'=>$section_entry['hours'],
+																'account_number'=>$section_entry['account_number']
+																));
 							}
-							else if($section == "deductions")
-								$payroll_entry_section_record->setValues(array('post_tax'=>$section_entry['post_tax']));
-
-//							$check = $payroll_entry_section_record->save(null, true); //Check Permissions & Save
+							else if($section == "deductions"){
+								$payroll_entry_section_record->setValues(array(
+																'pre_tax'=>$section_entry['pre_tax'],
+																'annual_limit'=>$section_entry['annual_limit'],
+																'account_number'=>$section_entry['account_number']
+																));
+							}
+							else if($section ==  "contributions"){
+								$payroll_entry_section_record->setValues(array(
+																'annual_limit'=>$section_entry['annual_limit'],
+																'account_number_liability'=>$section_entry['account_number_liability'],
+																'account_number_expense'=>$section_entry['account_number_expense']
+																));
+							}
+							
+							$check = $payroll_entry_section_record->save(null, true); //Check Permissions & Save
 						}
 					}
 				}
@@ -363,11 +388,10 @@ echo "</pre>";
 			}
 			
 			//Go back to Dashboard w/ success message
-			$msg = "The payroll period from $period_start to $period_end has been created. Click here to proceed to ...";
-			header('Location: index.php?-action=dashboard'.'&--msg='.urlencode($msg)); //Go to dashboard.
+			$msg = "The payroll period from $period_start to $period_end has been created. Please review and confirm to post.";
+			header('Location: index.php?-action=browse&-table=payroll_period'.'&--msg='.urlencode($msg)); //Go to dashboard.
 
-			df_display(array("default_date" => $period_start), 'generate_payroll.html');
-
+			//df_display(array("default_date" => $period_start), 'generate_payroll.html');
 
 		}
 	}

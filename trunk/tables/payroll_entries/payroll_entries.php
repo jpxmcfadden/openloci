@@ -12,12 +12,63 @@ class tables_payroll_entries {
 		return $employee_record->val('first_name').' '.$employee_record->val('last_name').' - Payroll Period: '. $payroll_period_record->strval('period_start');;
 	}
 
-//	function block__before_record_actions(){
-//		//If this is being edited coming from the review process, provide a direct link back.
-//		if(isset($_GET['-review']))
-//			echo '<a href="index.php?-action=browse&-table=payroll_period&-recordid=' . $_GET['-review'] . '">Return to Payroll Review</a>';
-//	}
+	//Permissions
+	function getPermissions(&$record){
+		//First check if the user is logged in.
+		if( isUser() ){
+			//Check status, determine if record should be uneditable.
+			if ( isset($record) ){
+				if(	$record->val('status') == "Closed")
+					return Dataface_PermissionsTool::getRolePermissions('NO_EDIT_DELETE');
+			}
+			return Dataface_PermissionsTool::getRolePermissions(myRole());
+		}
+		else
+			return Dataface_PermissionsTool::NO_ACCESS();
+	}
+
+	//If the record has been set to "Posted" don't allow the income and deduction form fields to be edited.
+	function init(&$table){
+		$app =& Dataface_Application::getInstance(); 
+		$record =& $app->getRecord();
+
+		if($record->val("status") ==  "Posted"){
+		
+			$myfield =& $table->getField('income');
+			$myfield['widget']['type'] = 'hidden';
+			
+			$myfield =& $table->getField('deductions');
+			$myfield['widget']['type'] = 'hidden';
+		}
+	}	
 	
+	//If coming from Payroll Review -	1) set a session variable which will be used to determine where to go in after_action_edit(),
+	//									2) if coming from the review page & the record has been saved, go back to the review page.
+	function block__before_form(){
+		if(isset($_GET['--saved']) && isset($_GET['-review'])){
+		//	echo $_GET['-review'];
+			$msg = "Entry successfully saved.";
+			header('Location: index.php?-action=browse&-table=payroll_period&-recordid=' . $_GET['-review'].'&--msg='.urlencode($msg));
+		}
+		elseif(isset($_GET['-review'])){
+			$_SESSION['review']=$_GET['-review'];
+		//	//echo $_SESSION['review'];
+		}
+	}
+
+	function after_action_edit($params=array()){
+		//If this is being edited coming from the review process, don't go back to "view" after editing, otherwise follow normal behavior.
+		if(isset($_SESSION['review'])){
+			$recordid = $_SESSION['review'];
+			unset($_SESSION['review']);
+		}
+		else{
+			$record =& $params['record'];
+			header('Location: '.$record->getURL('-action=view').'&--msg='.urlencode('Record successfully added.'));
+			exit;
+		}
+	}
+
 
 //Use this to set the default filter for payroll period.
 /*	function init(&$table){
@@ -162,7 +213,7 @@ class tables_payroll_entries {
 				//Description
 				$childString .= '<td>' . $type_record->val('name') . '</td>';
 
-				//Post Tax
+				//Pre Tax
 				if($addition_record->val('pre_tax') == 1)
 					$childString .= "<td>Yes</td>";
 				else
@@ -172,14 +223,14 @@ class tables_payroll_entries {
 					//Check if type is Federal Income Tax
 					if($addition_record->val('type') == $payroll_config->val('federal_type')){
 						//Exemption Amount - Where state is null = federal
-						$exemption_record = df_get_record("_payroll_config_tax_exemptions",array("state"=>"="));
+						$exemption_record = df_get_record("_payroll_config_tax_exemptions",array("state"=>"FED"));
 						$exemption_amount = $exemption_record->val($payroll_config->val('payroll_period')) * $employee_record->val('exemptions_federal');
 
 						//Total taxable income minus exemptions
 						$taxable_income_minus_exemptions = $total_taxable_income - $exemption_amount;
 
 						//Calculate Income Tax
-						$subtotal = calculate_tax_table($taxable_income_minus_exemptions, $employee_record->val("marital_status"));
+						$subtotal = calculate_tax_table($taxable_income_minus_exemptions, $employee_record->val("marital_status"), "FED");
 
 						//Check for modifications and add in
 						if($addition_record->val('amount_base') != null)
@@ -320,8 +371,8 @@ class tables_payroll_entries {
 	
 }
 
-//Calculate the federal/state/city tax using the tax tables - City as yet to be implemented
-function calculate_tax_table($taxable_income_minus_exemptions, $marital_status, $state = '='){
+//Calculate the federal/state/city tax using the tax tables - City as yet to be implemented (Default = Federal)
+function calculate_tax_table($taxable_income_minus_exemptions, $marital_status, $state = 'FED'){
 
 	$payroll_config = df_get_record('_payroll_config', array('config_id'=>1));
 	$payroll_period = $payroll_config->val('payroll_period');

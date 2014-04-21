@@ -1,0 +1,52 @@
+{use_macro file="Dataface_Main_Template.html"}
+	{fill_slot name="main_column"}
+
+		<h1>Close Payroll</h1>
+		<br><br>
+
+		<form name="close_month">
+			<input type="hidden" name="-action" value="close_payroll">
+	
+			{if $payroll_months}
+				<p>The following months have posted payroll periods but have not yet been closed.</p>
+				<p>Please select the Month to Close:
+					<select name="payroll_month">
+						<option value="">Please Select...</option>
+						{foreach from=$payroll_months key=i item=month}
+							<option value="{$month}" {*if $i == 0}selected="selected"{/if*}>{$month}</option>
+						{/foreach}
+					</select>
+				</p>
+				<input type="submit" value="Submit">
+			{elseif $periods}
+				<p>The following Payroll Periods will be closed for the month of {$month}:</p>
+					<table class="listing resultList">
+						<tr>
+							<th>Payroll Period ID</th>
+							<th>Payroll Start Date</th>
+							<th>Payroll End Date</th>
+							<th>Date Posted</th>
+						</tr>
+					{foreach from=$periods item=period}
+						<tr>
+							<td>{$period.payroll_period_id}</td>
+							<td>{$period.period_start}</td>
+							<td>{$period.period_end}</td>
+							<td>{$period.post_date}</td>
+						</tr>
+					{/foreach}
+					</table>
+					
+				<input type="hidden" name="payroll_month" value={$month}>
+				<input type="hidden" name="confirm" value="confirm">
+				<input type="submit" value="Confirm">
+				
+			{else}
+				<p>There is nothing to do.</p>
+			{/if}
+				
+			
+		</form>
+
+	{/fill_slot}
+{/use_macro}
