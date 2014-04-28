@@ -12,22 +12,36 @@ class tables_call_slips {
 			if( isUser() ){
 				//Check status, determine if record should be uneditable.
 				if ( isset($record) ){
-					if(	$record->val('status') == 'RDY' ||
-						$record->val('status') == 'SNT' ||
-						$record->val('status') == 'PPR' ||
-						$record->val('status') == 'PRE' ||
-						$record->val('status') == 'CMP'
-					)
-					//return Dataface_PermissionsTool::getRolePermissions('NO_EDIT_DELETE');
-					return Dataface_PermissionsTool::getRolePermissions('MASTER'); //This needs to be changed - When saving with the above line, it doesn't let save if converting to RDY etc. Need button anyway.
+					//return Dataface_PermissionsTool::getRolePermissions(myRole());
+					//if(	$record->val('status') == 'RDY' ||
+					//	$record->val('status') == 'SNT' ||
+					//	$record->val('status') == 'PPR' ||
+					//	$record->val('status') == 'PRE' ||
+					//	$record->val('status') == 'CMP'
+					//)
+					if($record->val('status') != 'NCO' && $record->val('status') != 'CMP')
+						return Dataface_PermissionsTool::getRolePermissions('NO_EDIT_DELETE');
+						//return Dataface_PermissionsTool::getRolePermissions('MASTER'); //This needs to be changed - When saving with the above line, it doesn't let save if converting to RDY etc. Need button anyway.
 				}
 			}
 			else
 				return Dataface_PermissionsTool::NO_ACCESS();
 		}
+
+//		function __field__permissions($record){
+//			if(isset($record) && $record->val('status') != 'NCO')
+//			$perms = &Dataface_PermissionsTool::getRolePermissions(myRole());
+//			unset($perms['edit']);
+//			return array("edit" => 0);
+//		}
 		
+//		function status__permissions(&$record){
+//			return array("edit"=>1);
+//		}
+
 		function rel_call_slip_purchase_orders__permissions(&$record){
-			return array(
+//		function rel_call_slip_inventory__permissions(&$record){
+				return array(
 					'add new related record'=>0,
 					'add existing related record'=>0,
 					'remove related record'=>0,
@@ -36,13 +50,22 @@ class tables_call_slips {
 				);
 		}
 
-		//Set timelog edit permissions to use the timelog table's permission settings (unset related record permissions)
 		function rel_time_logs__permissions(&$record){
+			//Set timelog edit permissions to use the timelog table's permission settings (unset related record permissions)
 			$perms = &Dataface_PermissionsTool::getRolePermissions(myRole());
 			unset($perms['edit related records']);
 			unset($perms['delete related record']);
-		}
 
+			//If call slip is no longer incomplete, don't allow entry modification
+			if($record->val('status') != 'NCO' && $record->val('status') != 'CMP'){
+				return array(
+					'add new related record'=>0,
+					'add existing related record'=>0,
+					'remove related record'=>0,
+					'delete related record'=>0
+				);
+			}
+		}
 
 	//Set the record title
 		function getTitle(&$record){
@@ -302,7 +325,8 @@ class tables_call_slips {
 				$total_materials_sale += number_format($sale_price * $cs_ir['quantity'],2,".","");
 
 				$childString .= '<tr><td style="text-align: right">Inventory' .
-								'</td><td>' . $inventory_record->display('item_name') .
+							//	'</td><td>' . $inventory_record->display('item_name') .
+								'</td><td> ITEM NAME '.
 								'</td><td style="text-align: right">' . $cs_ir['quantity'] .
 								'</td><td style="text-align: right">$' . $purchase_price .
 								'</td><td style="text-align: right; ' . $markup_color. '">' . $markup .
@@ -387,7 +411,8 @@ class tables_call_slips {
 				$record->setValue('status',"CMP"); //Set status to Complete.
 			else
 				$record->setValue('status',"RDY"); //Set status to Ready.
-			$res = $record->save(null, true); //Save Record w/ permission check.
+			//$res = $record->save(null, true); //Save Record w/ permission check.
+			$res = $record->save(); //Save Record w/o permission check. - Temporary quick fix, should modify permissions instead
 			
 			//Check for errors.
 			if ( PEAR::isError($res) ){
