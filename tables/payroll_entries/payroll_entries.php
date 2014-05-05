@@ -26,7 +26,7 @@ class tables_payroll_entries {
 		else
 			return Dataface_PermissionsTool::NO_ACCESS();
 	}
-
+	
 	//If the record has been set to "Posted" don't allow the income and deduction form fields to be edited.
 	function init(&$table){
 		$app =& Dataface_Application::getInstance(); 

@@ -2,6 +2,12 @@
 
 class tables_call_slips {
 
+	function asdfghj(){
+		return 1;
+	}
+
+
+
 	//Class Variables
 	private $cs_modify_inventory = array(); //Create a class variable to store the values for modifying the inventory
 
@@ -19,7 +25,7 @@ class tables_call_slips {
 					//	$record->val('status') == 'PRE' ||
 					//	$record->val('status') == 'CMP'
 					//)
-					if($record->val('status') != 'NCO' && $record->val('status') != 'CMP')
+					if($record->val('status') != 'NCO' && $record->val('status') != 'NCP' && $record->val('status') != 'CMP')
 						return Dataface_PermissionsTool::getRolePermissions('NO_EDIT_DELETE');
 						//return Dataface_PermissionsTool::getRolePermissions('MASTER'); //This needs to be changed - When saving with the above line, it doesn't let save if converting to RDY etc. Need button anyway.
 				}
@@ -40,7 +46,7 @@ class tables_call_slips {
 //		}
 
 		function rel_call_slip_purchase_orders__permissions(&$record){
-//		function rel_call_slip_inventory__permissions(&$record){
+//		function rel_call_slip_additional_materials__permissions(&$record){
 				return array(
 					'add new related record'=>0,
 					'add existing related record'=>0,
@@ -57,7 +63,7 @@ class tables_call_slips {
 			unset($perms['delete related record']);
 
 			//If call slip is no longer incomplete, don't allow entry modification
-			if($record->val('status') != 'NCO' && $record->val('status') != 'CMP'){
+			if($record->val('status') != 'NCO' && $record->val('status') != 'NCP' && $record->val('status') != 'CMP'){
 				return array(
 					'add new related record'=>0,
 					'add existing related record'=>0,
@@ -407,7 +413,7 @@ class tables_call_slips {
 		//If the "Change Status To: Complete" button has been pressed.
 		//Because both the $_GET and $query will be "" on a new record, check to insure that they are not empty.
 		if(($_GET['-status_change'] == $query['-recordid']) && ($query['-recordid'] != "")){
-			if($record->val('status') == "NCO")
+			if($record->val('status') == "NCO" || $record->val('status') == "NCP")
 				$record->setValue('status',"CMP"); //Set status to Complete.
 			else
 				$record->setValue('status',"RDY"); //Set status to Ready.
@@ -439,7 +445,7 @@ class tables_call_slips {
 			$childString .= '</form>';
 			$childString .= '<script language="Javascript">document.status_change.submit();</script>';
 		}
-		elseif(	$record->val('status') == 'NCO' || $record->val('status') == 'CMP' ){
+		elseif(	$record->val('status') == 'NCO' || $record->val('status') == "NCP" || $record->val('status') == 'CMP' ){
 			$childString .= '<form>';
 			$childString .= '<input type="hidden" name="-table" value="'.$query['-table'].'">';
 			$childString .= '<input type="hidden" name="-action" value="'.$query['-action'].'">';
@@ -447,7 +453,7 @@ class tables_call_slips {
 			
 			$childString .= '<input type="hidden" name="-status_change" value="'.$record->getID().'">';
 
-			if($record->val('status') == "NCO")
+			if($record->val('status') == "NCO" || $record->val('status') == "NCP")
 				$childString .= '<input type="submit" value="Change Status to: Job Completed">';
 			elseif($record->val('status') == "CMP"){
 

@@ -16,6 +16,9 @@
 			<li><img src="{$ENV.DATAFACE_URL}/images/topic_icon.gif"/>
 				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=invoice"> Batch Print Invoices </a>(Ready: {$call_slips})
 			</li>
+			<li><img src="{$ENV.DATAFACE_URL}/images/topic_icon.gif"/>
+				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=call_slip_print_work_order"> Print All Unprinted Work Orders </a>
+			</li>
 		</ul>
 
 		<br><b>CUSTOMERS</b><br>
@@ -115,7 +118,8 @@
 
 		<br><b>ACCOUNTS PAYABLE</b><br>
 		<ul>
-			<li><img src="{$ENV.DATAFACE_URL}/images/topic_icon.gif"/> Post Accounts Payable (Pending: #)</a>
+			<li><img src="{$ENV.DATAFACE_URL}/images/topic_icon.gif"/>
+				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=accounts_payable_post"> Post Accounts Payable </a>(Pending: {$payable_pending})
 			</li>
 			<li><img src="{$ENV.DATAFACE_URL}/images/topic_icon.gif"/> Print Checks (Ready: #)</a>
 			</li>

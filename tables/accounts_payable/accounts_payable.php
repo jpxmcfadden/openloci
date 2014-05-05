@@ -112,19 +112,28 @@ class tables_accounts_payable {
 			//Pull the purchase order type from the previously saved (snapshot) purchase_order_id field (first character)
 			$po_old = $record->getSnapshot(['purchase_order_id']);
 			$po_type = substr($po_old['purchase_order_id'],0,1);
-				
-			//Open record from appropriate table
-			if($po_type == 'S'){
-				$po_record = df_get_record('purchase_order_service', array('purchase_order_id'=>$po_old['purchase_order_id']));
+
+			//If this is a new record, don't do this (ie po_type will be null) -- good programming: po_type above returns warning, check po_old instead and assign po_type inside
+			if($po_type != null){
+				//Open record from appropriate table
+				if($po_type == 'S'){
+					$po_record = df_get_record('purchase_order_service', array('purchase_order_id'=>$po_old['purchase_order_id']));
+				}
+				elseif($po_type == 'I'){
+					$po_record = df_get_record('purchase_order_inventory', array('purchase_order_id'=>$po_old['purchase_order_id']));
+				}
+				elseif($po_type == 'O'){
+					$po_record = df_get_record('purchase_order_office', array('purchase_order_id'=>$po_old['purchase_order_id']));
+				}
+				elseif($po_type == 'R'){
+					$po_record = df_get_record('purchase_order_services_rendered', array('purchase_order_id'=>$po_old['purchase_order_id']));
+				}
+				else
+					return PEAR::raiseError("something went wrong..." . $po_type,DATAFACE_E_NOTICE);
+					
+				$po_record->setValue('assigned_voucher_id',NULL);
+				$po_record->save();
 			}
-			elseif($po_type == 'I'){
-				$po_record = df_get_record('purchase_order_inventory', array('purchase_order_id'=>$po_old['purchase_order_id']));
-			}
-			else
-				return PEAR::raiseError("something went wrong..." . $po_type,DATAFACE_E_NOTICE);
-				
-			$po_record->setValue('assigned_voucher_id',NULL);
-			$po_record->save();	
 		}
 		
 		//Assign Vendor & Type (& for SPO, Customer / Site) from PO
@@ -137,6 +146,10 @@ class tables_accounts_payable {
 				$po_record = df_get_record('purchase_order_service', array('purchase_order_id'=>$record->val('purchase_order_id')));
 			elseif($po_type == 'I')
 				$po_record = df_get_record('purchase_order_inventory', array('purchase_order_id'=>$record->val('purchase_order_id')));
+			elseif($po_type == 'O')
+				$po_record = df_get_record('purchase_order_office', array('purchase_order_id'=>$record->val('purchase_order_id')));
+			elseif($po_type == 'R')
+				$po_record = df_get_record('purchase_order_services_rendered', array('purchase_order_id'=>$record->val('purchase_order_id')));
 			else
 				return PEAR::raiseError("something went wrong..." . $po_type,DATAFACE_E_NOTICE);
 			
@@ -163,6 +176,12 @@ class tables_accounts_payable {
 			}
 			elseif($po_type == 'I'){
 				$po_record = df_get_record('purchase_order_inventory', array('purchase_order_id'=>$record->val('purchase_order_id')));
+			}
+			elseif($po_type == 'O'){
+				$po_record = df_get_record('purchase_order_office', array('purchase_order_id'=>$record->val('purchase_order_id')));
+			}
+			elseif($po_type == 'R'){
+				$po_record = df_get_record('purchase_order_services_rendered', array('purchase_order_id'=>$record->val('purchase_order_id')));
 			}
 			else
 				return PEAR::raiseError("something went wrong..." . $po_type,DATAFACE_E_NOTICE);

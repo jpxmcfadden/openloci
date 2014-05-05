@@ -6,6 +6,9 @@
 	display:block;
 	page-break-after: always;
 }
+.print:last-child {
+	page-break-after: auto;
+}
 
 /*.print:last_child {
 	display:block;
