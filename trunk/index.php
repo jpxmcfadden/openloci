@@ -83,3 +83,80 @@ function company_webaddress(){
 	$record = df_get_record('_company_info', array('id'=>1));
 	return $record->val('web_address');
 }
+
+function url_data($url){
+	$ch = curl_init();
+	curl_setopt($ch, CURLOPT_URL, $url);
+	curl_setopt($ch, CURLOPT_RETURNTRANSFER,1);
+	$data = curl_exec($ch);
+	curl_close($ch);
+	return $data;
+}
+
+//Create General Ledger & Associated Journal Entries
+//Return: 0 == success, -1 == record not created (permission error), -2 == malformed $journal_entry_array, -3 == partial entry created
+function create_general_ledger_entry($journal_entry_array, $description = null){
+
+	//Check to insure $journal_entry_array has all necessary information
+	foreach($journal_entry_array as $key => $entry){
+		if(!isset($entry['account_number'])) return -2;
+		if(!(isset($entry['credit']) || isset($entry['debit']))) return -2;
+	}
+		
+	//Create new General Ledger Entry
+	$gl_record = new Dataface_Record('general_ledger', array());
+	$gl_record->setValues(array(
+		'ledger_date'=>date("Y-m-d"),
+		'ledger_description'=>$description
+	));
+
+	//Save Record
+//	$res = $gl_record->save(null, true); //Save w/ permission check
+	
+	//Check for errors.
+//	if ( PEAR::isError($res) ){
+//		// An error occurred
+//		return -1;
+//	}
+
+	//Parse through all journal entries and save
+	foreach($journal_entry_array as $key => $entry){
+		$glj_record = new Dataface_Record('general_ledger_journal', array());
+		$glj_record->setValues(array(
+			'ledger_id'=>$gl_record->val('ledger_id'),
+			'date'=>date("Y-m-d"),
+			'account_id'=>$entry['account_number'],
+			'debit'=>isset($entry['debit']) ? $entry['debit'] : null,
+			'credit'=>isset($entry['credit']) ? $entry['credit'] : null
+		));
+
+echo "saved:<pre>";print_r($glj_record->vals());echo "</pre>";
+		//Save Record
+//		$res = $glj_record->save(); //Save w/o permission check - presumably if the first check passed, the user has permission to post payroll
+	}
+
+
+return 1;
+
+}
+
+
+//https://groups.google.com/forum/?fromgroups=#!topic/xataface/1aH8Q3rdcsc
+//Quick and dirty method of pulling an htmlreport as text
+//	$reportid - the 'report_id' field of the desired htmlreport
+//	$record - the record containing the data for the report.
+function getHTMLReport(Dataface_Record $record, $reportid){
+	//Pull the appropriate HTML Report
+	$report = df_get_record("dataface__htmlreports_reports", array("report_id"=>$reportid));
+	//This works too...
+	//	$mod = Dataface_ModuleTool::getInstance()->loadModule('modules_htmlreports');
+	//	$report = $mod->getReportById($reportid);
+
+	//Include XfHtmlReportBuilder.class.php
+	require_once(dirname(__FILE__).'\modules\htmlreports\classes\XfHtmlReportBuilder.class.php');
+	
+	//Get the results from XfHtmlReportBuilder
+	$results = XfHtmlReportBuilder::fillReportSingle($record, $report->val('template_html'));
+
+	return $results;
+}
