@@ -20,7 +20,10 @@ class tables_accounts_payable {
 
 
 	function getTitle(&$record){
-		return 'Invoice ID: ' . $record->val('invoice_id') . ' - Status: ' . $record->val('post_status');
+		$po_type = substr($record->val('purchase_order_id'),0,1);
+		return 'Voucher ID #' . $record->val('voucher_id') . " (" . $record->strval('voucher_date') . ") - Type: " . $po_type . ", Invoice ID: " . $record->val('invoice_id');
+
+		//return 'Invoice ID: ' . $record->val('invoice_id') . ' - Status: ' . $record->val('post_status');
 	}
 
 	function titleColumn(){
@@ -153,13 +156,27 @@ class tables_accounts_payable {
 			else
 				return PEAR::raiseError("something went wrong..." . $po_type,DATAFACE_E_NOTICE);
 			
-			//Assign & Save data
-			$record->setValue('vendor_id',$po_record->val('vendor_id'));
-			if($po_type == 'S'){
-				$cs_record = df_get_record('call_slips', array('call_id'=>$po_record->val('callslip_id')));
-				$record->setValue('customer_id',$cs_record->val('customer_id'));
-				$record->setValue('site_id',$cs_record->val('site_id'));
-			}			
+		//Assign Vendor based on PO (overwrite vendor, if already selected we don't care, and if someone changes the vendor after selecting a PO - but not the PO, this will reset to match)
+		$record->setValue('vendor_id',$po_record->val('vendor_id'));
+			
+		//If this is a Service PO, add customer & site
+		if($po_type == 'S'){
+			$cs_record = df_get_record('call_slips', array('call_id'=>$po_record->val('callslip_id')));
+			$record->setValue('customer_id',$cs_record->val('customer_id'));
+			$record->setValue('site_id',$cs_record->val('site_id'));
+		}
+			
+		//If Credit Account is left blank, assign default AP account.
+		if($record->val('account_credit') == null){
+			$account_record = df_get_record('_account_defaults', array('default_id'=>('1')));
+			$record->setValue('account_credit', $account_record->val('accounts_payable'));
+		}
+
+		//If Debit Account is left blank, assign default account from vendor.
+		if($record->val('account_debit') == null){
+			$account_record = df_get_record('vendors', array('vendor_id'=>$po_record->val('vendor_id')));
+			$record->setValue('account_debit', $account_record->val('default_account'));
+		}
 	}
 
 
