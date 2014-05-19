@@ -111,13 +111,13 @@ function create_general_ledger_entry($journal_entry_array, $description = null){
 	));
 
 	//Save Record
-//	$res = $gl_record->save(null, true); //Save w/ permission check
+	$res = $gl_record->save(null, true); //Save w/ permission check
 	
 	//Check for errors.
-//	if ( PEAR::isError($res) ){
-//		// An error occurred
-//		return -1;
-//	}
+	if ( PEAR::isError($res) ){
+		// An error occurred
+		return -1;
+	}
 
 	//Parse through all journal entries and save
 	foreach($journal_entry_array as $key => $entry){
@@ -130,9 +130,8 @@ function create_general_ledger_entry($journal_entry_array, $description = null){
 			'credit'=>isset($entry['credit']) ? $entry['credit'] : null
 		));
 
-echo "saved:<pre>";print_r($glj_record->vals());echo "</pre>";
 		//Save Record
-//		$res = $glj_record->save(); //Save w/o permission check - presumably if the first check passed, the user has permission to post payroll
+		$res = $glj_record->save(); //Save w/o permission check - presumably if the first check passed, the user has permission to post payroll
 	}
 
 

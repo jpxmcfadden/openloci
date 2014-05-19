@@ -119,7 +119,10 @@
 		<br><b>ACCOUNTS PAYABLE</b><br>
 		<ul>
 			<li><img src="{$ENV.DATAFACE_URL}/images/topic_icon.gif"/>
-				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=accounts_payable_post"> Post Accounts Payable </a>(Pending: {$payable_pending})
+				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=accounts_payable_batch_post"> Post Accounts Payable (Batches)</a>(Pending: {$payable_pending_batches})
+			</li>
+			<li><img src="{$ENV.DATAFACE_URL}/images/topic_icon.gif"/>
+				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=accounts_payable_post"> Post Accounts Payable (Not assigned to a batch)</a>(Pending: {$payable_pending})
 			</li>
 			<li><img src="{$ENV.DATAFACE_URL}/images/topic_icon.gif"/> Print Checks (Ready: #)</a>
 			</li>

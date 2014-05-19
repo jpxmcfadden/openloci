@@ -1,0 +1,117 @@
+{use_macro file="Dataface_Main_Template.html"}
+	{fill_slot name="main_column"}
+
+{$test}
+		<script type="text/javascript">
+			{literal}
+			function toggle_all(form, toggle) {
+				var myForm = document.forms[form];
+				for( var i=0; i < myForm.length; i++ ) { 
+					if(toggle) {
+						myForm.elements[i].checked = "checked";
+					}
+					else {
+						myForm.elements[i].checked = "";
+					}
+				}
+			}
+			
+			function confirm_submit(form,el) {
+				if(confirm("Are you sure?"))
+					document.forms[form].elements[el].value = "yes";
+				else
+					document.forms[form].elements[el].value = "no";
+			}
+			{/literal}
+			</script>
+	
+		<h1>Post Accounts Payable Batch Entries</h1>
+		
+		{if $confirm == "true"}
+			<p class="portalMessage">The following accounts payable batches / entries have been posted. <a href="index.php?-table=dashboard"> Return to Dashboard.</a></p>
+
+			<table class="listing resultList">
+				<tr>
+					<th>Batch ID</th>
+					<th>Voucher</th>
+				</tr>
+				{foreach from=$headers key=batch_id item=batch}
+					<tr class="listing odd">
+						<td>{$batch_id}</td>
+						<td>
+							<table class="listing resultList">
+								<tr>
+									<th>ID</th>
+									<th>Date</th>
+									<th>Description</th>
+								</tr>
+								{assign var="i" value=0}
+								{foreach from=$batch item=list}
+									{if $i%2 == 0}
+										<tr class="listing odd">
+									{else}
+										<tr class="listing even">
+									{/if}
+										<td valign="top"><a href="index.php?-table=accounts_payable&-action=browse&-recordid=accounts_payable?voucher_id={$list.id}">{$list.id}</a></td>
+										<td valign="top"><a href="index.php?-table=accounts_payable&-action=browse&-recordid=accounts_payable?voucher_id={$list.id}">{$list.date}</a></td>
+										<td valign="top"><a href="index.php?-table=accounts_payable&-action=browse&-recordid=accounts_payable?voucher_id={$list.id}">{$list.description}</a></td>
+									</tr>
+									{assign var="i" value=$i+1}
+								{/foreach}
+							</table>
+						</td>
+					</tr>
+				{/foreach}
+				</table>
+
+		{elseif $headers}
+			<p>Select the following accounts payable entries to be posted:</p>
+
+			<!--form name="select_post" onSubmit='confirm_submit("select_post","confirm_post")'-->
+			<form name="select_post">
+				<input type="hidden" name="-action" value="accounts_payable_batch_post">
+				<input type="hidden" name="confirm_post" value="true">
+							
+				<table class="listing resultList">
+					<tr>
+						<th><input type="checkbox" checked onchange=toggle_all("select_post",this.checked)></th>
+						<th>Batch ID</th>
+						<th>Voucher</th>
+					</tr>
+					{foreach from=$headers key=batch_id item=batch}
+						<tr class="listing odd">
+							<td><input type="checkbox" checked name="{$batch_id}"></td>
+							<td>{$batch_id}</td>
+							<td>
+								<table class="listing resultList">
+									<tr>
+										<th>ID</th>
+										<th>Date</th>
+										<th>Description</th>
+									</tr>
+									{assign var="i" value=0}
+									{foreach from=$batch item=list}
+										{if $i%2 == 0}
+											<tr class="listing odd">
+										{else}
+											<tr class="listing even">
+										{/if}
+											<td valign="top"><a href="index.php?-table=accounts_payable&-action=browse&-recordid=accounts_payable?voucher_id={$list.id}">{$list.id}</a></td>
+											<td valign="top"><a href="index.php?-table=accounts_payable&-action=browse&-recordid=accounts_payable?voucher_id={$list.id}">{$list.date}</a></td>
+											<td valign="top"><a href="index.php?-table=accounts_payable&-action=browse&-recordid=accounts_payable?voucher_id={$list.id}">{$list.description}</a></td>
+										</tr>
+										{assign var="i" value=$i+1}
+									{/foreach}
+								</table>
+							</td>
+						</tr>
+					{/foreach}
+				</table>
+				
+				<input type="submit" value="Post">
+			</form>
+		{else}
+			<p class="portalMessage">There are currently no accounts payable batch entries ready for posting. <a href="index.php?-table=dashboard"> Return to Dashboard.</a></p>
+		{/if}
+	{/fill_slot}
+{/use_macro}
