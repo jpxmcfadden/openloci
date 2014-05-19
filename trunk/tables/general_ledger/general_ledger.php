@@ -53,20 +53,20 @@ class tables_general_ledger {
 				$accountRecord = $ar->vals();
 				$childString .= '<tr><td>' . $accountRecord['account_number'] .
 								'</td><td>' . $accountRecord['account_name'] .
-								'</td><td>' . $journalRecord['debit'] .
-								'</td><td>' . $journalRecord['credit'] .
+								'</td><td align="right">' . $journalRecord['debit'] .
+								'</td><td align="right">' . $journalRecord['credit'] .
 								'</td></tr>';
 				$debit_total += $journalRecord['debit'];
 				$credit_total += $journalRecord['credit'];
 			}
 		}
 		
-		if($debit_total == $credit_total)
+		if(round($debit_total,5) == round($credit_total,5))
 			$background = 'style="background-color: lightgreen"';
 		else
 			$background = 'style="background-color: #ff7070"';
 		
-		$childString .= "<tr><td></td><td></td><td $background><b>".number_format($debit_total,2)."</b></td><td $background><b>".number_format($credit_total,2).'</b></td></tr>';
+		$childString .= "<tr><td></td><td></td><td $background align=right><b>".number_format($debit_total,2)."</b></td><td $background align=right><b>".number_format($credit_total,2).'</b></td></tr>';
 		$childString .= '</table><br>';
 
 		

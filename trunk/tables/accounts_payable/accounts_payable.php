@@ -34,6 +34,12 @@ class tables_accounts_payable {
 		return date('Y-m-d');
 	}
 
+	function amount__display(&$record){
+		if($record->val('amount') != NULL)
+			return "$" . $record->val('amount');
+			
+	}
+
 	function customer_id__display(&$record){
 		if($record->val('customer_id') == NULL)
 			return "---";
@@ -50,7 +56,61 @@ class tables_accounts_payable {
 		return $site_record->val('site_address');
 	}
 
+	function section__amount(&$record){
+		//$app =& Dataface_Application::getInstance(); 
+		//$query =& $app->getQuery();
+		$childString = '';
 
+		//Get selected PO Type
+		$po_type = $record->val('type');
+
+		//Open record from appropriate table
+		if($po_type == 'S'){
+			$po_record = df_get_record('purchase_order_service', array('purchase_order_id'=>$record->val('purchase_order_id')));
+		}
+		elseif($po_type == 'I'){
+			$po_record = df_get_record('purchase_order_inventory', array('purchase_order_id'=>$record->val('purchase_order_id')));
+		}
+		elseif($po_type == 'O'){
+			$po_record = df_get_record('purchase_order_office', array('purchase_order_id'=>$record->val('purchase_order_id')));
+		}
+		elseif($po_type == 'R'){
+			$po_record = df_get_record('purchase_order_services_rendered', array('purchase_order_id'=>$record->val('purchase_order_id')));
+		}
+		else
+			return array('content' => '<table><tr><td style="background-color: #ffa07b;">ERROR: Could not read PO</td></tr></table>','class' => 'main','label' => 'Amount','order' => 9);		
+			
+		$item_total = $po_record->val('item_total');
+		$shipping = $po_record->val('shipping');
+		$tax = round($po_record->val('tax') * $po_record->val('item_total'),2);
+		if($record->val('apply_discount') == 1){
+			if($record->val("modify_discount") != null)
+				$discount = $record->val('modify_discount');
+			else{
+				$vendor_record = df_get_record("vendors", array('vendor_id'=>$record->val('vendor_id')));
+				$discount = round($vendor_record->val('discount_percent') * $item_total / 100,2);
+			}
+		}
+
+		$total_amount = $item_total + $shipping + $tax - $discount;
+		
+		$childString .= "<table>
+							<tr><td>Item Total from PO</td><td align=right>$" . number_format($item_total,2) . "</td></tr>";
+		if($discount != null) $childString .= "<tr><td>Discount</td><td align=right>-$" . number_format($discount,2) . "</td></tr>";
+		$childString .= "	<tr><td>Tax</td><td align=right>$" . number_format($tax,2) . "</td></tr>
+							<tr><td>Shipping</td><td align=right>$" . number_format($shipping,2) . "</td></tr>
+							<tr><td><b>TOTAL</b></td><td align=right><b>$" . number_format($total_amount,2) . "</b></td></tr>
+						</table>";
+		
+		
+		return array(
+			'content' => "$childString",
+			'class' => 'main',
+			'label' => 'Amount',
+			'order' => 9
+		);
+	}	
+	
 	function section__status(&$record){
 		$app =& Dataface_Application::getInstance(); 
 		$query =& $app->getQuery();
@@ -177,6 +237,24 @@ class tables_accounts_payable {
 			$account_record = df_get_record('vendors', array('vendor_id'=>$po_record->val('vendor_id')));
 			$record->setValue('account_debit', $account_record->val('default_account'));
 		}
+		
+		//Calculate Total & assign to the Amount field
+		$item_total = $po_record->val('item_total');
+		$shipping = $po_record->val('shipping');
+		$tax = round($po_record->val('tax') * $po_record->val('item_total'),2);
+		if($record->val('apply_discount') == 1){
+			if($record->val("modify_discount") != null)
+				$discount = $record->val('modify_discount');
+			else{
+				$vendor_record = df_get_record("vendors", array('vendor_id'=>$record->val('vendor_id')));
+				$discount = round($vendor_record->val('discount_percent') * $item_total / 100,2);
+			}
+		}
+		$total_amount = $item_total + $shipping + $tax - $discount;		
+		$record->setValue('amount', $total_amount);
+		
+		
+		
 	}
 
 
