@@ -17,8 +17,7 @@ class actions_call_slip_print_work_order {
 		
 		if(isset($query['-recordid'])){
 			$record =& $app->getRecord();
-			echo '<div class="print">' . getHTMLReport($record,'call_slip_work_order') . '</div>';
-			
+			echo '<div class="print">' . getHTMLReport($record,"call_slip_work_order") . '</div>';			
 			//Update record status (only if status is NCO)
 			if($record->val('status') == "NCO"){
 				$record->setValue('status',"NCP"); //Set status to "Not Complete - Work Order Printed".
@@ -26,7 +25,7 @@ class actions_call_slip_print_work_order {
 			}
 
 			//Auto Print
-//			print '<script type="text/javascript">window.print();</script>';
+			print '<script type="text/javascript">window.print();</script>';
 
 			//Redirect back to the previous page
 			$url = $app->url('-action=browse') . '&--msg='.urlencode('Work Order(s) Printed.');;
@@ -48,6 +47,7 @@ class actions_call_slip_print_work_order {
 				
 				//Auto Print
 				print '<script type="text/javascript">window.print();</script>';
+
 			}
 			else
 				$msg = 'Nothing to print.';
@@ -57,7 +57,8 @@ class actions_call_slip_print_work_order {
 		}
 
 		//Redirect back to previous
-		print '<script type="text/javascript">window.location.replace("'.$url.'");</script>';
+		//print '<script type="text/javascript">window.location.replace("'.$url.'");</script>';
+		print '<script type="text/javascript">function redirect(){return function(){window.location.replace("'.$url.'");}}setTimeout(redirect(), 10);</script>'; //Include 10us delay to insure that the print dialog pops up.
 		
 	}
 }
