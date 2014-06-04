@@ -23,6 +23,11 @@ class tables_purchase_order_service_items {
 		return array('edit'=>1);
 	}
 
+	
+	function field__item_total($record){
+		return number_format($record->val("quantity_used") * $record->val("sale_price"),2);
+	}
+	
 }
 
 ?>

@@ -144,9 +144,9 @@ return 1;
 //Quick and dirty method of pulling an htmlreport as text
 //	$reportid - the 'report_id' field of the desired htmlreport
 //	$record - the record containing the data for the report.
-function getHTMLReport(Dataface_Record $record, $reportid){
+function getHTMLReport(Dataface_Record $record, $report_name){
 	//Pull the appropriate HTML Report
-	$report = df_get_record("dataface__htmlreports_reports", array("report_id"=>$reportid));
+	$report = df_get_record("dataface__htmlreports_reports", array("actiontool_name"=>'='.$report_name));
 	//This works too...
 	//	$mod = Dataface_ModuleTool::getInstance()->loadModule('modules_htmlreports');
 	//	$report = $mod->getReportById($reportid);
@@ -155,7 +155,8 @@ function getHTMLReport(Dataface_Record $record, $reportid){
 	require_once(dirname(__FILE__).'\modules\htmlreports\classes\XfHtmlReportBuilder.class.php');
 	
 	//Get the results from XfHtmlReportBuilder
-	$results = XfHtmlReportBuilder::fillReportSingle($record, $report->val('template_html'));
+	$results = '<style>' . XfHtmlReportBuilder::fillReportSingle($record, $report->val('template_css')) . '</style>';
+	$results .= XfHtmlReportBuilder::fillReportSingle($record, $report->val('template_html'));
 
 	return $results;
 }
