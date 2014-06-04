@@ -35,6 +35,44 @@ class tables_call_slip_inventory {
 		//}
 	
 	}
+
+	//Calculated fields - for HTML Reports
+	function field__item_cost($record){
+		//If sale overide cost has been set in the call slip, use it
+		if($record->val('sale_price') != null)
+			return number_format($record->val('sale_price'),2);
+
+		//Otherwise, pull the item / cost out of the 'inventory' table
+		$inventory_record = df_get_record('inventory', array('inventory_id'=>$record->val('inventory_id')));
+		
+		//If item is set for cost overide, use 'sale_overide'
+		if($inventory_record->val('sale_method') == "overide")
+			return $inventory_record->val('sale_overide');
+			
+		//Otherwise, calculate the price from the sale average
+		$customerRecord = df_get_record('customers', array('customer_id'=>$record->val('customer_id')));
+		$markupRecords = df_get_records_array('customer_markup_rates', array('markup_id'=>$record->val('markup')));
+
+		$purchase_price = $record->val('purchase_price');
+		
+		foreach ($markupRecords as $mr) {
+			if($mr->val('to') == null)
+				$no_limit = true;
+
+			if( ($purchase_price >= $mr->val('from')) && ($purchase_price <= $mr->val('to') || $no_limit == true) ){
+				$markup = $mr->val('markup_percent');
+				break;
+			}
+		}
+
+		$sale_price = number_format($purchase_price * (1+$markup),2,".","");
+		
+		return $sale_price;
+	}
+
+	function field__item_total($record){
+		return number_format($record->val('sale_price') * $record->val('quantity'),2);
+	}
 	
 }
 

@@ -141,6 +141,7 @@ class tables_accounts_payable {
 			$childString .= '</form>';
 			$childString .= '<script language="Javascript">document.status_change.submit();</script>';
 		}
+		//Show Pending button
 		elseif(	$record->val('post_status') == ''){
 			$childString .= '<form>';
 			$childString .= '<input type="hidden" name="-table" value="'.$query['-table'].'">';
@@ -149,6 +150,101 @@ class tables_accounts_payable {
 			
 			$childString .= '<input type="hidden" name="-pending" value="'.$record->getID().'">';
 			$childString .= '<input type="submit" value="Change Status to: Pending">';
+
+			$childString .= '</form>';
+		}
+		//If the "Create Credit Voucher" button has been pressed.
+		elseif(($_GET['-credit'] == $query['-recordid']) && ($query['-recordid'] != "")){
+			//Create the Credit Voucher Record
+			$new_record = new Dataface_Record('accounts_payable', array());
+			$new_record->setValue('voucher_date',date('Y-m-d'));
+			$new_record->setValue('invoice_id',$record->val('invoice_id'));
+			$new_record->setValue('invoice_date',$record->val('invoice_date'));
+			$new_record->setValue('post_status','Pending');
+			$new_record->setValue('purchase_order_id',$record->val('purchase_order_id'));
+			$new_record->setValue('vendor_id',$record->val('vendor_id'));
+			$new_record->setValue('customer_id',$record->val('customer_id'));
+			$new_record->setValue('site_id',$record->val('site_id'));
+			$new_record->setValue('type',$record->val('type'));
+			$new_record->setValue('credit',"Credit for Voucher " . $record->val('voucher_id'));
+			$new_record->setValue('description',"Credit to reverse entry for Voucher ID ".$record->val('voucher_id'));
+			$new_record->setValue('amount',$record->val('amount'));
+			$new_record->setValue('apply_discount',$record->val('apply_discount'));
+			$new_record->setValue('modify_discount',$record->val('modify_discount'));
+			$new_record->setValue('account_credit',$record->val('account_debit'));
+			$new_record->setValue('account_debit',$record->val('account_credit'));
+			$res_n = $new_record->save(null, true); //Save Record w/ permission check.
+
+			//Set the check to VOID & Credit to Credit Voucher ID
+			if($record->val("check_number") == "")
+				$record->setValue('check_number',"VOID");
+			else
+				$record->setValue('check_number',"VOID - ".$record->val('check_number'));
+			$record->setValue('credit',"Credited (".$new_record->val('voucher_id').")");
+			$res_r = $record->save(); //Save Record w/ permission check.
+
+			//Unset the assigned Voucher ID in the Purchase Order - so that it can be redone with a new voucher.
+				$po_type = $record->val('type');
+
+				//Open record from appropriate table
+				if($po_type == 'S'){
+					$po_record = df_get_record('purchase_order_service', array('purchase_order_id'=>$record->val('purchase_order_id')));
+				}
+				elseif($po_type == 'I'){
+					$po_record = df_get_record('purchase_order_inventory', array('purchase_order_id'=>$record->val('purchase_order_id')));
+				}
+				elseif($po_type == 'O'){
+					$po_record = df_get_record('purchase_order_office', array('purchase_order_id'=>$record->val('purchase_order_id')));
+				}
+				elseif($po_type == 'R'){
+					$po_record = df_get_record('purchase_order_services_rendered', array('purchase_order_id'=>$record->val('purchase_order_id')));
+				}
+				else
+					return PEAR::raiseError("something went wrong..." . $po_type,DATAFACE_E_NOTICE);
+						
+				//Set to null
+				$po_record->setValue('assigned_voucher_id',NULL);
+				$res_p = $po_record->save();
+
+
+			//Check for errors.
+			$errors = 0;
+			$msg = "";
+			if ( PEAR::isError($res_n)){ //Create new
+				$msg .= '<input type="hidden" name="--error" value="Unable to create a Credit Voucher. This is most likely because you do not have the required permissions.<br>">';
+				$errors = 1;
+			}
+			if ( PEAR::isError($res_r)){ //Void check
+				$msg .= '<input type="hidden" name="--error" value="Unable to VOID Check. Please see your system administrator to correct this issue.<br>">';
+				$errors = 1;
+			}
+			if ( PEAR::isError($res_p)){ //Unset PO
+				$msg .= '<input type="hidden" name="--error" value="Unable to clear the Purchase Order record. The associated Purchase order will not be able to be assigned again until this is fixed. Please see your system administrator to correct this issue.">';
+				$errors = 1;
+			}
+			if($errors == 0)
+				$msg = '<input type="hidden" name="--msg" value="Credit Voucher Created.">';
+			
+			$childString .= '<form name="status_change">';
+			$childString .= '<input type="hidden" name="-table" value="'.$query['-table'].'">';
+			$childString .= '<input type="hidden" name="-action" value="'.$query['-action'].'">';
+			$childString .= '<input type="hidden" name="-recordid" value="'.$record->getID().'">';
+
+			$childString .= $msg;
+
+			$childString .= '</form>';
+			$childString .= '<script language="Javascript">document.status_change.submit();</script>';
+		}
+
+		//Show Credit Voucher button
+		elseif(	$record->val('post_status') == 'Posted' && $record->val('credit') == ""){
+			$childString .= '<form>';
+			$childString .= '<input type="hidden" name="-table" value="'.$query['-table'].'">';
+			$childString .= '<input type="hidden" name="-action" value="'.$query['-action'].'">';
+			$childString .= '<input type="hidden" name="-recordid" value="'.$record->getID().'">';
+			
+			$childString .= '<input type="hidden" name="-credit" value="'.$record->getID().'">';
+			$childString .= '<input type="submit" value="Create Credit Voucher">';
 
 			$childString .= '</form>';
 		}
@@ -261,7 +357,7 @@ class tables_accounts_payable {
 
 	function afterSave(&$record){
 		//After saving the record, assign the selected po's assigned_voucher_id field to the record id
-		if($record->val('purchase_order_id') != NULL){
+		if($record->val('purchase_order_id') != NULL && $record->val('credit') == ""){
 			//Pull the purchase order type
 			$po_type = $record->val('type');
 			

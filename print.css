@@ -10,6 +10,11 @@
 	page-break-after: auto;
 }
 
+@media print {
+    html, body {
+        height: 99%;    
+    }
+}
 /*.print:last_child {
 	display:block;
 	page-break-after: avoid;

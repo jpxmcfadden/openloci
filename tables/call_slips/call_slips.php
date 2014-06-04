@@ -2,11 +2,6 @@
 
 class tables_call_slips {
 
-	function asdfghj(){
-		return 1;
-	}
-
-
 
 	//Class Variables
 	private $cs_modify_inventory = array(); //Create a class variable to store the values for modifying the inventory
@@ -62,14 +57,19 @@ class tables_call_slips {
 			unset($perms['edit related records']);
 			unset($perms['delete related record']);
 
+///			$foo = $record->val('status');
+//			$foo = 1;
+			
 			//If call slip is no longer incomplete, don't allow entry modification
+			if(isset($record))
 			if($record->val('status') != 'NCO' && $record->val('status') != 'NCP' && $record->val('status') != 'CMP'){
-				return array(
-					'add new related record'=>0,
-					'add existing related record'=>0,
-					'remove related record'=>0,
-					'delete related record'=>0
-				);
+//			if($foo == 1){
+//				return array(
+//					'add new related record'=>0,
+//					'add existing related record'=>0,
+//					'remove related record'=>0,
+//					'delete related record'=>0
+//				);
 			}
 		}
 
@@ -97,7 +97,8 @@ class tables_call_slips {
 		}
 
 		function charge_consumables__default() {
-		   return "25.00";
+			$admin_record = df_get_record('call_slip_admin',array('call_slip_admin_id'=>"=1")); //Get the admin record
+			return $admin_record->val('charge_consumables_default');
 		}
 
 	//Visual Things
@@ -106,7 +107,7 @@ class tables_call_slips {
 			$app =& Dataface_Application::getInstance(); 
 			$record =& $app->getRecord();
 			$query =& $app->getQuery();
-			
+		
 			if($query['-action'] != 'new'){ //We do this b/c when getRecord() is used on a "new record" it returns the data from the last saved record.
 				if($record->val('type') == "PM"){ //Check if type == "PK" and if so replace the dropdown menu with static text.
 					echo 'Preventative Maintenance<style>#type {display:none;}</style>';
@@ -332,7 +333,7 @@ class tables_call_slips {
 
 				$childString .= '<tr><td style="text-align: right">Inventory' .
 							//	'</td><td>' . $inventory_record->display('item_name') .
-								'</td><td> ITEM NAME '.
+								'</td><td> ' . $inventory_record->val("item_name") .
 								'</td><td style="text-align: right">' . $cs_ir['quantity'] .
 								'</td><td style="text-align: right">$' . $purchase_price .
 								'</td><td style="text-align: right; ' . $markup_color. '">' . $markup .
@@ -410,13 +411,99 @@ class tables_call_slips {
 		$query =& $app->getQuery();
 		$childString = '';
 
-		//If the "Change Status To: Complete" button has been pressed.
+		//If the "Change Status To: Complete / Ready" button has been pressed.
 		//Because both the $_GET and $query will be "" on a new record, check to insure that they are not empty.
 		if(($_GET['-status_change'] == $query['-recordid']) && ($query['-recordid'] != "")){
+			//Set status to "Complete"
 			if($record->val('status') == "NCO" || $record->val('status') == "NCP")
 				$record->setValue('status',"CMP"); //Set status to Complete.
-			else
+			//Set status to "Ready" - also, save all inventory material sale values (so that they don't change once the invoice has been printed)
+			else{
 				$record->setValue('status',"RDY"); //Set status to Ready.
+				
+				//Set item sale prices
+				
+				//Inventory Items
+				$inventoryRecords = df_get_records_array('call_slip_inventory', array('call_id'=>$record->val('call_id')));
+				foreach ($inventoryRecords as $cs_ir){
+					//Pull the item / cost out of the 'inventory' table
+					$inventory_record = df_get_record('inventory', array('inventory_id'=>$cs_ir->val('inventory_id')));
+					
+					$purchase_price = $cs_ir->val('purchase_price');
+					$sale_price = $cs_ir->val('sale_price'); //Pull sale price from record (will likely be null)
+
+					//If the sale price has not already been set in the callslip inventory record
+					if(!isset($sale_price)){
+					
+						//Check if the Inventory sale overide has been set, if so, use it
+						if($inventory_record->val('sale_method')=="overide"){
+							$sale_price = $inventory_record->val('sale_overide');
+						}
+						//Otherwise (most likely), calculate based on the purchase price and set customer markup rate
+						else{ 
+							//Get the custmer markup record
+							$customerRecord = df_get_record('customers', array('customer_id'=>$record->val('customer_id')));
+							$markupRecords = df_get_records_array('customer_markup_rates', array('markup_id'=>$record->val('markup')));
+
+							foreach ($markupRecords as $mr) {
+								if($mr->val('to') == null)
+									$no_limit = true;
+								
+								if( ($purchase_price >= $mr->val('from')) && ($purchase_price <= $mr->val('to') || $no_limit == true) ){
+									$markup = $mr->val('markup_percent');
+									break;
+								}
+							}
+							
+							$sale_price = round($purchase_price * (1+$markup),2);
+						}				
+
+						$cs_ir->setValue('sale_price',$sale_price);
+						$res = $cs_ir->save(null,true); //Save Record w/ permission check.
+					}
+				}
+
+				//Purchase Order Items
+				$purchaseRecords = df_get_records_array('purchase_order_service', array('callslip_id'=>$record->val('call_id')));
+				foreach ($purchaseRecords as $cs_pr){
+					//Pull the items from the purchase order record
+					$itemRecords = df_get_records_array('purchase_order_service_items', array('purchase_order_id'=>$cs_pr->val('purchase_id')));
+					foreach ($itemRecords as $item){
+						$purchase_price = $item->val('purchase_price');
+						$sale_price = $item->val('sale_price'); //Pull sale price from record (will likely be null)
+
+						//If the sale price has not already been set in the po item record
+						if(!isset($sale_price)){
+							//Get the custmer markup record
+							$customerRecord = df_get_record('customers', array('customer_id'=>$record->val('customer_id')));
+							$markupRecords = df_get_records_array('customer_markup_rates', array('markup_id'=>$record->val('markup')));
+
+							foreach ($markupRecords as $mr) {
+								if($mr->val('to') == null)
+									$no_limit = true;
+								
+								if( ($purchase_price >= $mr->val('from')) && ($purchase_price <= $mr->val('to') || $no_limit == true) ){
+									$markup = $mr->val('markup_percent');
+									break;
+								}
+							}
+							
+							$sale_price = round($purchase_price * (1+$markup),2);
+
+							$item->setValue('sale_price',$sale_price);
+						}
+						
+						//If the "quantity used" field is empty, assign it to be the total quantity from purchase
+						if($item->val('quantity_used') == "")
+							$item->setValue('quantity_used',$item->val('quantity'));
+
+						$res = $item->save(null,true); //Save Record w/ permission check.
+
+					}
+				}
+			}
+			
+			//Save record
 			//$res = $record->save(null, true); //Save Record w/ permission check.
 			$res = $record->save(); //Save Record w/o permission check. - Temporary quick fix, should modify permissions instead
 			
@@ -763,25 +850,95 @@ class tables_call_slips {
 		function field__materials_total($record){
 			$total = 0;
 			
-				$purchaseorderRecords = $record->getRelatedRecords('call_slip_purchase_orders');
-				foreach ($purchaseorderRecords as $cs_pr){
-					$subtotal_sale = $cs_pr['cost_sale'] * $cs_pr['quantity'];
+			$purchaseorderRecords = df_get_records_array('purchase_order_service', array('callslip_id'=>$record->val('call_id')));
+			foreach ($purchaseorderRecords as $cs_pr){
+				//Pull the items from the purchase order record
+				$itemRecords = df_get_records_array('purchase_order_service_items', array('purchase_order_id'=>$cs_pr->val('purchase_id')));
+				foreach ($itemRecords as $item){
+					$subtotal_sale = $item->val('sale_price') * $item->val('quantity_used');
 					$total += $subtotal_sale;
 				}
+			}
 			
-				$inventoryRecords = $record->getRelatedRecords('call_slip_inventory');
-				foreach ($inventoryRecords as $cs_ir){
-					$subtotal_sale = $cs_ir['sell_cost'] * $cs_ir['quantity'];
-					$total += $subtotal_sale;
-				}
+			$inventoryRecords = $record->getRelatedRecords('call_slip_inventory');
+			foreach ($inventoryRecords as $cs_ir){
+				$subtotal_sale = $cs_ir['sale_price'] * $cs_ir['quantity'];
+				$total += $subtotal_sale;
+			}
 
+			$additionalRecords = $record->getRelatedRecords('call_slip_additional_materials');
+			foreach ($additionalRecords as $cs_ar){
+				$subtotal_sale = $cs_ar['sale_price'] * $cs_ar['quantity'];
+				$total += $subtotal_sale;
+			}
+
+			$total += $record->val('charge_consumables');
+				
 			return number_format($total,2);
 		}
 	
-	
+		function field__consumables_text($record){
+			if($record->val('charge_consumables') != "")
+				return "Misc Consumables";
+		}
+		function field__consumables_quantity($record){
+			if($record->val('charge_consumables') != "")
+				return "1";
+		}
+		function field__consumables_charge($record){
+			if($record->val('charge_consumables') != "")
+				return $record->val('charge_consumables');
+		}
 
+		function field__fuel_text($record){
+			$text = "";
+			if($record->val('charge_fuel') != "")
+				$text .= "Fuel Surcharge: $" . $record->val('charge_fuel');
+				
+			return $text;
+		}
+		
+		function field__invoice_total($record){
+			$total = 0;
+			
+			//Materials
+			$purchaseorderRecords = df_get_records_array('purchase_order_service', array('callslip_id'=>$record->val('call_id')));
+			foreach ($purchaseorderRecords as $cs_pr){
+				//Pull the items from the purchase order record
+				$itemRecords = df_get_records_array('purchase_order_service_items', array('purchase_order_id'=>$cs_pr->val('purchase_id')));
+				foreach ($itemRecords as $item){
+					$subtotal_sale = $item->val('sale_price') * $item->val('quantity_used');
+					$total += $subtotal_sale;
+				}
+			}
+			
+			$inventoryRecords = $record->getRelatedRecords('call_slip_inventory');
+			foreach ($inventoryRecords as $cs_ir){
+				$subtotal_sale = $cs_ir['sale_price'] * $cs_ir['quantity'];
+				$total += $subtotal_sale;
+			}
 
+			$additionalRecords = $record->getRelatedRecords('call_slip_additional_materials');
+			foreach ($additionalRecords as $cs_ar){
+				$subtotal_sale = $cs_ar['sale_price'] * $cs_ar['quantity'];
+				$total += $subtotal_sale;
+			}
 
+			//Misc
+			$total += $record->val('charge_consumables');
+			$total += $record->val('charge_fuel');
+
+			//Hours
+			$employeeRecords = $record->getRelatedRecords('time_logs');
+			foreach ($employeeRecords as $cs_er){
+				$arrive = Dataface_converters_date::datetime_to_string($cs_er['start_time']);
+				$depart = Dataface_converters_date::datetime_to_string($cs_er['end_time']);
+				$hours = number_format(((strtotime($depart) - strtotime($arrive)) / 3600),1);
+				$total += ($hours * $cs_er['rate_per_hour']);
+			}
+
+			return number_format($total,2);
+		}
 
 
 

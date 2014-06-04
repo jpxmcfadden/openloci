@@ -4,6 +4,10 @@ class actions_call_slip_print_work_order {
 	
 	function handle(&$params){
 
+		//Permission check
+		if ( !isUser() )
+			return Dataface_Error::permissionDenied("You are not logged in");
+
 		$app =& Dataface_Application::getInstance();
 		$query =& $app->getQuery();
 
@@ -13,7 +17,7 @@ class actions_call_slip_print_work_order {
 		
 		if(isset($query['-recordid'])){
 			$record =& $app->getRecord();
-			echo '<div class="print">' . getHTMLReport($record,6) . '</div>';
+			echo '<div class="print">' . getHTMLReport($record,'call_slip_work_order') . '</div>';
 			
 			//Update record status (only if status is NCO)
 			if($record->val('status') == "NCO"){
@@ -22,7 +26,7 @@ class actions_call_slip_print_work_order {
 			}
 
 			//Auto Print
-			print '<script type="text/javascript">window.print();</script>';
+//			print '<script type="text/javascript">window.print();</script>';
 
 			//Redirect back to the previous page
 			$url = $app->url('-action=browse') . '&--msg='.urlencode('Work Order(s) Printed.');;
@@ -33,7 +37,7 @@ class actions_call_slip_print_work_order {
 
 			if(!empty($records)){
 				foreach ($records as $record){
-					echo '<div class="print">' . getHTMLReport($record,6) . '</div>';
+					echo '<div class="print">' . getHTMLReport($record,'call_slip_work_order') . '</div>';
 
 					//Update record status
 					$record->setValue('status',"NCP"); //Set status to "Not Complete - Work Order Printed".
