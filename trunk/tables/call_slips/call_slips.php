@@ -40,8 +40,7 @@ class tables_call_slips {
 //			return array("edit"=>1);
 //		}
 
-		function rel_call_slip_purchase_orders__permissions(&$record){
-//		function rel_call_slip_additional_materials__permissions(&$record){
+/*		function rel_call_slip_purchase_orders__permissions(&$record){
 				return array(
 					'add new related record'=>0,
 					'add existing related record'=>0,
@@ -50,8 +49,8 @@ class tables_call_slips {
 				//	'reorder_related_records'=>1
 				);
 		}
-
-		function rel_time_logs__permissions(&$record){
+*/
+/*		function rel_time_logs__permissions(&$record){
 			//Set timelog edit permissions to use the timelog table's permission settings (unset related record permissions)
 			$perms = &Dataface_PermissionsTool::getRolePermissions(myRole());
 			unset($perms['edit related records']);
@@ -72,7 +71,7 @@ class tables_call_slips {
 //				);
 			}
 		}
-
+*/
 	//Set the record title
 		function getTitle(&$record){
 			//Pull the site address
@@ -101,7 +100,42 @@ class tables_call_slips {
 			return $admin_record->val('charge_consumables_default');
 		}
 
+		function charge_fuel__default() {
+			$admin_record = df_get_record('call_slip_admin',array('call_slip_admin_id'=>"=1")); //Get the admin record
+			return $admin_record->val('charge_fuel_default');
+		}
+
 	//Visual Things
+	
+		function block__before_record_actions(){
+			$app =& Dataface_Application::getInstance(); 
+			$record =& $app->getRecord();
+
+			if($record->val('status') == 'RDY' || $record->val('status') == 'SNT' || $record->val('status') == 'PPR'){
+				echo '	<div class="dataface-view-record-actions">
+							<ul>
+								<li id="call_slip_invoice" class="plain">
+									<a class="" id="call_slip_invoice-link" href="'.$app->url('-action=call_slip_print_invoice').' title="" data-xf-permission="view">
+										<img id="call_slip_invoice-icon" src="images/report_icon.png" alt="Print Invoice">                   <span class="action-label">Print Invoice</span>
+									</a>
+								</li>
+							</ul>
+						</div>';
+			}
+
+			if($record->val('status') == 'NCO' || $record->val('status') == 'NCP'){
+				echo '	<div class="dataface-view-record-actions">
+							<ul>
+								<li id="print_work_order" class="plain">
+									<a class="" id="print_work_order-link" href="'.$app->url('-action=call_slip_print_work_order').' title="" data-xf-permission="view">
+										<img id="call_slip_invoice-icon" src="images/report_icon.png" alt="Print Work Order">                   <span class="action-label">Print Work Order</span>
+									</a>
+								</li>
+							</ul>
+						</div>';
+			}
+		}
+	
 		//Hide the "type" field if the record type is set as "PM"
 		function block__before_type_widget(){
 			$app =& Dataface_Application::getInstance(); 

@@ -40,7 +40,8 @@ class actions_call_slip_print_invoice {
 			$url = $app->url('-action=browse') . '&--msg='.urlencode('Invoice(s) Printed.');;
 
 			//Redirect back to previous
-			print '<script type="text/javascript">window.location.replace("'.$url.'");</script>';
+			//print '<script type="text/javascript">window.location.replace("'.$url.'");</script>';
+			print '<script type="text/javascript">function redirect(){return function(){window.location.replace("'.$url.'");}}setTimeout(redirect(), 10);</script>'; //Include 10us delay to insure that the print dialog pops up.
 		}
 		//If multiple records are selected
 		else{
@@ -66,7 +67,9 @@ class actions_call_slip_print_invoice {
 				$msg = 'Work Order(s) Printed.';
 				
 				//Auto Print
-				print '<script type="text/javascript">window.print();</script>';
+				//print '<script type="text/javascript">window.print();</script>';
+				print '<script type="text/javascript">function redirect(){return function(){window.location.replace("'.$url.'");}}setTimeout(redirect(), 10);</script>'; //Include 10us delay to insure that the print dialog pops up.
+
 			}
 			else
 				$msg = 'Nothing to print.';
