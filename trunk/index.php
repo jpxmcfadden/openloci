@@ -12,8 +12,8 @@
 
 
 		
-require_once "../xataface/dataface-public-api.php";
-df_init(__FILE__, "../xataface");
+require_once "../xataface/trunk/dataface-public-api.php";
+df_init(__FILE__, "../xataface/trunk");
 $app =& Dataface_Application::getInstance();
 $app->display();
 
