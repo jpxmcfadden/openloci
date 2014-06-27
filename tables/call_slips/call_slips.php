@@ -40,7 +40,7 @@ class tables_call_slips {
 //			return array("edit"=>1);
 //		}
 
-/*		function rel_call_slip_purchase_orders__permissions(&$record){
+		function rel_call_slip_purchase_orders__permissions(&$record){
 				return array(
 					'add new related record'=>0,
 					'add existing related record'=>0,
@@ -49,8 +49,8 @@ class tables_call_slips {
 				//	'reorder_related_records'=>1
 				);
 		}
-*/
-/*		function rel_time_logs__permissions(&$record){
+
+		function rel_time_logs__permissions(&$record){
 			//Set timelog edit permissions to use the timelog table's permission settings (unset related record permissions)
 			$perms = &Dataface_PermissionsTool::getRolePermissions(myRole());
 			unset($perms['edit related records']);
@@ -71,7 +71,7 @@ class tables_call_slips {
 //				);
 			}
 		}
-*/
+
 	//Set the record title
 		function getTitle(&$record){
 			//Pull the site address
@@ -451,6 +451,13 @@ class tables_call_slips {
 			//Set status to "Complete"
 			if($record->val('status') == "NCO" || $record->val('status') == "NCP")
 				$record->setValue('status',"CMP"); //Set status to Complete.
+			//Create Credit
+			elseif($record->val('status') == "SNT"){
+				//Create Credit CS
+				$credit_call_id = $this->create_credit_cs($record);
+				$record->setValue('status',"CRD");
+				$record->setValue('credit',"Credited (Call ID " . $credit_call_id . ")");
+			}
 			//Set status to "Ready" - also, save all inventory material sale values (so that they don't change once the invoice has been printed)
 			else{
 				$record->setValue('status',"RDY"); //Set status to Ready.
@@ -552,6 +559,8 @@ class tables_call_slips {
 					$msg = '<input type="hidden" name="--msg" value="Status Changed to: Job Completed">';
 				elseif($record->val('status') == "RDY")
 					$msg = '<input type="hidden" name="--msg" value="Status Changed to: Invoice Ready to Print / Send">';
+				elseif($record->val('status') == "CRD")
+					$msg = '<input type="hidden" name="--msg" value="Credit Call Slip has been created.">';
 				else 
 					$msg = '<input type="hidden" name="--error" value="Something Broke: Status='.$record->val('status').'">';
 			}
@@ -566,7 +575,7 @@ class tables_call_slips {
 			$childString .= '</form>';
 			$childString .= '<script language="Javascript">document.status_change.submit();</script>';
 		}
-		elseif(	$record->val('status') == 'NCO' || $record->val('status') == "NCP" || $record->val('status') == 'CMP' ){
+		elseif(	$record->val('status') == 'NCO' || $record->val('status') == "NCP" || $record->val('status') == 'CMP' || $record->val('status') == "SNT" ){
 			$childString .= '<form>';
 			$childString .= '<input type="hidden" name="-table" value="'.$query['-table'].'">';
 			$childString .= '<input type="hidden" name="-action" value="'.$query['-action'].'">';
@@ -596,6 +605,8 @@ class tables_call_slips {
 				else
 					$childString .= '<input type="submit" value="Change Status to: Invoice Ready to Print / Send">';
 			}
+			elseif($record->val('status') == "SNT")
+				$childString .= '<input type="submit" value="Credit Invoice">';
 			$childString .= '</form>';
 		}
 		//elseif(	$record->val('post_status') == 'Pending'){ //---can do this by linking to -action=ledger_post&selected="this_one"
@@ -613,6 +624,96 @@ class tables_call_slips {
 			'order' => 10
 		);
 	}
+	
+	//Function to create a credit call slip - returns call_id of new credit call_slip, -1 on error.
+	function create_credit_cs($record){
+		$new_cs_record = new Dataface_Record('call_slips', array());
+
+		//Create a array from the current record values.
+		$record_values = $record->vals();
+		
+		//Unset the values that we don't want to transfer to the new record.
+		unset($record_values['search_field']);
+		unset($record_values['call_id']);
+		unset($record_values['status']);
+
+		//Copy everything from the current record to the new
+		foreach($record_values as $name=>$value){
+			$new_cs_record->setValue($name,$value);
+			//$ret .= $name . "=" . $value . " - ";
+		}
+		$new_cs_record->setValue('status','CMP');
+		$new_cs_record->setValue('credit','Credit for Call ID '.$record->val('call_id'));
+		
+		//$res = $record->save();   // Doesn't check permissions
+		$res = $new_cs_record->save(null, true);  // checks permissions
+
+		if ( PEAR::isError($res) ){
+			// An error occurred
+			return -1;
+			throw new Exception($res->getMessage());
+		}
+		
+
+		//Get & parse through call slip inventory records
+		$csi_records = df_get_records_array('call_slip_inventory',array('call_id'=>$record->val('call_id')));
+		foreach($csi_records as $csi_record){
+			//Create new call slip inventory entries
+			$new_csi_record = new Dataface_Record('call_slip_inventory', array());
+
+			//Create a array from the current record values.
+			$record_values = $csi_record->vals();
+
+			//Unset the values that we don't want to transfer to the new record.
+			unset($record_values['csi_id']);
+			unset($record_values['call_id']);
+
+			//Copy everything from the current record to the new
+			foreach($record_values as $name=>$value){
+				$new_csi_record->setValue($name,$value);
+			}
+			$new_csi_record->setValue('call_id',$new_cs_record->val('call_id'));
+
+			$res = $new_csi_record->save(null, true);  // checks permissions
+
+			if ( PEAR::isError($res) ){
+				// An error occurred
+				return -2;
+				throw new Exception($res->getMessage());
+			}
+		}
+		
+		//Create new call slip additional materials entries
+		$csa_records = df_get_records_array('call_slip_additional_materials',array('call_id'=>$record->val('call_id')));
+		foreach($csa_records as $csa_record){
+			//Create new call slip inventory entries
+			$new_csa_record = new Dataface_Record('call_slip_additional_materials', array());
+
+			//Create a array from the current record values.
+			$record_values = $csa_record->vals();
+
+			//Unset the values that we don't want to transfer to the new record.
+			unset($record_values['list_id']);
+			unset($record_values['call_id']);
+
+			//Copy everything from the current record to the new
+			foreach($record_values as $name=>$value){
+				$new_csa_record->setValue($name,$value);
+			}
+			$new_csa_record->setValue('call_id',$new_cs_record->val('call_id'));
+
+			$res = $new_csa_record->save(null, true);  // checks permissions
+
+			if ( PEAR::isError($res) ){
+				// An error occurred
+				return -3;
+				throw new Exception($res->getMessage());
+			}
+		}
+
+		return $new_cs_record->val('call_id');
+	}
+	
 	
 	
 	//Calendar Module Functions
@@ -816,7 +917,9 @@ class tables_call_slips {
 
 
 
-
+function aswed(){
+	return "foo";
+}
 
 
 
