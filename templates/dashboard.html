@@ -103,7 +103,7 @@
 			</li>
 		</ul>
 		
-		<br><b>JOURNAL ENTRIES</b><br>
+		<br><b>GENERAL LEDGER / JOURNAL ENTRIES</b><br>
 		<ul>
 			<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
 				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=general_ledger_recurring"> View / Edit Recurring Journal Entries</a>
@@ -113,6 +113,15 @@
 			</li-->
 			<li><img src="{$ENV.DATAFACE_URL}/images/topic_icon.gif"/>
 				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=journal_post"> Post Journal Entries </a>(Pending: {$journal_pending})
+			</li>
+			<li><img src="{$ENV.DATAFACE_URL}/images/topic_icon.gif"/>
+				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=close_ledger&-period=month"> Close Month </a>
+			</li>
+			<li><img src="{$ENV.DATAFACE_URL}/images/topic_icon.gif"/>
+				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=close_ledger&-period=quarter"> Close Quarter </a>
+			</li>
+			<li><img src="{$ENV.DATAFACE_URL}/images/topic_icon.gif"/>
+				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=close_ledger&-period=year"> Close Year </a>
 			</li>
 		</ul>
 
@@ -149,14 +158,7 @@
 			<li><img src="{$ENV.DATAFACE_URL}/images/file.gif"/> Bank Reconcillation -- ??
 			</li>
 		</ul>
-		
-		<br><b>CLOSE</b><br>
-		<ul>
-			<li><img src="{$ENV.DATAFACE_URL}/images/topic_icon.gif"/> Month
-			</li>
-			<li><img src="{$ENV.DATAFACE_URL}/images/topic_icon.gif"/> Year
-			</li>
-		</ul>
+
 		
 		<br><br>
 		
