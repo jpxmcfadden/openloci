@@ -7,10 +7,12 @@
 		{if $period_select}
 			<p>Please Select from the Following Periods:</p>
 			<form name="select_date">
-				<select name="period">
+				<input type="hidden" name="-action" value="close_ledger">
+				<input type="hidden" name="action_section" value="display">
+				<select name="period_range">
 					<option value="">Please Select...</option>
 					{foreach from=$period_select key=i item=period}
-						<option value="{$period}">{$period}</option>
+						<option value="{$period}">{$i}</option>
 					{/foreach}
 				</select>
 	
@@ -38,7 +40,42 @@
 					</tr>
 					{assign var="i" value=$i+1}
 				{/foreach}
-			</table>			
+			</table>
+		{elseif $accounts}
+			<table class="listing resultList">
+				<tr>
+					<th>Account</th>
+					<th>Name</th>
+					<th>Debit</th>
+					<th>Credit</th>
+				</tr>
+				{$i = 0}
+				{foreach from=$accounts item=list}
+					{if $i%2 == 0}
+						<tr class="listing odd">
+					{else}
+						<tr class="listing even">
+					{/if}
+						<td valign="top">{$list.account_number}</td>
+						<td valign="top">{$list.account_name}</td>
+						<td valign="top" style="text-align: right;">{$list.debit}</td>
+						<td valign="top" style="text-align: right;">{$list.credit}</td>
+					</tr>
+					{assign var="i" value=$i+1}
+				{/foreach}
+				<tr>
+					{if $total_debit == $total_credit}{assign var="color" value="lightgreen"}{else}{assign var="color" value="#ff7070"}{/if}
+					<td></td><td>TOTAL</td><td style="background-color: {$color}; text-align: right;">{$total_debit}</td><td style="background-color: {$color}; text-align: right;">{$total_credit}</td>
+				</tr>
+			</table>
+
+			<form name="confirm_close">
+				<input type="hidden" name="-action" value="close_ledger">
+				<input type="hidden" name="action_section" value="confirm">
+				<input type="hidden" name="period_range" value="{$period_range}">
+				<input type="submit" value="Confirm">
+			</form>
+
 		{/if}
 
 
