@@ -2,6 +2,21 @@
 
 class tables_vendors {
 
+	//Permissions
+	function getPermissions(&$record){
+		//Check if the user is logged in & what their permissions for this table are.
+		if( isUser() ){
+			$userperms = get_userPerms('vendors');
+			if($userperms == "view")
+				return Dataface_PermissionsTool::getRolePermissions("READ ONLY"); //Assign Read Only Permissions
+			elseif($userperms == "edit")
+				return Dataface_PermissionsTool::getRolePermissions(myRole()); //Assign Permissions based on user Role (typically USER)
+		}
+
+		//Default: No Access
+		return Dataface_PermissionsTool::NO_ACCESS();
+	}
+
 	function getTitle(&$record){
 		return $record->val('vendor') . " (ID: " . $record->val('vendor_id') . ")";
 	}

@@ -213,6 +213,10 @@ ul
 }
 
 
+/*Hide the "My Profile" and "Control Panel" links*/
+#personal_tools_my_profile-link {display: none;}
+#personal_tools_manage-link {display: none;}
+
 /*Hides certain fields that we only want to pop up on a selection*/
 /*#custom_rph_form_row {display: none;}*/
 

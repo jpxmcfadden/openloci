@@ -14,19 +14,22 @@ class tables_payroll_entries {
 
 	//Permissions
 	function getPermissions(&$record){
-		//First check if the user is logged in.
+		//Check if the user is logged in & what their permissions for this table are.
 		if( isUser() ){
-			//Check status, determine if record should be uneditable.
-			if ( isset($record) ){
-				if(	$record->val('status') == "Closed")
-					return Dataface_PermissionsTool::getRolePermissions('NO_EDIT_DELETE');
+			$userperms = get_userPerms('payroll');
+			if($userperms == "view")
+				return Dataface_PermissionsTool::getRolePermissions("READ ONLY"); //Assign Read Only Permissions
+			elseif($userperms == "edit" || $userperms == "post" || $userperms == "close"){
+				//Check status, determine if record should be uneditable.
+				if ( isset($record) && $record->val('status') == "Closed" ) //No edit after Closed
+						return Dataface_PermissionsTool::getRolePermissions('NO_EDIT_DELETE');
+				return Dataface_PermissionsTool::getRolePermissions(myRole()); //Assign Permissions based on user Role (typically USER)
 			}
-			return Dataface_PermissionsTool::getRolePermissions(myRole());
 		}
-		else
-			return Dataface_PermissionsTool::NO_ACCESS();
-	}
-	
+
+		//Default: No Access
+		return Dataface_PermissionsTool::NO_ACCESS();
+	}	
 	//If the record has been set to "Posted" don't allow the income and deduction form fields to be edited.
 	function init(&$table){
 		$app =& Dataface_Application::getInstance(); 

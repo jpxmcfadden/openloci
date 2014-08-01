@@ -1,6 +1,6 @@
 <?php
 error_reporting(E_ERROR | E_WARNING | E_PARSE);
-class actions_close_ledger {
+class actions_trial_balance {
 	
 	function handle(&$params){
 		$app =& Dataface_Application::getInstance();
@@ -61,7 +61,7 @@ class actions_close_ledger {
 				
 			} break;
 			
-			case "display": { //Check for unposted batches & show, Show Trial Balance / Income Statement / Balance Sheets
+			case "display": { //Check for unposted batches & show Trial Balance
 				//Get & decode the period range
 				$date_range = urldecode($_GET['period_range']);
 				$data_array = array_merge($data_array, array("period_range"=>$_GET['period_range'])); //Add period_range - going to need to use it again after confim button is pressed.

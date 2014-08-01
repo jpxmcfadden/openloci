@@ -2,6 +2,100 @@
 
 class tables_employees {
 
+	//Permissions
+	function getPermissions(&$record){
+		//Check if the user is logged in & what their permissions for this table are.
+		if( isUser() ){
+			$userperms = get_userPerms('employees');
+			if($userperms == "view_techs"){
+				//Allow access to only those employee records where the employee is assigned as a technician.
+				$employee_table =& Dataface_Table::loadTable('employees');
+				$employee_table->setSecurityFilter(array('tech'=>'Y'));
+				return Dataface_PermissionsTool::getRolePermissions("READ ONLY"); //Assign Read Only Permissions
+			}
+			if($userperms == "view_all")
+				return Dataface_PermissionsTool::getRolePermissions("READ ONLY"); //Assign Read Only Permissions
+			elseif($userperms == "edit")
+				return Dataface_PermissionsTool::getRolePermissions(myRole()); //Assign Permissions based on user Role (typically USER)
+		}
+
+		//Default: No Access
+		return Dataface_PermissionsTool::NO_ACCESS();
+	}
+
+	//Deny view permissions to all fields for non 'edit' users & re-enable the specific fields that the user is entitled to see
+	function __field__permissions($record){
+		//Check Permissions
+		$userperms = get_userPerms('employees');
+		if ( isset($record) && ($userperms == "view_techs" || $userperms == "view_all") )
+			return array('view'=>0);
+	}
+
+	//Viewable for "view_techs" && "view_all" permissions
+		function employee_id__permissions(&$record){
+			//Check permissions & if allowed, set edit permissions to be viewable
+			$userperms = get_userPerms('employees');
+			if ( isset($record) && ($userperms == "view_techs" || $userperms == "view_all") )
+				return array('view'=>1);
+		}
+		function first_name__permissions(&$record){
+			//Check permissions & if allowed, set edit permissions to be viewable
+			$userperms = get_userPerms('employees');
+			if ( isset($record) && ($userperms == "view_techs" || $userperms == "view_all") )
+				return array('view'=>1);
+		}
+		function last_name__permissions(&$record){
+			//Check permissions & if allowed, set edit permissions to be viewable
+			$userperms = get_userPerms('employees');
+			if ( isset($record) && ($userperms == "view_techs" || $userperms == "view_all") )
+				return array('view'=>1);
+		}
+
+	//Viewable for "view_all" permissions
+		function address__permissions(&$record){
+			//Check permissions & if allowed, set edit permissions to be viewable
+			$userperms = get_userPerms('employees');
+			if ( isset($record) && $userperms == "view_all" )
+				return array('view'=>1);
+		}
+		function city__permissions(&$record){
+			//Check permissions & if allowed, set edit permissions to be viewable
+			$userperms = get_userPerms('employees');
+			if ( isset($record) && $userperms == "view_all" )
+				return array('view'=>1);
+		}
+		function state__permissions(&$record){
+			//Check permissions & if allowed, set edit permissions to be viewable
+			$userperms = get_userPerms('employees');
+			if ( isset($record) && $userperms == "view_all" )
+				return array('view'=>1);
+		}
+		function zip__permissions(&$record){
+			//Check permissions & if allowed, set edit permissions to be viewable
+			$userperms = get_userPerms('employees');
+			if ( isset($record) && $userperms == "view_all" )
+				return array('view'=>1);
+		}
+		function phone1__permissions(&$record){
+			//Check permissions & if allowed, set edit permissions to be viewable
+			$userperms = get_userPerms('employees');
+			if ( isset($record) && $userperms == "view_all" )
+				return array('view'=>1);
+		}
+		function phone2__permissions(&$record){
+			//Check permissions & if allowed, set edit permissions to be viewable
+			$userperms = get_userPerms('employees');
+			if ( isset($record) && $userperms == "view_all" )
+				return array('view'=>1);
+		}
+		function email__permissions(&$record){
+			//Check permissions & if allowed, set edit permissions to be viewable
+			$userperms = get_userPerms('employees');
+			if ( isset($record) && $userperms == "view_all" )
+				return array('view'=>1);
+		}
+
+	
 	//Set timelog edit permissions to use the timelog table's permission settings (unset related record permissions)
 	function rel_time_logs__permissions(&$record){
 		$perms = &Dataface_PermissionsTool::getRolePermissions(myRole());
@@ -9,12 +103,6 @@ class tables_employees {
 		unset($perms['delete related record']);
 	}
 
-//function getPermissions($record){
-//	$perms = &Dataface_PermissionsTool::getRolePermissions(myRole());
-//	unset($perms['edit related records']);
-//	unset($perms['delete related record']);
-//	return Dataface_PermissionsTool::getRolePermissions(myRole());
-//}	
 
 	function getTitle(&$record){
 		return $record->val('first_name').' '.$record->val('last_name');

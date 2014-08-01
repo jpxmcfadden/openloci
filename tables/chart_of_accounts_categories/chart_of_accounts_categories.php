@@ -2,9 +2,19 @@
 
 class tables_chart_of_accounts_categories {
 
+	//Permissions
 	function getPermissions(&$record){
-		$role = "NO_EDIT_DELETE";
-		return Dataface_PermissionsTool::getRolePermissions($role);
+		//Check if the user is logged in & what their permissions for this table are.
+		if( isUser() ){
+			$userperms = get_userPerms('chart_of_accounts');
+			if($userperms == "view")
+				return Dataface_PermissionsTool::getRolePermissions("READ ONLY"); //Assign Read Only Permissions
+			elseif($userperms == "edit")
+				return Dataface_PermissionsTool::getRolePermissions("NO_EDIT_DELETE"); //Allows new records, but not editing or deleting of old ones.
+		}
+
+		//Default: No Access
+		return Dataface_PermissionsTool::NO_ACCESS();
 	}
 	
 	function beforeInsert(&$record){

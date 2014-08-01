@@ -6,19 +6,25 @@ class tables_accounts_payable {
 
 	//Permissions
 	function getPermissions(&$record){
-		//First check if the user is logged in.
+		//Check if the user is logged in & what their permissions for this table are.
 		if( isUser() ){
-			//Check status, determine if record should be uneditable.
-			if ( isset($record) ){
-				if(	$record->val('post_status') == 'Posted')
-					return Dataface_PermissionsTool::getRolePermissions('NO_EDIT_DELETE');
+			$userperms = get_userPerms('accounts_payable');
+			if($userperms == "view")
+				return Dataface_PermissionsTool::getRolePermissions("READ ONLY"); //Assign Read Only Permissions
+			elseif($userperms == "edit" || $userperms == "post"){
+				//Check status, determine if record should be uneditable.
+				if ( isset($record) && $record->val('post_status') == 'Posted')
+						return Dataface_PermissionsTool::getRolePermissions('NO_EDIT_DELETE');
+				return Dataface_PermissionsTool::getRolePermissions(myRole()); //Assign Permissions based on user Role (typically USER)
 			}
 		}
-		else
-			return Dataface_PermissionsTool::NO_ACCESS();
+
+		//Default: No Access
+		return Dataface_PermissionsTool::NO_ACCESS();
 	}
 
 
+	
 	function getTitle(&$record){
 		$po_type = substr($record->val('purchase_order_id'),0,1);
 		return 'Voucher ID #' . $record->val('voucher_id') . " (" . $record->strval('voucher_date') . ") - Type: " . $po_type . ", Invoice ID: " . $record->val('invoice_id');

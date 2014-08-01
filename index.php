@@ -27,7 +27,7 @@ function isUser(){
 function isAdmin(){
     $auth =& Dataface_AuthenticationTool::getInstance();
     $user =& $auth->getLoggedInUser();
-    if ( $user and ($user->val('role') == 'ADMIN' or $user->val('role') == 'MASTER') )  return true;
+    if ( $user and ($user->val('role') == 'ADMIN' or $user->val('role') == 'SYSTEM') )  return true;
     return false;
 }
 
@@ -35,6 +35,18 @@ function myRole(){
 	$auth =& Dataface_AuthenticationTool::getInstance();
 	$user =& $auth->getLoggedInUser();
 	return $user->val('role'); 
+}
+
+function userID(){
+	$auth =& Dataface_AuthenticationTool::getInstance();
+	$user =& $auth->getLoggedInUser();
+	return $user->val('user_id'); 
+}
+
+function get_userPerms($perm){
+	$auth =& Dataface_AuthenticationTool::getInstance();
+	$user =& $auth->getLoggedInUser();
+	return $user->val($perm);
 }
 
 function default_location_state(){

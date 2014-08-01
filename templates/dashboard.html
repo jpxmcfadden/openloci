@@ -2,140 +2,380 @@
 	{fill_slot name="main_column"}
         <h1>Welcome to OpenLoci</h1>
         
-        <!--p>Please navigate by using the tabs above.</p-->
 		<p> </p>
 		
 
-		<h3><u>SERVICE MENU</u></h3>
+		<h3><u>MAIN MENU</u></h3>
 
-		<br><b>CALL SLIPS</b><br>
-		<ul>
-			<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
-				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=call_slips"> View / Edit / Add Call Slips</a>
-			</li>
-			<li><img src="{$ENV.DATAFACE_URL}/images/topic_icon.gif"/>
-				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=call_slip_print_invoice"> Batch Print Invoices </a>(Ready: {$call_slips})
-			</li>
-			<li><img src="{$ENV.DATAFACE_URL}/images/topic_icon.gif"/>
-				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=call_slip_print_work_order"> Print All Unprinted Work Orders </a>
-			</li>
-		</ul>
+		{if $view_service_menu == "view"}
+		
+			<br><table><tr><td><b><h4>Service</h4></b></td><tr>
+			<tr><td style="padding-left: 1em;">
+			
+			{if $call_slips == "view"}
+				<br><b>CALL SLIPS</b><br>
+				<ul>
+					<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
+						<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=call_slips"> View Call Slips</a>
+					</li>
+				</ul>
+			{elseif $call_slips == "edit"}
+				<br><b>CALL SLIPS</b><br>
+				<ul>
+					<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
+						<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=call_slips"> View / Edit / Add Call Slips</a>
+					</li>
+					<li><img src="{$ENV.DATAFACE_URL}/images/topic_icon.gif"/>
+						<a href="{$ENV.DATAFACE_SITE_HREF}?-action=call_slip_print_invoice"> Batch Print Invoices </a>(Ready: {$call_slips_ready})
+					</li>
+					<li><img src="{$ENV.DATAFACE_URL}/images/topic_icon.gif"/>
+						<a href="{$ENV.DATAFACE_SITE_HREF}?-action=call_slip_print_work_order"> Print All Unprinted Work Orders </a>
+					</li>
+				</ul>
+			{/if}
+			
+			{if $customers == "view"}
+				<br><b>CUSTOMERS</b><br>
+				<ul>
+					<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
+						<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=customers"> View Customers</a>
+					</li>
+					<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
+						<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=customer_sites"> View Sites</a>
+					</li>
+				</ul>
+			{elseif $customers == "edit"}
+				<br><b>CUSTOMERS</b><br>
+				<ul>
+					<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
+						<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=customers"> View / Edit / Add Customers</a>
+					</li>
+					<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
+						<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=customer_sites"> View / Edit / Add Sites</a>
+					</li>
+				</ul>
+			{/if}
+			
+			{if $contracts == "view"}
+				<br><b>CONTRACTS</b><br>
+				<ul>
+					<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
+						<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=contracts"> View Contracts</a>
+					</li>
+					{if $call_slips == "edit"}
+						<li><img src="{$ENV.DATAFACE_URL}/images/topic_icon.gif"/>
+							<a href="{$ENV.DATAFACE_SITE_HREF}?-action=generate_ccs"> Generate Contract Call Slips</a> <!--(**Save what has already been generated and add a check w/ yes/no)-->
+						</li>
+					{/if}
+				</ul>
+			{elseif $contracts == "edit"}
+				<br><b>CONTRACTS</b><br>
+				<ul>
+					<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
+						<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=contracts"> View / Edit / Add Contracts</a>
+					</li>
+					{if $call_slips == "edit"}
+						<li><img src="{$ENV.DATAFACE_URL}/images/topic_icon.gif"/>
+							<a href="{$ENV.DATAFACE_SITE_HREF}?-action=generate_ccs"> Generate Contract Call Slips</a> <!--(**Save what has already been generated and add a check w/ yes/no)-->
+						</li>
+					{/if}
+				</ul>
+			{/if}
+			
+			{if $dispatch != ""}
+				<br><b>DISPATCH</b><br>
+				<ul>
+					<li><img src="{$ENV.DATAFACE_URL}/images/table.gif"/>
+						<a href="{$ENV.DATAFACE_SITE_HREF}?-action=calendar_display&-table=call_slips"> Dispatch Board</a>
+					</li>
+				</ul>
+			{/if}
+			
+			</td></tr></table>
+		{/if}
 
-		<br><b>CUSTOMERS</b><br>
-		<ul>
-			<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
-				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=customers"> View / Edit / Add Customers</a>
-			</li>
-			<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
-				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=customer_sites"> View / Edit / Add Sites</a>
-			</li>
-		</ul>
+		
+		{if $view_accounting_menu == "view"}
+		
+			<br><table><tr><td><b><h4>Accounting</h4></b></td><tr>
+			<tr><td style="padding-left: 1em;">
+			
+			{if $inventory == "view"}
+				<br><b>INVENTORY</b><br>
+				<ul>
+					<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
+						<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=inventory"> View the Inventory</a>
+					</li>
+				</ul>
+			{elseif $inventory == "edit"}
+				<br><b>INVENTORY</b><br>
+				<ul>
+					<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
+						<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=inventory"> View / Edit the Inventory</a>
+					</li>
+				</ul>
+			{/if}
+
+			
+			{if $chart_of_accounts == "view"}
+				<br><b>ACCOUNTS</b><br>
+				<ul>
+					<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
+						<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=chart_of_accounts"> View the Chart of Accounts</a>
+					</li>
+				</ul>
+			{elseif $chart_of_accounts == "edit"}
+				<br><b>ACCOUNTS</b><br>
+				<ul>
+					<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
+						<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=chart_of_accounts"> View / Edit the Chart of Accounts</a>
+					</li>
+				</ul>
+			{/if}
+			
+			{if $general_ledger == "view"}
+				<br><b>GENERAL LEDGER</b><br>
+				<ul>
+					<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
+						<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=general_ledger"> View General Ledger Journal Entries</a>
+					</li>
+					<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
+						<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=general_ledger_recurring"> View Recurring Journal Entries</a>
+					</li>
+				</ul>
+			{elseif $general_ledger == "edit" || $general_ledger == "post" || $general_ledger == "close"}
+				<br><b>GENERAL LEDGER</b><br>
+				<ul>
+					<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
+						<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=general_ledger"> View / Edit General Ledger Journal Entries</a>
+					</li>
+					<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
+						<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=general_ledger_recurring"> View / Edit Recurring Journal Entries</a>
+					</li>
+
+					<!--li><img src="{$ENV.DATAFACE_URL}/images/topic_icon.gif"/>
+						<a href="{$ENV.DATAFACE_SITE_HREF}?-action=journal_recurring"> Generate Recurring Journal Entries </a>
+					</li-->
+
+					{if $general_ledger == "post" || $general_ledger == "close"}
+						<li><img src="{$ENV.DATAFACE_URL}/images/topic_icon.gif"/>
+							<a href="{$ENV.DATAFACE_SITE_HREF}?-action=journal_post"> Post Journal Entries </a>(Pending: {$general_ledger_pending})
+						</li>
+					{/if}
+					
+					{if $general_ledger == "close"}
+						<li><img src="{$ENV.DATAFACE_URL}/images/topic_icon.gif"/>
+							<a href="{$ENV.DATAFACE_SITE_HREF}?-action=close_ledger&-period_type=month"> Close Month </a>
+						</li>
+						<li><img src="{$ENV.DATAFACE_URL}/images/topic_icon.gif"/>
+							<a href="{$ENV.DATAFACE_SITE_HREF}?-action=close_ledger&-period_type=quarter"> Close Quarter </a>
+						</li>
+						<li><img src="{$ENV.DATAFACE_URL}/images/topic_icon.gif"/>
+							<a href="{$ENV.DATAFACE_SITE_HREF}?-action=close_ledger&-period_type=year"> Close Year </a>
+						</li>
+					{/if}
+				</ul>
+			{/if}
+
+			{if $purchase_order_inventory != "" || $purchase_order_service != "" || $purchase_order_office != "" || $purchase_order_services_rendered != ""}
+				<br><b>PURCHASE ORDERS</b><br>
+				<ul>
+					{if $purchase_order_inventory == "view"}
+						<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
+							<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=purchase_order_inventory"> View Inventory Purchase Orders</a>
+						</li>
+					{elseif $purchase_order_inventory == "edit" || $purchase_order_inventory == "post"}
+						<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
+							<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=purchase_order_inventory"> View / Edit Inventory Purchase Orders</a>
+						</li>
+					{/if}
+						
+					{if $purchase_order_service == "view"}
+						<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
+							<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=purchase_order_service"> View Service Purchase Orders</a>
+						</li>
+					{elseif $purchase_order_service == "edit" || $purchase_order_service == "post"}
+						<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
+							<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=purchase_order_service"> View / Edit Service Purchase Orders</a>
+						</li>
+					{/if}
+						
+					{if $purchase_order_office == "view"}
+						<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
+							<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=purchase_order_office"> View Office Purchase Orders</a>
+						</li>
+					{elseif $purchase_order_office == "edit" || $purchase_order_office == "post"}
+						<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
+							<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=purchase_order_office"> View / Edit Office Purchase Orders</a>
+						</li>
+					{/if}
+
+					{if $purchase_order_rendered_services == "view"}
+						<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
+							<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=purchase_order_rendered_services"> View Rendered Services Purchase Orders</a>
+						</li>
+					{elseif $purchase_order_rendered_services == "edit" || $purchase_order_rendered_services == "post"}
+						<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
+							<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=purchase_order_rendered_services"> View / Edit Rendered Services Purchase Orders</a>
+						</li>
+					{/if}
+
+					{if $purchase_order_inventory == "post"}
+						<li><img src="{$ENV.DATAFACE_URL}/images/topic_icon.gif"/>
+							<a href="{$ENV.DATAFACE_SITE_HREF}?-action=purchase_order_post_inventory"> Post Inventory Purchase Orders</a> (Pending: {$ipo_pending})
+						</li>
+					{/if}
+					{if $purchase_order_service == "post"}
+						<li><img src="{$ENV.DATAFACE_URL}/images/topic_icon.gif"/>
+							<a href="{$ENV.DATAFACE_SITE_HREF}?-action=purchase_order_post_service"> Post Service Purchase Orders</a> (Pending: {$spo_pending})
+						</li>
+					{/if}
+					{if $purchase_order_office == "post"}
+						<li><img src="{$ENV.DATAFACE_URL}/images/topic_icon.gif"/>
+							<a href="{$ENV.DATAFACE_SITE_HREF}?-action=purchase_order_post_office"> Post Office Purchase Orders</a> (Pending: {$opo_pending})
+						</li>
+					{/if}
+					{if $purchase_order_rendered_services == "post"}
+						<li><img src="{$ENV.DATAFACE_URL}/images/topic_icon.gif"/>
+							<a href="{$ENV.DATAFACE_SITE_HREF}?-action=purchase_order_post_rendered_services"> Post Rendered Services Purchase Orders</a> (Pending: {$rpo_pending})
+						</li>
+					{/if}
+
+				</ul>
+			{/if}
+
+			{if $payroll == "view"}
+				<br><b>PAYROLL</b><br>
+				<ul>
+					<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
+						<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=payroll_period"> View Payroll Archive</a>
+					</li>
+				</ul>		
+			{elseif $payroll == "edit" || $payroll == "post"}
+				<br><b>PAYROLL</b><br>
+				<ul>
+					<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
+						<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=payroll_period"> View Payroll Archive / Edit {if $payroll == "post"}& Post{/if} Unposted & Closed Periods</a>
+					</li>
+					<li><img src="{$ENV.DATAFACE_URL}/images/topic_icon.gif"/>
+						<a href="{$ENV.DATAFACE_SITE_HREF}?-action=generate_payroll"> Generate New payroll Period</a>
+					</li>
+				</ul>		
+			{elseif $payroll == "close"}
+				<br><b>PAYROLL</b><br>
+				<ul>
+					<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
+						<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=payroll_period"> View Payroll Archive / Edit & Post Unposted & Closed Periods</a>
+					</li>
+					<li><img src="{$ENV.DATAFACE_URL}/images/topic_icon.gif"/>
+						<a href="{$ENV.DATAFACE_SITE_HREF}?-action=generate_payroll"> Generate New payroll Period</a>
+					</li>
+					<li><img src="{$ENV.DATAFACE_URL}/images/topic_icon.gif"/>
+						<a href="{$ENV.DATAFACE_SITE_HREF}?-action=close_payroll"> Close Payroll</a>
+					</li>
+				</ul>		
+			{/if}
+
+
+			{if $accounts_payable == "view"}
+				<br><b>ACCOUNTS PAYABLE</b><br>
+				<ul>
+					<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
+						<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=accounts_payable"> View Payroll Archive</a>
+					</li>
+				</ul>
+			{elseif $accounts_payable == "edit"}
+				<br><b>ACCOUNTS PAYABLE</b><br>
+				<ul>
+					<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
+						<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=accounts_payable"> View / Edit Payroll Archive</a>
+					</li>
+				</ul>
+			{elseif $accounts_payable == "post"}
+				<br><b>ACCOUNTS PAYABLE</b><br>
+				<ul>
+					<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
+						<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=accounts_payable"> View / Edit Payroll Archive</a>
+					</li>
+					<li><img src="{$ENV.DATAFACE_URL}/images/topic_icon.gif"/>
+						<a href="{$ENV.DATAFACE_SITE_HREF}?-action=accounts_payable_batch_post"> Post Accounts Payable [Batches]</a> (Pending: {$payable_pending_batches})
+					</li>
+					<li><img src="{$ENV.DATAFACE_URL}/images/topic_icon.gif"/>
+						<a href="{$ENV.DATAFACE_SITE_HREF}?-action=accounts_payable_post"> Post Accounts Payable [Not assigned to a batch] </a>(Pending: {$payable_pending})
+					</li>
+				</ul>
+			{/if}
+
+			{if 0} 
+			----------------------------------------------------------------------------------------------------
+			----------------------------------------------------------------------------------------------------
+				<ul>
+					<li><img src="{$ENV.DATAFACE_URL}/images/topic_icon.gif"/> Print Checks (Ready: #)</a>
+					</li>
+				</ul>
+			----------------------------------------------------------------------------------------------------
+			----------------------------------------------------------------------------------------------------
+			{/if}
+			
+			</td></tr></table>
+		{/if}
 		
 		
-		<br><b>CONTRACTS</b><br>
-		<ul>
-			<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
-				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=contracts"> View / Edit / Add Contracts</a>
-			</li>
-			<li><img src="{$ENV.DATAFACE_URL}/images/topic_icon.gif"/>
-				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=generate_ccs"> Generate Contract Call Slips</a> <!--(**Save what has already been generated and add a check w/ yes/no)-->
-			</li>
-		</ul>
-
-		<br><b>DISPATCH</b><br>
-		<ul>
-			<li><img src="{$ENV.DATAFACE_URL}/images/table.gif"/>
-				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=calendar_display&-table=call_slips"> Dispatch Board</a>
-			</li>
-		</ul>
-
-		<br><br>
-
-		<p>-----------------------------------------------------------------------------------------------------------------------------</p>
 		
-		<h3><u>ACCOUNTING MENU</u></h3>
-
-
-		<br><b>Payroll</b><br>
-		<ul>
-			<li><img src="{$ENV.DATAFACE_URL}/images/topic_icon.gif"/>
-				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=generate_payroll"> Generate new payroll period</a>
-			</li>
-			<li><img src="{$ENV.DATAFACE_URL}/images/topic_icon.gif"/>
-				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=close_payroll"> Close Payroll</a>
-			</li>
-			<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
-				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=payroll_period"> View payroll archive</a>
-			</li>
-		</ul>
-
 		
-		<br><b>Inventory</b><br>
-		<ul>
-			<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
-				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=inventory"> View / Edit the Inventory</a>
-			</li>
-		</ul>
 		
-		<br><b>Purchase Orders</b><br>
-		<ul>
-			<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
-				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=purchase_order_post_inventory"> Post Inventory Purchase Orders</a>(Pending: {$ipo_pending})
-			</li>
-			<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
-				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=purchase_order_post_service"> Post Service Purchase Orders</a>(Pending: {$spo_pending})
-			</li>
-			<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
-				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=purchase_order_post_office"> Post Office Purchase Orders</a>(Pending: {$opo_pending})
-			</li>
-			<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
-				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=purchase_order_post_rendered_services"> Post Rendered Services Purchase Orders</a>(Pending: {$rpo_pending})
-			</li>
-		</ul>
-
-		<br><b>TABLES</b><br>
-		<ul>
-			<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
-				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=chart_of_accounts"> View / Edit the Chart of Accounts</a>
-			</li>
-			<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
-				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=general_ledger"> View / Edit the General Ledger</a>
-			</li>
-		</ul>
 		
-		<br><b>GENERAL LEDGER / JOURNAL ENTRIES</b><br>
-		<ul>
-			<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
-				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=general_ledger_recurring"> View / Edit Recurring Journal Entries</a>
-			</li>
-			<!--li><img src="{$ENV.DATAFACE_URL}/images/topic_icon.gif"/>
-				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=journal_recurring"> Generate Recurring Journal Entries </a>
-			</li-->
-			<li><img src="{$ENV.DATAFACE_URL}/images/topic_icon.gif"/>
-				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=journal_post"> Post Journal Entries </a>(Pending: {$journal_pending})
-			</li>
-			<li><img src="{$ENV.DATAFACE_URL}/images/topic_icon.gif"/>
-				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=close_ledger&-period_type=month"> Close Month </a>
-			</li>
-			<li><img src="{$ENV.DATAFACE_URL}/images/topic_icon.gif"/>
-				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=close_ledger&-period_type=quarter"> Close Quarter </a>
-			</li>
-			<li><img src="{$ENV.DATAFACE_URL}/images/topic_icon.gif"/>
-				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=close_ledger&-period_type=year"> Close Year </a>
-			</li>
-		</ul>
+		
+		
+		{if $view_admin_menu == "view"}
+		
+			<br><table><tr><td><b><h4>System Administration</h4></b></td><tr>
+			<tr><td style="padding-left: 1em;">
+		
+			{if $rates != "" || $county_tax != "" || $payroll_config != ""}
+				<br><b>SETTINGS</b>
+				<ul>
+				{if $rates == "edit"}
+					<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
+						<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=rates"> Customer Rates Table</a>
+					</li>
+				{/if}
+				{if $county_tax == "edit"}
+					<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
+						<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=admin_county_tax"> County Tax Table</a>
+					</li>
+				{/if}
+				{if $payroll_config == "edit"}
+					<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
+						<a href="{$ENV.DATAFACE_SITE_HREF}?-action=edit&-table=_payroll_config"> Payroll Configuration</a>
+					</li>
+				{/if}
+				</ul>
+			{/if}
+			
+			{if $role == "SYSTEM"}
+				<br><b>SYSTEM SETTINGS</b>
+				<ul>
+					<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
+						<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=_system_users"> Users</a>
+					</li>
+					<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
+						<a href="{$ENV.DATAFACE_SITE_HREF}?-action=edit&-table=_company_info"> Company Information</a>
+					</li>
+					<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
+						<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=dataface__htmlreports_reports"> Edit Printable Documents</a>
+					</li>
+				</ul>
+			{/if}
+		
+			</td></tr></table>
+		{/if}
+		
+		
+		
+{if 0}
 
-		<br><b>ACCOUNTS PAYABLE</b><br>
-		<ul>
-			<li><img src="{$ENV.DATAFACE_URL}/images/topic_icon.gif"/>
-				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=accounts_payable_batch_post"> Post Accounts Payable (Batches)</a>(Pending: {$payable_pending_batches})
-			</li>
-			<li><img src="{$ENV.DATAFACE_URL}/images/topic_icon.gif"/>
-				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=accounts_payable_post"> Post Accounts Payable (Not assigned to a batch)</a>(Pending: {$payable_pending})
-			</li>
-			<li><img src="{$ENV.DATAFACE_URL}/images/topic_icon.gif"/> Print Checks (Ready: #)</a>
-			</li>
-		</ul>
+
 		
 		<br><b>ACCOUNTS RECEIVABLE</b><br>
 		<ul>
@@ -161,29 +401,7 @@
 
 		
 		<br><br>
-		
-
-		<h3><u>ADMIN MENU</u></h3>
-
-		<br><b>ADMIN SETTINGS</b>
-		<ul>
-			<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
-				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=admin_users"> View / Edit the Users Table</a>
-			</li>
-			<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
-				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=rates"> View / Edit the Rates Table</a>
-			</li>
-			<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
-				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=admin_county_tax"> View / Edit the County / Tax Table</a>
-			</li>
-			<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
-				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=_system_company_info"> View / Edit the Company Information</a>
-			</li>
-			<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
-				<a href="{$ENV.DATAFACE_SITE_HREF}?-action=edit&-table=_payroll_config"> Payroll Configuration</a>
-			</li>
-		</ul>
-		
+				
             <!--ul>
                 <li><img src="{$ENV.DATAFACE_URL}/images/add_icon.gif"/>
                     <a href="{$ENV.DATAFACE_SITE_HREF}?-table=customers&-action=new">
@@ -215,5 +433,8 @@
                 </li>
                 
             </ul-->
+{/if}
+
+
 	{/fill_slot}
 {/use_macro}
