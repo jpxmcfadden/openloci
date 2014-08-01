@@ -2,6 +2,21 @@
 
 class tables_call_slip_inventory {
 
+	//Permissions
+	function getPermissions(&$record){
+		//Check if the user is logged in & what their permissions for this table are.
+		if( isUser() ){
+			$userperms = get_userPerms('call_slips');
+			if($userperms == "view")
+				return Dataface_PermissionsTool::getRolePermissions("READ ONLY"); //Assign Read Only Permissions
+			elseif($userperms == "edit")
+				return Dataface_PermissionsTool::getRolePermissions(myRole()); //Assign Permissions based on user Role (typically USER)
+		}
+
+		//Default: No Access
+		return Dataface_PermissionsTool::NO_ACCESS();
+	}
+
 	//This is for Call Slip Invoices
 	function field__total_cost($record){
 		$total_cost = number_format($record->val('quantity') * $record->val('sell_cost'),2);

@@ -4,7 +4,10 @@ class actions_close_payroll {
 
 		//Permission check
 		if ( !isUser() )
-			return Dataface_Error::permissionDenied("You are not logged in");	
+			return Dataface_Error::permissionDenied("You are not logged in");
+			
+		if(get_userPerms('payroll') != "Close")
+			return Dataface_Error::permissionDenied("You do not have the proper permissions to Close Payroll");
 
 		//Pull Payroll Configuration Information
 		$payroll_config = df_get_record('_payroll_config', array('config_id'=>1));

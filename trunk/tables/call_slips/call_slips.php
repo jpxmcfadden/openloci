@@ -9,45 +9,54 @@ class tables_call_slips {
 
 	//Permissions
 		function getPermissions(&$record){
-			//First check if the user is logged in.
+			//Check if the user is logged in & what their permissions for this table are.
 			if( isUser() ){
-				//Check status, determine if record should be uneditable.
-				if ( isset($record) ){
-					//return Dataface_PermissionsTool::getRolePermissions(myRole());
-					//if(	$record->val('status') == 'RDY' ||
-					//	$record->val('status') == 'SNT' ||
-					//	$record->val('status') == 'PPR' ||
-					//	$record->val('status') == 'PRE' ||
-					//	$record->val('status') == 'CMP'
-					//)
-					if($record->val('status') != 'NCO' && $record->val('status') != 'NCP' && $record->val('status') != 'CMP')
-						return Dataface_PermissionsTool::getRolePermissions('NO_EDIT_DELETE');
-						//return Dataface_PermissionsTool::getRolePermissions('MASTER'); //This needs to be changed - When saving with the above line, it doesn't let save if converting to RDY etc. Need button anyway.
+				$userperms = get_userPerms('call_slips');
+				if($userperms == "view")
+					return Dataface_PermissionsTool::getRolePermissions("READ ONLY"); //Assign Read Only Permissions
+				elseif($userperms == "edit"){
+					$perms = Dataface_PermissionsTool::getRolePermissions(myRole()); //Assign Permissions based on user Role (typically USER)
+					if ( isset($record) && ( $record->val('status') != 'NCO' && $record->val('status') != 'NCP' && $record->val('status') != 'CMP' ) )
+						unset($perms['delete']);
+					return $perms;
 				}
 			}
-			else
-				return Dataface_PermissionsTool::NO_ACCESS();
+
+			//Default: No Access
+			return Dataface_PermissionsTool::NO_ACCESS();
 		}
 
-//		function __field__permissions($record){
-//			if(isset($record) && $record->val('status') != 'NCO')
-//			$perms = &Dataface_PermissionsTool::getRolePermissions(myRole());
-//			unset($perms['edit']);
-//			return array("edit" => 0);
-//		}
+		function __field__permissions($record){
+			if ( isset($record) && ($record->val('status') != 'NCO' && $record->val('status') != 'NCP' && $record->val('status') != 'CMP' ) )
+					return array('edit'=>0);
+		}
+
+		//Remove the "edit" tab, if applicable. --- Field permissions are set to 'edit'=>0 anyway, but since changing "status" required general edit access via getPermissions(), which then automatically shows the tab - this needs to be visually disabled.
+		function init(){
+			$app =& Dataface_Application::getInstance();
+			$query =& $app->getQuery();
+			$record =& $app->getRecord();
+			
+			//Only on the 'view' page. Otherwise, causes issues with looking at the entire table (i.e. user sees a blank page).
+			//If record exists & the status is set such that the record shouldn't be editable.
+			if($query['-action'] == 'view' && ( isset($record) && ($record->val('status') != 'NCO' && $record->val('status') != 'NCP' && $record->val('status') != 'CMP' ) ))
+				echo "<style>#record-tabs-edit{display: none;}</style";
+		}
 		
-//		function status__permissions(&$record){
-//			return array("edit"=>1);
-//		}
+		function status__permissions(&$record){
+		//Check permissions & if allowed, set edit permissions for "account_status"
+		if(get_userPerms('call_clips') == "edit")
+			return array("edit"=>1);
+		}
 
 		function rel_call_slip_purchase_orders__permissions(&$record){
-				return array(
-					'add new related record'=>0,
-					'add existing related record'=>0,
-					'remove related record'=>0,
-					'delete related record'=>0
-				//	'reorder_related_records'=>1
-				);
+			return array(
+				'add new related record'=>0,
+				'add existing related record'=>0,
+				'remove related record'=>0,
+				'delete related record'=>0
+			//	'reorder_related_records'=>1
+			);
 		}
 
 		function rel_time_logs__permissions(&$record){
@@ -55,20 +64,16 @@ class tables_call_slips {
 			$perms = &Dataface_PermissionsTool::getRolePermissions(myRole());
 			unset($perms['edit related records']);
 			unset($perms['delete related record']);
-
-///			$foo = $record->val('status');
-//			$foo = 1;
-			
+				
 			//If call slip is no longer incomplete, don't allow entry modification
 			if(isset($record))
 			if($record->val('status') != 'NCO' && $record->val('status') != 'NCP' && $record->val('status') != 'CMP'){
-//			if($foo == 1){
-//				return array(
-//					'add new related record'=>0,
-//					'add existing related record'=>0,
-//					'remove related record'=>0,
-//					'delete related record'=>0
-//				);
+				return array(
+					'add new related record'=>0,
+					'add existing related record'=>0,
+					'remove related record'=>0,
+					'delete related record'=>0
+				);
 			}
 		}
 
@@ -441,188 +446,192 @@ class tables_call_slips {
 
 	
 	function section__status(&$record){
-		$app =& Dataface_Application::getInstance(); 
-		$query =& $app->getQuery();
-		$childString = '';
+		//Check permissions & if allowed, show Change Status button
+		if(get_userPerms('call_slips') == "edit"){
 
-		//If the "Change Status To: Complete / Ready" button has been pressed.
-		//Because both the $_GET and $query will be "" on a new record, check to insure that they are not empty.
-		if(($_GET['-status_change'] == $query['-recordid']) && ($query['-recordid'] != "")){
-			//Set status to "Complete"
-			if($record->val('status') == "NCO" || $record->val('status') == "NCP")
-				$record->setValue('status',"CMP"); //Set status to Complete.
-			//Create Credit
-			elseif($record->val('status') == "SNT"){
-				//Create Credit CS
-				$credit_call_id = $this->create_credit_cs($record);
-				$record->setValue('status',"CRD");
-				$record->setValue('credit',"Credited (Call ID " . $credit_call_id . ")");
-			}
-			//Set status to "Ready" - also, save all inventory material sale values (so that they don't change once the invoice has been printed)
-			else{
-				$record->setValue('status',"RDY"); //Set status to Ready.
-				
-				//Set item sale prices
-				
-				//Inventory Items
-				$inventoryRecords = df_get_records_array('call_slip_inventory', array('call_id'=>$record->val('call_id')));
-				foreach ($inventoryRecords as $cs_ir){
-					//Pull the item / cost out of the 'inventory' table
-					$inventory_record = df_get_record('inventory', array('inventory_id'=>$cs_ir->val('inventory_id')));
-					
-					$purchase_price = $cs_ir->val('purchase_price');
-					$sale_price = $cs_ir->val('sale_price'); //Pull sale price from record (will likely be null)
+			$app =& Dataface_Application::getInstance(); 
+			$query =& $app->getQuery();
+			$childString = '';
 
-					//If the sale price has not already been set in the callslip inventory record
-					if(!isset($sale_price)){
-					
-						//Check if the Inventory sale overide has been set, if so, use it
-						if($inventory_record->val('sale_method')=="overide"){
-							$sale_price = $inventory_record->val('sale_overide');
-						}
-						//Otherwise (most likely), calculate based on the purchase price and set customer markup rate
-						else{ 
-							//Get the custmer markup record
-							$customerRecord = df_get_record('customers', array('customer_id'=>$record->val('customer_id')));
-							$markupRecords = df_get_records_array('customer_markup_rates', array('markup_id'=>$record->val('markup')));
-
-							foreach ($markupRecords as $mr) {
-								if($mr->val('to') == null)
-									$no_limit = true;
-								
-								if( ($purchase_price >= $mr->val('from')) && ($purchase_price <= $mr->val('to') || $no_limit == true) ){
-									$markup = $mr->val('markup_percent');
-									break;
-								}
-							}
-							
-							$sale_price = round($purchase_price * (1+$markup),2);
-						}				
-
-						$cs_ir->setValue('sale_price',$sale_price);
-						$res = $cs_ir->save(null,true); //Save Record w/ permission check.
-					}
+			//If the "Change Status To: Complete / Ready" button has been pressed.
+			//Because both the $_GET and $query will be "" on a new record, check to insure that they are not empty.
+			if(($_GET['-status_change'] == $query['-recordid']) && ($query['-recordid'] != "")){
+				//Set status to "Complete"
+				if($record->val('status') == "NCO" || $record->val('status') == "NCP")
+					$record->setValue('status',"CMP"); //Set status to Complete.
+				//Create Credit
+				elseif($record->val('status') == "SNT"){
+					//Create Credit CS
+					$credit_call_id = $this->create_credit_cs($record);
+					$record->setValue('status',"CRD");
+					$record->setValue('credit',"Credited (Call ID " . $credit_call_id . ")");
 				}
+				//Set status to "Ready" - also, save all inventory material sale values (so that they don't change once the invoice has been printed)
+				else{
+					$record->setValue('status',"RDY"); //Set status to Ready.
+					
+					//Set item sale prices
+					
+					//Inventory Items
+					$inventoryRecords = df_get_records_array('call_slip_inventory', array('call_id'=>$record->val('call_id')));
+					foreach ($inventoryRecords as $cs_ir){
+						//Pull the item / cost out of the 'inventory' table
+						$inventory_record = df_get_record('inventory', array('inventory_id'=>$cs_ir->val('inventory_id')));
+						
+						$purchase_price = $cs_ir->val('purchase_price');
+						$sale_price = $cs_ir->val('sale_price'); //Pull sale price from record (will likely be null)
 
-				//Purchase Order Items
-				$purchaseRecords = df_get_records_array('purchase_order_service', array('callslip_id'=>$record->val('call_id')));
-				foreach ($purchaseRecords as $cs_pr){
-					//Pull the items from the purchase order record
-					$itemRecords = df_get_records_array('purchase_order_service_items', array('purchase_order_id'=>$cs_pr->val('purchase_id')));
-					foreach ($itemRecords as $item){
-						$purchase_price = $item->val('purchase_price');
-						$sale_price = $item->val('sale_price'); //Pull sale price from record (will likely be null)
-
-						//If the sale price has not already been set in the po item record
+						//If the sale price has not already been set in the callslip inventory record
 						if(!isset($sale_price)){
-							//Get the custmer markup record
-							$customerRecord = df_get_record('customers', array('customer_id'=>$record->val('customer_id')));
-							$markupRecords = df_get_records_array('customer_markup_rates', array('markup_id'=>$record->val('markup')));
+						
+							//Check if the Inventory sale overide has been set, if so, use it
+							if($inventory_record->val('sale_method')=="overide"){
+								$sale_price = $inventory_record->val('sale_overide');
+							}
+							//Otherwise (most likely), calculate based on the purchase price and set customer markup rate
+							else{ 
+								//Get the custmer markup record
+								$customerRecord = df_get_record('customers', array('customer_id'=>$record->val('customer_id')));
+								$markupRecords = df_get_records_array('customer_markup_rates', array('markup_id'=>$record->val('markup')));
 
-							foreach ($markupRecords as $mr) {
-								if($mr->val('to') == null)
-									$no_limit = true;
-								
-								if( ($purchase_price >= $mr->val('from')) && ($purchase_price <= $mr->val('to') || $no_limit == true) ){
-									$markup = $mr->val('markup_percent');
-									break;
+								foreach ($markupRecords as $mr) {
+									if($mr->val('to') == null)
+										$no_limit = true;
+									
+									if( ($purchase_price >= $mr->val('from')) && ($purchase_price <= $mr->val('to') || $no_limit == true) ){
+										$markup = $mr->val('markup_percent');
+										break;
+									}
 								}
+								
+								$sale_price = round($purchase_price * (1+$markup),2);
+							}				
+
+							$cs_ir->setValue('sale_price',$sale_price);
+							$res = $cs_ir->save(null,true); //Save Record w/ permission check.
+						}
+					}
+
+					//Purchase Order Items
+					$purchaseRecords = df_get_records_array('purchase_order_service', array('callslip_id'=>$record->val('call_id')));
+					foreach ($purchaseRecords as $cs_pr){
+						//Pull the items from the purchase order record
+						$itemRecords = df_get_records_array('purchase_order_service_items', array('purchase_order_id'=>$cs_pr->val('purchase_id')));
+						foreach ($itemRecords as $item){
+							$purchase_price = $item->val('purchase_price');
+							$sale_price = $item->val('sale_price'); //Pull sale price from record (will likely be null)
+
+							//If the sale price has not already been set in the po item record
+							if(!isset($sale_price)){
+								//Get the custmer markup record
+								$customerRecord = df_get_record('customers', array('customer_id'=>$record->val('customer_id')));
+								$markupRecords = df_get_records_array('customer_markup_rates', array('markup_id'=>$record->val('markup')));
+
+								foreach ($markupRecords as $mr) {
+									if($mr->val('to') == null)
+										$no_limit = true;
+									
+									if( ($purchase_price >= $mr->val('from')) && ($purchase_price <= $mr->val('to') || $no_limit == true) ){
+										$markup = $mr->val('markup_percent');
+										break;
+									}
+								}
+								
+								$sale_price = round($purchase_price * (1+$markup),2);
+
+								$item->setValue('sale_price',$sale_price);
 							}
 							
-							$sale_price = round($purchase_price * (1+$markup),2);
+							//If the "quantity used" field is empty, assign it to be the total quantity from purchase
+							if($item->val('quantity_used') == "")
+								$item->setValue('quantity_used',$item->val('quantity'));
 
-							$item->setValue('sale_price',$sale_price);
+							$res = $item->save(null,true); //Save Record w/ permission check.
+
 						}
-						
-						//If the "quantity used" field is empty, assign it to be the total quantity from purchase
-						if($item->val('quantity_used') == "")
-							$item->setValue('quantity_used',$item->val('quantity'));
-
-						$res = $item->save(null,true); //Save Record w/ permission check.
-
 					}
 				}
+				
+				//Save record
+				//$res = $record->save(null, true); //Save Record w/ permission check.
+				$res = $record->save(); //Save Record w/o permission check. - Temporary quick fix, should modify permissions instead
+				
+				//Check for errors.
+				if ( PEAR::isError($res) ){
+					// An error occurred
+					//throw new Exception($res->getMessage());
+					$msg = '<input type="hidden" name="--error" value="Unable to change status. This is most likely because you do not have the required permissions.">';
+				}
+				else {
+					if($record->val('status') == "CMP")
+						$msg = '<input type="hidden" name="--msg" value="Status Changed to: Job Completed">';
+					elseif($record->val('status') == "RDY")
+						$msg = '<input type="hidden" name="--msg" value="Status Changed to: Invoice Ready to Print / Send">';
+					elseif($record->val('status') == "CRD")
+						$msg = '<input type="hidden" name="--msg" value="Credit Call Slip has been created.">';
+					else 
+						$msg = '<input type="hidden" name="--error" value="Something Broke: Status='.$record->val('status').'">';
+				}
+				
+				$childString .= '<form name="status_change">';
+				$childString .= '<input type="hidden" name="-table" value="'.$query['-table'].'">';
+				$childString .= '<input type="hidden" name="-action" value="'.$query['-action'].'">';
+				$childString .= '<input type="hidden" name="-recordid" value="'.$record->getID().'">';
+
+				$childString .= $msg;
+
+				$childString .= '</form>';
+				$childString .= '<script language="Javascript">document.status_change.submit();</script>';
 			}
-			
-			//Save record
-			//$res = $record->save(null, true); //Save Record w/ permission check.
-			$res = $record->save(); //Save Record w/o permission check. - Temporary quick fix, should modify permissions instead
-			
-			//Check for errors.
-			if ( PEAR::isError($res) ){
-				// An error occurred
-				//throw new Exception($res->getMessage());
-				$msg = '<input type="hidden" name="--error" value="Unable to change status. This is most likely because you do not have the required permissions.">';
+			elseif(	$record->val('status') == 'NCO' || $record->val('status') == "NCP" || $record->val('status') == 'CMP' || $record->val('status') == "SNT" ){
+				$childString .= '<form>';
+				$childString .= '<input type="hidden" name="-table" value="'.$query['-table'].'">';
+				$childString .= '<input type="hidden" name="-action" value="'.$query['-action'].'">';
+				$childString .= '<input type="hidden" name="-recordid" value="'.$record->getID().'">';
+				
+				$childString .= '<input type="hidden" name="-status_change" value="'.$record->getID().'">';
+
+				if($record->val('status') == "NCO" || $record->val('status') == "NCP")
+					$childString .= '<input type="submit" value="Change Status to: Job Completed">';
+				elseif($record->val('status') == "CMP"){
+
+					//Check if all purchase orders associated with the Call Slip have been posted.
+					//If so, allow to be set to RDY, else don't.
+
+					$purchaseorderRecords = $record->getRelatedRecords('call_slip_purchase_orders');
+					$po_not_posted = false;
+					foreach ($purchaseorderRecords as $cs_pr){
+						if($cs_pr['post_status'] != "Posted"){
+							$po_not_posted = true;
+							break;
+						}
+							
+					}
+					if($po_not_posted == true)
+						$childString .= '[Some Purchase Orders associated with this record have not yet been posted.]<br>
+										<input type="submit" value="Change Status to: Invoice Ready to Print / Send" disabled="disabled" style="color: grey;">';
+					else
+						$childString .= '<input type="submit" value="Change Status to: Invoice Ready to Print / Send">';
+				}
+				elseif($record->val('status') == "SNT")
+					$childString .= '<input type="submit" value="Credit Invoice">';
+				$childString .= '</form>';
 			}
+			//elseif(	$record->val('post_status') == 'Pending'){ //---can do this by linking to -action=ledger_post&selected="this_one"
+			//	$childString .= 'Post';
+			//}
 			else {
-				if($record->val('status') == "CMP")
-					$msg = '<input type="hidden" name="--msg" value="Status Changed to: Job Completed">';
-				elseif($record->val('status') == "RDY")
-					$msg = '<input type="hidden" name="--msg" value="Status Changed to: Invoice Ready to Print / Send">';
-				elseif($record->val('status') == "CRD")
-					$msg = '<input type="hidden" name="--msg" value="Credit Call Slip has been created.">';
-				else 
-					$msg = '<input type="hidden" name="--error" value="Something Broke: Status='.$record->val('status').'">';
+				$childString .= "No further options available";
 			}
 			
-			$childString .= '<form name="status_change">';
-			$childString .= '<input type="hidden" name="-table" value="'.$query['-table'].'">';
-			$childString .= '<input type="hidden" name="-action" value="'.$query['-action'].'">';
-			$childString .= '<input type="hidden" name="-recordid" value="'.$record->getID().'">';
-
-			$childString .= $msg;
-
-			$childString .= '</form>';
-			$childString .= '<script language="Javascript">document.status_change.submit();</script>';
+			//if(	$record->val('post_status') == '')
+			return array(
+				'content' => "$childString",
+				'class' => 'main',
+				'label' => 'Change Status',
+				'order' => 999
+			);
 		}
-		elseif(	$record->val('status') == 'NCO' || $record->val('status') == "NCP" || $record->val('status') == 'CMP' || $record->val('status') == "SNT" ){
-			$childString .= '<form>';
-			$childString .= '<input type="hidden" name="-table" value="'.$query['-table'].'">';
-			$childString .= '<input type="hidden" name="-action" value="'.$query['-action'].'">';
-			$childString .= '<input type="hidden" name="-recordid" value="'.$record->getID().'">';
-			
-			$childString .= '<input type="hidden" name="-status_change" value="'.$record->getID().'">';
-
-			if($record->val('status') == "NCO" || $record->val('status') == "NCP")
-				$childString .= '<input type="submit" value="Change Status to: Job Completed">';
-			elseif($record->val('status') == "CMP"){
-
-				//Check if all purchase orders associated with the Call Slip have been posted.
-				//If so, allow to be set to RDY, else don't.
-
-				$purchaseorderRecords = $record->getRelatedRecords('call_slip_purchase_orders');
-				$po_not_posted = false;
-				foreach ($purchaseorderRecords as $cs_pr){
-					if($cs_pr['post_status'] != "Posted"){
-						$po_not_posted = true;
-						break;
-					}
-						
-				}
-				if($po_not_posted == true)
-					$childString .= '[Some Purchase Orders associated with this record have not yet been posted.]<br>
-									<input type="submit" value="Change Status to: Invoice Ready to Print / Send" disabled="disabled" style="color: grey;">';
-				else
-					$childString .= '<input type="submit" value="Change Status to: Invoice Ready to Print / Send">';
-			}
-			elseif($record->val('status') == "SNT")
-				$childString .= '<input type="submit" value="Credit Invoice">';
-			$childString .= '</form>';
-		}
-		//elseif(	$record->val('post_status') == 'Pending'){ //---can do this by linking to -action=ledger_post&selected="this_one"
-		//	$childString .= 'Post';
-		//}
-		else {
-			$childString .= "No further options available";
-		}
-		
-		//if(	$record->val('post_status') == '')
-		return array(
-			'content' => "$childString",
-			'class' => 'main',
-			'label' => 'Change Status',
-			'order' => 10
-		);
 	}
 	
 	//Function to create a credit call slip - returns call_id of new credit call_slip, -1 on error.

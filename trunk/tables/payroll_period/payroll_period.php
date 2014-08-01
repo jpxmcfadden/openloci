@@ -13,19 +13,21 @@ class tables_payroll_period {
 
 	//Permissions
 	function getPermissions(&$record){
-		//First check if the user is logged in.
+		//Check if the user is logged in & what their permissions for this table are.
 		if( isUser() ){
-			//Check status, determine if record should be uneditable.
-			if ( isset($record) ){
-				//if(	$record->val('status') == "Posted" && !isset($_GET['-status_post'])) //No edit after Posted
-				if(	$record->val('status') == "Closed" && !isset($_GET['confirm']) ) //No edit after Closed
-					return Dataface_PermissionsTool::getRolePermissions('NO_EDIT_DELETE');
-
-				return Dataface_PermissionsTool::getRolePermissions(myRole());
+			$userperms = get_userPerms('payroll');
+			if($userperms == "view")
+				return Dataface_PermissionsTool::getRolePermissions("READ ONLY"); //Assign Read Only Permissions
+			elseif($userperms == "edit" || $userperms == "post" || $userperms == "close"){
+				//Check status, determine if record should be uneditable.
+				if ( isset($record) && $record->val('status') == "Closed" && !isset($_GET['confirm']) ) //No edit after Closed - unless the confirm button was *just* pressed (Since the "post" button is within the record view & the action to save happens on page reload, must make this exception, otherwise permissions will keep it from saving as "posted")
+						return Dataface_PermissionsTool::getRolePermissions('NO_EDIT_DELETE');
+				return Dataface_PermissionsTool::getRolePermissions(myRole()); //Assign Permissions based on user Role (typically USER)
 			}
 		}
-		else
-			return Dataface_PermissionsTool::NO_ACCESS();
+
+		//Default: No Access
+		return Dataface_PermissionsTool::NO_ACCESS();
 	}
 
 	function section__entries(&$record){

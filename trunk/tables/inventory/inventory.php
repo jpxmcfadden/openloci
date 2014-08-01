@@ -3,10 +3,19 @@
 class tables_inventory {
 
 
+	//Permissions
 	function getPermissions(&$record){
-	//	return Dataface_PermissionsTool::NO_EDIT_DELETE();
-		$role = "ACCESS";
-		return Dataface_PermissionsTool::getRolePermissions($role);
+		//Check if the user is logged in & what their permissions for this table are.
+		if( isUser() ){
+			$userperms = get_userPerms('inventory');
+			if($userperms == "view")
+				return Dataface_PermissionsTool::getRolePermissions("READ ONLY"); //Assign Read Only Permissions
+			elseif($userperms == "edit")
+				return Dataface_PermissionsTool::getRolePermissions(myRole()); //Assign Permissions based on user Role (typically USER)
+		}
+
+		//Default: No Access
+		return Dataface_PermissionsTool::NO_ACCESS();
 	}
 
 /*	function block__after_rate_label_widget(){
