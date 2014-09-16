@@ -35,5 +35,37 @@ class tables_accounts_payable_batch {
 		exit;
 	}
 
+	
+	//Add included vouchers the view tab
+	function section__vouchers(&$record){
+
+		$childString = "";	
+	
+		$voucherRecords = $record->getRelatedRecords('vouchers');
+
+		$childString .= '<table class="view_add"><tr>
+							<th>Voucher ID</th>
+							<th>Voucher Date</th>
+							<th>Posted Date</th>
+						</tr>';
+							
+		foreach($voucherRecords as $voucherRecord){
+			$ap_voucherRecord = df_get_record('accounts_payable', array('voucher_id'=>$voucherRecord['voucher_id']));
+			$childString .= '<tr>' .
+								'<td><a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=accounts_payable">' . $voucherRecord['voucher_id'] . '</a></td>' .
+								'<td>' . $ap_voucherRecord->strval('voucher_date') . '</td>' .
+								'<td>' . $ap_voucherRecord->strval('post_date') . '</td>' .
+							'</tr>';
+		}
+	
+		$childString .= '</table>';
+		return array(
+			'content' => "$childString",
+			'class' => 'main',
+			'label' => 'Included Vouchers',
+			'order' => 10
+		);
+	}
+	
 }
 ?>

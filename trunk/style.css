@@ -42,6 +42,15 @@ ul
 	display: none;
 }
 
+/*Change the spacing of the navigation pane*/
+.portletContent {
+    padding: .1em;
+}
+/*Change the navigation pane size*/
+.portletBody #portlet-navigation-tree{
+	height: 50em;
+	width: 12em;
+}
 
 /*Change the size of the lookup widget*/
 .xf-RecordBrowserWidget-displayField { width: 300px}
@@ -221,7 +230,7 @@ ul
 /*#custom_rph_form_row {display: none;}*/
 
 
-/*For printing invoices*/
+/*For printing documents*/
 .print {display: none;}
 .invoice {
 	font-size: 14px;
