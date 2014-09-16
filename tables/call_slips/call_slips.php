@@ -2,7 +2,6 @@
 
 class tables_call_slips {
 
-
 	//Class Variables
 	private $cs_modify_inventory = array(); //Create a class variable to store the values for modifying the inventory
 
@@ -16,7 +15,7 @@ class tables_call_slips {
 					return Dataface_PermissionsTool::getRolePermissions("READ ONLY"); //Assign Read Only Permissions
 				elseif($userperms == "edit"){
 					$perms = Dataface_PermissionsTool::getRolePermissions(myRole()); //Assign Permissions based on user Role (typically USER)
-					if ( isset($record) && ( $record->val('status') != 'NCO' && $record->val('status') != 'NCP' && $record->val('status') != 'CMP' ) )
+					//if ( isset($record) && ( $record->val('status') != 'NCO' && $record->val('status') != 'NCP' && $record->val('status') != 'CMP' ) )
 						unset($perms['delete']);
 					return $perms;
 				}
@@ -44,9 +43,9 @@ class tables_call_slips {
 		}
 		
 		function status__permissions(&$record){
-		//Check permissions & if allowed, set edit permissions for "account_status"
-		if(get_userPerms('call_clips') == "edit")
-			return array("edit"=>1);
+			//Check permissions & if allowed, set edit permissions for "account_status"
+			if(get_userPerms('call_slips') == "edit")
+				return array("edit"=>1);
 		}
 
 		function rel_call_slip_purchase_orders__permissions(&$record){
@@ -116,18 +115,30 @@ class tables_call_slips {
 			$app =& Dataface_Application::getInstance(); 
 			$record =& $app->getRecord();
 
+			//Add link to print invoice (if appropriate)
 			if($record->val('status') == 'RDY' || $record->val('status') == 'SNT' || $record->val('status') == 'PPR'){
 				echo '	<div class="dataface-view-record-actions">
 							<ul>
 								<li id="call_slip_invoice" class="plain">
 									<a class="" id="call_slip_invoice-link" href="'.$app->url('-action=call_slip_print_invoice').' title="" data-xf-permission="view">
-										<img id="call_slip_invoice-icon" src="images/report_icon.png" alt="Print Invoice">                   <span class="action-label">Print Invoice</span>
+										<img id="call_slip_invoice-icon" src="images/report_icon.png" alt="Print Invoice">
+										<span class="action-label">Print Invoice</span>
 									</a>
 								</li>
 							</ul>
 						</div>';
+						
+				//If printing invoice for the first time, give the user the confirm dialog.
+				if($record->val('status') == 'RDY')
+					echo '	<script>
+								jQuery("#call_slip_invoice").click(function(){
+									return confirm("NOTICE: You are about to print the invoice for this call slip. Once printed this call slip will no longer be editable & an accounts receivable entry will automatically be created. Do you wish to proceed?");
+								});
+							</script>';
+				
 			}
 
+			//Add link to print work order (if appropriate)
 			if($record->val('status') == 'NCO' || $record->val('status') == 'NCP'){
 				echo '	<div class="dataface-view-record-actions">
 							<ul>
@@ -158,11 +169,17 @@ class tables_call_slips {
 		//Display PM as "Preventative Maintenance"
 		function type__display(&$record){
 			//Pull the "type" valuelist
-			$list = $record->_table->_valuelistsConfig['type_list'];
+//			$list = $record->_table->_valuelistsConfig['type_list'];
 
 			//Add PM to the list
 			$list["PM"]="Preventative Maintenance";
-				
+
+			$list["TM"] = "Time & Material";
+			$list["QU"] = "Quoted Repairs";
+			$list["SW"] = "Service Warranty";
+			$list["NC"] = "No Charge";
+
+			
 			//Return the type as per the list.
 			return $list[$record->val('type')];
 		}
@@ -457,8 +474,11 @@ class tables_call_slips {
 			//Because both the $_GET and $query will be "" on a new record, check to insure that they are not empty.
 			if(($_GET['-status_change'] == $query['-recordid']) && ($query['-recordid'] != "")){
 				//Set status to "Complete"
-				if($record->val('status') == "NCO" || $record->val('status') == "NCP")
+				if($record->val('status') == "NCO" || $record->val('status') == "NCP"){
 					$record->setValue('status',"CMP"); //Set status to Complete.
+					if($record->val('completion_date') == "")
+						$record->setValue('completion_date',date("Y-m-d")); //Set Job Completion Date.
+				}
 				//Create Credit
 				elseif($record->val('status') == "SNT"){
 					//Create Credit CS
@@ -553,8 +573,8 @@ class tables_call_slips {
 				}
 				
 				//Save record
-				//$res = $record->save(null, true); //Save Record w/ permission check.
-				$res = $record->save(); //Save Record w/o permission check. - Temporary quick fix, should modify permissions instead
+				$res = $record->save(null, true); //Save Record w/ permission check.
+				//$res = $record->save(); //Save Record w/o permission check. - Temporary quick fix, should modify permissions instead
 				
 				//Check for errors.
 				if ( PEAR::isError($res) ){
@@ -926,16 +946,6 @@ class tables_call_slips {
 
 
 
-function aswed(){
-	return "foo";
-}
-
-
-
-
-
-
-
 	//These are for HTML Reports
 		function field__company($record){
 			return company_name();
@@ -1085,8 +1095,6 @@ function aswed(){
 
 			return number_format($total,2);
 		}
-
-
 
 
 }

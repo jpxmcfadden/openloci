@@ -105,6 +105,7 @@ function url_data($url){
 	return $data;
 }
 
+
 //Create General Ledger & Associated Journal Entries
 //Return: 0 == success, -1 == record not created (permission error), -2 == malformed $journal_entry_array, -3 == partial entry created
 function create_general_ledger_entry($journal_entry_array, $description = null){

@@ -24,5 +24,6 @@ class tables_accounts_payable_batch_vouchers {
 		$voucher_record->save();
 
 	}
+	
 }
 ?>

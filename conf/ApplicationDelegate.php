@@ -15,6 +15,20 @@ class conf_ApplicationDelegate {
 
 	}
 
+function getNavItem($key, $label){
+	if(strstr($key, "__label_")){
+		return array(
+			'no_link' => true
+		);
+	
+	}
+	
+	throw new Exception("Use default rendering");
+}	
+
+	
+	
+	
 	//Create a new hidden field with the record version at the end of the form.
 	function block__before_form_close_tag(){
 		//Create a new hidden timestamp field with the page load time at the end of the form.
@@ -94,8 +108,13 @@ class conf_ApplicationDelegate {
 			
 		//If user is logged in, select which tables are shown
 		if(isUser()){
-			//If first logging in, default to the Dashboard page.
-			if ( $query['-table'] == 'dashboard' and ($query['-action'] == 'browse' or $query['-action'] == 'list') ){
+			//If no table or action is set, default to the dashboard page - this needs to be set explicitly due to Xataface defaulting to the first table listed in the conf.ini file - which in this case is a "__label_" tag (see custom getNavItem function above) <- causes an error b/c isn't not actually a table/action
+			if( $query['-table'] == null && $query['-action'] == null ){
+				$query['-action'] = 'dashboard';
+			}
+			
+			//When the Dashboard page is clicked - load action.
+			if( $query['-table'] == 'dashboard' and ($query['-action'] == 'browse' or $query['-action'] == 'list') ){
 				$query['-action'] = 'dashboard';
 			}
 			

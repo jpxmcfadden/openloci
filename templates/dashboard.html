@@ -176,7 +176,25 @@
 					{/if}
 				</ul>
 			{/if}
-
+			
+			{if $general_ledger == "close"}
+				<br><b>REPORTS</b><br>
+				<ul>
+					<li><img src="{$ENV.DATAFACE_URL}/images/file.gif"/> Income Statement
+					</li>
+					<li><img src="{$ENV.DATAFACE_URL}/images/file.gif"/> Trial Balance
+					</li>
+					<li><img src="{$ENV.DATAFACE_URL}/images/file.gif"/> Balance Sheet
+					</li>
+					<li><img src="{$ENV.DATAFACE_URL}/images/file.gif"/> Bank Reconcillation
+					</li>
+					<li> <p style="color:lightgrey"> <img src="{$ENV.DATAFACE_URL}/images/file.gif"/> Statement of Cash Flows</p>
+					</li>
+					<li> <p style="color:lightgrey"> <img src="{$ENV.DATAFACE_URL}/images/file.gif"/> Statement of Changes in Equity</p>
+					</li>
+				</ul>			
+			{/if}
+			
 			{if $purchase_order_inventory != "" || $purchase_order_service != "" || $purchase_order_office != "" || $purchase_order_services_rendered != ""}
 				<br><b>PURCHASE ORDERS</b><br>
 				<ul>
@@ -281,21 +299,30 @@
 				<br><b>ACCOUNTS PAYABLE</b><br>
 				<ul>
 					<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
-						<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=accounts_payable"> View Payroll Archive</a>
+						<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=accounts_payable"> View Accounts Payable</a>
+					</li>
+					<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
+						<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=accounts_payable_batch"> View Accounts Payable Batches</a>
 					</li>
 				</ul>
 			{elseif $accounts_payable == "edit"}
 				<br><b>ACCOUNTS PAYABLE</b><br>
 				<ul>
 					<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
-						<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=accounts_payable"> View / Edit Payroll Archive</a>
+						<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=accounts_payable"> View / Edit Accounts Payable</a>
+					</li>
+					<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
+						<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=accounts_payable_batch"> View / Edit Accounts Payable Batches</a>
 					</li>
 				</ul>
 			{elseif $accounts_payable == "post"}
 				<br><b>ACCOUNTS PAYABLE</b><br>
 				<ul>
 					<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
-						<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=accounts_payable"> View / Edit Payroll Archive</a>
+						<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=accounts_payable"> View / Edit Accounts Payable</a>
+					</li>
+					<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
+						<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=accounts_payable_batch"> View / Edit Accounts Payable Batches</a>
 					</li>
 					<li><img src="{$ENV.DATAFACE_URL}/images/topic_icon.gif"/>
 						<a href="{$ENV.DATAFACE_SITE_HREF}?-action=accounts_payable_batch_post"> Post Accounts Payable [Batches]</a> (Pending: {$payable_pending_batches})
@@ -305,6 +332,35 @@
 					</li>
 				</ul>
 			{/if}
+
+
+			{if $accounts_receivable == "view"}
+				<br><b>ACCOUNTS RECEIVABLE</b><br>
+				<ul>
+					<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
+						<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=accounts_receivable"> View Accounts Receivable</a>
+					</li>
+				</ul>
+			{elseif $accounts_receivable == "edit"}
+				<br><b>ACCOUNTS RECEIVABLE</b><br>
+				<ul>
+					<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
+						<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=accounts_receivable"> View / Edit Accounts Receivable</a>
+					</li>
+				</ul>
+			{elseif $accounts_receivable == "post"}
+				<br><b>ACCOUNTS RECEIVABLE</b><br>
+				<ul>
+					<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
+						<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=accounts_receivable"> View / Edit Accounts Receivable</a>
+					</li>
+					<li><img src="{$ENV.DATAFACE_URL}/images/topic_icon.gif"/> Post Accounts Receivable (Pending: #)</a>
+					</li>
+				</ul>
+			{/if}
+
+
+
 
 			{if 0} 
 			----------------------------------------------------------------------------------------------------
@@ -373,33 +429,7 @@
 		
 		
 		
-{if 0}
-
-
-		
-		<br><b>ACCOUNTS RECEIVABLE</b><br>
-		<ul>
-			<li><img src="{$ENV.DATAFACE_URL}/images/topic_icon.gif"/> Post Accounts Receivable (Pending: #)</a>
-			</li>
-		</ul>
-
-		<br><b>REPORTS</b><br>
-		<ul>
-			<li><img src="{$ENV.DATAFACE_URL}/images/file.gif"/> Income Statement
-			</li>
-			<li><img src="{$ENV.DATAFACE_URL}/images/file.gif"/> Trial Balance
-			</li>
-			<li><img src="{$ENV.DATAFACE_URL}/images/file.gif"/> Balance Sheet
-			</li>
-			<li> <p style="color:lightgrey"> <img src="{$ENV.DATAFACE_URL}/images/file.gif"/> Statement of Cash Flows</p>
-			</li>
-			<li> <p style="color:lightgrey"> <img src="{$ENV.DATAFACE_URL}/images/file.gif"/> Statement of Changes in Equity</p>
-			</li>
-			<li><img src="{$ENV.DATAFACE_URL}/images/file.gif"/> Bank Reconcillation -- ??
-			</li>
-		</ul>
-
-		
+{if 0}		
 		<br><br>
 				
             <!--ul>
