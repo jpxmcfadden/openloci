@@ -4,7 +4,11 @@ class actions_generate_payroll {
 
 		//Permission check
 		if ( !isUser() )
-			return Dataface_Error::permissionDenied("You are not logged in");	
+			return Dataface_Error::permissionDenied("You are not logged in");
+			
+		$payroll_perms = get_userPerms('payroll');
+		if(!($payroll_perms == "edit" || $payroll_perms == "post" || $payroll_perms == "close"))
+			return Dataface_Error::permissionDenied("You do not have the proper permissions to Generate Payroll");
 	
 		//Pull selected date if submitted, else null.
 		$selected_date = isset($_GET['selected_date']) ? $_GET['selected_date'] : null;
@@ -13,16 +17,17 @@ class actions_generate_payroll {
 		$payroll_config = df_get_record('_payroll_config', array('config_id'=>1));
 		$payroll_config = $payroll_config->vals();
 
-
 		//If data has not been submitted, or there was a problem with the submitted date - Display selection menu
 		if($selected_date == null){
+		
+
 			//Auto Select - last week
 				//$default_date = date('Y/m/d', strtotime('last '.$payroll_config['week_start'], time())); //This most recent (week start) day
 				//$default_date = date('Y/m/d', strtotime('last '.$payroll_config['week_start'], strtotime($default_date))); //Previous (week start) day
 			$default_date = date('Y/m/d', strtotime($payroll_config['week_start'] . " -2 week", time())); //Previous (week start) day
 			
 			//Display Selection Page
-			df_display(array("default_date" => $default_date), 'generate_payroll.html');
+			df_display(array("default_date" => $default_date, "weekstart"=>1), 'generate_payroll.html');
 		}
 		else{
 			//Get payroll period start date
@@ -82,10 +87,22 @@ class actions_generate_payroll {
 				return 0;
 			}
 
+			//Check to insure that all 'active' employees have been appropriately set up.
+			$employees = df_get_records_array('employees', array('active'=>'Y'));
+			foreach($employees as $payroll_entry => $employee){
+				//Check to insure that there is at least 1 wage expense account for all salaried employees.
+				if($employee->val("employee_type") == "Salary"){
+					$wage_accounts = df_get_records_array("employees_wage_accounts", array("employee_id"=>$employee->val("employee_id")));
+					if(empty($wage_accounts)){
+						$msg .= "The following employee's wage expense account(s) have not been set up correctly: " . $employee->val("last_name") . ", " . $employee->val("first_name") . "\n";
+						header('Location: index.php?-action=generate_payroll'.'&--msg='.urlencode($msg)); //Reset page w/ Error Msg
+						return 0;
+					}
+				}
+			}			
 
 
-			
-			//If there are no errors with the date selection or time logs, start collecting the payroll data
+			//If there are no errors with the date selection, time logs, or employee file, start collecting the payroll data
 			
 			$payroll_data = array();
 			$payroll_data['period_start'] = $period_start;
@@ -93,8 +110,7 @@ class actions_generate_payroll {
 			$payroll_data['month_period_number'] = monthPeriod($period_start, $payroll_config['payroll_period']);
 
 			
-			//Pull all active employees
-			$employees = df_get_records_array('employees', array('active'=>'Y'));
+			//Go through all active employees
 			foreach($employees as $payroll_entry => $employee){
 				//Get basic employee information
 				$employee_id = $employee->val('employee_id');

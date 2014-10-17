@@ -6,7 +6,7 @@ class actions_close_payroll {
 		if ( !isUser() )
 			return Dataface_Error::permissionDenied("You are not logged in");
 			
-		if(get_userPerms('payroll') != "Close")
+		if(get_userPerms('payroll') != "close")
 			return Dataface_Error::permissionDenied("You do not have the proper permissions to Close Payroll");
 
 		//Pull Payroll Configuration Information

@@ -353,10 +353,15 @@
 				<ul>
 					<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
 						<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=accounts_receivable"> View / Edit Accounts Receivable</a>
+					<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
+						<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=accounts_receivable_batch"> View / Edit Accounts Receivable Batches</a>
 					</li>
-					<li><img src="{$ENV.DATAFACE_URL}/images/topic_icon.gif"/> Post Accounts Receivable (Pending: #)</a>
+					<li><img src="{$ENV.DATAFACE_URL}/images/topic_icon.gif"/>
+						<a href="{$ENV.DATAFACE_SITE_HREF}?-action=accounts_receivable_batch_post"> Post Accounts Receivable [Batches]</a> (Pending: {$receivable_pending_batches})
 					</li>
-				</ul>
+					<li><img src="{$ENV.DATAFACE_URL}/images/topic_icon.gif"/>
+						<a href="{$ENV.DATAFACE_SITE_HREF}?-action=accounts_receivable_post"> Post Accounts Receivable [Not assigned to a batch] </a>(Pending: {$receivable_pending})
+					</li>				</ul>
 			{/if}
 
 
@@ -404,6 +409,11 @@
 				{if $payroll_config == "edit"}
 					<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
 						<a href="{$ENV.DATAFACE_SITE_HREF}?-action=edit&-table=_payroll_config"> Payroll Configuration</a>
+					</li>
+				{/if}
+				{if $markup == "edit"}
+					<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
+						<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=customer_markup"> Customer Markup Rates Table</a>
 					</li>
 				{/if}
 				</ul>

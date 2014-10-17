@@ -45,7 +45,7 @@ class actions_dashboard {
 				$dashboard_display_info['rpo_pending'] = count($status);
 			}
 
-			if($dashboard_display_info['purchase_order_rendered_services'] == "post"){
+			if($dashboard_display_info['accounts_payable'] == "post"){
 				$status = df_get_records_array('accounts_payable', array('post_status'=>'Pending', 'batch_id'=>'='));
 				$dashboard_display_info['payable_pending'] = count($status);
 				
@@ -53,6 +53,15 @@ class actions_dashboard {
 				$dashboard_display_info['payable_pending_batches'] = count($status);
 			}
 			
+			if($dashboard_display_info['accounts_receivable'] == "post"){
+				$status = df_get_records_array('accounts_receivable', array('post_status'=>'Pending', 'batch_id'=>'='));
+				$dashboard_display_info['receivable_pending'] = count($status);
+				
+				$status = df_get_records_array('accounts_receivable_batch', array('post_status'=>'='));
+				$dashboard_display_info['receivable_pending_batches'] = count($status);
+			}
+
+
 		//Display Dashboard
 		df_display($dashboard_display_info, 'dashboard.html');
 		

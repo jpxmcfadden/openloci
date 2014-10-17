@@ -1,15 +1,15 @@
 {use_macro file="Dataface_Main_Template.html"}
 	{fill_slot name="main_column"}
 
-		<link rel="stylesheet" type="text/css" media="all" href="/openloci/../xataface/lib/jscalendar/calendar-win2k-2.css">
-		<script type="text/javascript" src="/openloci/../xataface/lib/jscalendar/calendar.js"></script>
-		<script type="text/javascript" src="/openloci/../xataface/lib/jscalendar/lang/calendar-en.js"></script>
-		<script type="text/javascript" src="/openloci/../xataface/lib/jscalendar/calendar-setup.js"></script>
+		<link rel="stylesheet" type="text/css" media="all" href="{$ENV.DATAFACE_URL}/lib/jscalendar/calendar-win2k-2.css">
+		<script type="text/javascript" src="{$ENV.DATAFACE_URL}/lib/jscalendar/calendar.js"></script>
+		<script type="text/javascript" src="{$ENV.DATAFACE_URL}/lib/jscalendar/lang/calendar-en.js"></script>
+		<script type="text/javascript" src="{$ENV.DATAFACE_URL}/lib/jscalendar/calendar-setup.js"></script>
 
 		<h1>Generate Payroll</h1>
 		<br>
 		<br>***Dev Note:
-		<br>1. This needs to check the payroll period and suggest date accordingly (instead of previous week).
+		<br>1. <del>This needs to check the payroll period and suggest date accordingly (instead of previous week).</del>
 		<br>2. If possible, have only proper dates selectable - unsure if this can be done with this particular calendar widget. Maybe find one that can.
 		<br>3. Insure that for non-weekly periods, can't accidentally select an off week.
 		<br>4. Semimonthly & monthly payroll periods are not implemented yet.
@@ -22,7 +22,7 @@
 			Select Payroll Period
 			<input df:cloneable="1" name="selected_date" id="f-calendar-field-1" type="text" value={$default_date} readonly="readonly">
 			<a df:cloneable="1" href="#" id="f-calendar-trigger-1">
-				<img align="middle" border="0" src="/openloci/../xataface/lib/jscalendar/img.gif" alt="">
+				<img align="middle" border="0" src="{$ENV.DATAFACE_URL}/lib/jscalendar/img.gif" alt="">
 			</a>
 
 			{literal}

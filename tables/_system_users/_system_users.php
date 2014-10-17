@@ -4,9 +4,14 @@ class tables__system_users {
 
 	//Permissions
 	function getPermissions(&$record){
-		//First check if the user is logged in & that they are an admin.
+		//Check if the user is logged in & that they are an admin.
+		$perms = Dataface_PermissionsTool::getRolePermissions(myRole()); //Assign Permissions based on user Role (typically SYSTEM)
+		
+		//Remove the delete permission.
+		$perms['delete'] = 0;
+		
 		if( isAdmin() ){
-			return Dataface_PermissionsTool::getRolePermissions(myRole()); //Assign Permissions based on user Role (typically SYSTEM)
+			return $perms;
 		}
 
 		//Default: No Access

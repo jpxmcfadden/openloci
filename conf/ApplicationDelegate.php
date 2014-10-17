@@ -176,7 +176,7 @@ function getNavItem($key, $label){
 
 			//Parse out the parent record id from the URL
 			$s = strpos($portal,'&');
-			$table_id = substr($portal,0,$s);;;
+			$table_id = substr($portal,0,$s);
 	
 			//Create the redirect URL from the above
 			//This will take you back to the "relationship list" view of the parent record
@@ -201,6 +201,7 @@ function getNavItem($key, $label){
 	function block__custom_javascripts(){
 	//	echo '<script src="javascripts.js" type="text/javascript" language="javascript"></script>';
 		Dataface_JavascriptTool::getInstance()->import('submithandler.js');
+		Dataface_JavascriptTool::getInstance()->import('delete_confirm.js');
 		Dataface_JavascriptTool::getInstance()->import('widget hide.js');
 	//echo '<script src="js/widget hide.js" type="text/javascript" language="javascript"></script>';
 	}	
