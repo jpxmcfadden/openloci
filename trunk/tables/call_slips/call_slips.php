@@ -39,7 +39,7 @@ class tables_call_slips {
 			//Only on the 'view' page. Otherwise, causes issues with looking at the entire table (i.e. user sees a blank page).
 			//If record exists & the status is set such that the record shouldn't be editable.
 			if($query['-action'] == 'view' && ( isset($record) && ($record->val('status') != 'NCO' && $record->val('status') != 'NCP' && $record->val('status') != 'CMP' ) ))
-				echo "<style>#record-tabs-edit{display: none;}</style";
+				echo "<style>#record-tabs-edit{display: none;}</style>";
 		}
 		
 		function status__permissions(&$record){
@@ -166,6 +166,15 @@ class tables_call_slips {
 			}
 		}
 		
+		function valuelist__type_list(){
+			return array(
+				'TM'=>'Time & Material',
+				'QU'=>'Quoted Repairs',
+				'SW'=>'Service Warranty',
+				'NC'=>'No Charge'
+			);
+		}
+
 		//Display PM as "Preventative Maintenance"
 		function type__display(&$record){
 			//Pull the "type" valuelist

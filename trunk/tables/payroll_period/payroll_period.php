@@ -58,8 +58,10 @@ class tables_payroll_period {
 			
 				//Initialize Variables
 				$total_income = 0;
-				$total_taxable_income = 0;
+				//$total_taxable_income = 0;
 				$total_income_ytd = 0;
+				$total_wages = 0;
+				$total_ss_wages = 0;
 				
 				//Create Table
 				$childString .= '<b><u>Income</u></b><br><br>';
@@ -145,26 +147,62 @@ class tables_payroll_period {
 						$total_income_ytd += $ytd_amount + $subtotal;
 					
 					//Save taxable income to taxable total
-					if($addition_record->val('taxable') == 1)
-						$total_taxable_income += round($subtotal,2);
+					if($addition_record->val('taxable') == 1){
+					//	$total_taxable_income += round($subtotal,2);
+						$total_ss_wages += round($subtotal,2);
+					}
 
 				} //End foreach
 					
-				//Pull all Pre-Tax Deductions, subtract from taxable income.
+				//Pull all Pre-Tax Deductions, subtract from taxable income - Calculate Taxable Income for FICA / Medicare
 				$addition_records = df_get_records_array('payroll_entries_deductions',array('payroll_entry_id'=>$entry->val('payroll_entry_id'),'pre_tax'=>1));
 				foreach($addition_records as $addition_record){
 					//Subtract from taxable income.
-					$total_taxable_income -= ($addition_record->val('amount_base') + ($total_income * $addition_record->val('amount_multiply')));
-
+					//$total_taxable_income -= ($addition_record->val('amount_base') + ($total_income * $addition_record->val('amount_multiply')));
+					$total_ss_wages -= ($addition_record->val('amount_base') + ($total_income * $addition_record->val('amount_multiply')));
+					
 					//Sanity check and fix
-					if($total_taxable_income < 0)
-						$total_taxable_income = 0;
+					//if($total_taxable_income < 0)
+					//	$total_taxable_income = 0;
+					if($total_ss_wages < 0)
+						$total_ss_wages = 0;
 				}
 
+				//Total Wages is the Total SS Wages [minus the deductions (401K) that don't decrease SS wages]. Set equal and then subtract.
+				$total_wages = $total_ss_wages;
+				
+				//Pull all 401K Deductions, subtract from social security wages - Calculate Taxable Income for Federal / State Taxes
+				$addition_records = df_get_records_array('payroll_entries_deductions',array('payroll_entry_id'=>$entry->val('payroll_entry_id'),'type'=>$payroll_config->val('401k_deduction_type')));
+				foreach($addition_records as $addition_record){
+					//Subtract from taxable income.
+//					$total_taxable_income -= ($addition_record->val('amount_base') + ($total_income * $addition_record->val('amount_multiply')));
+					$total_wages -= ($addition_record->val('amount_base') + ($total_income * $addition_record->val('amount_multiply')));
+
+					//Sanity check and fix
+					if($total_wages < 0)
+						$total_wages = 0;
+				}
+
+				$ytd_wages = 0;
+				$ytd_ss_wages = 0;
+				$ytd_net_income = 0;
+				$payroll_periods = df_get_records_array('payroll_period',array('period_start'=>'>=2014-01-01','period_start'=>'<=2014-12-31'));
+				foreach($payroll_periods as $payroll_period){
+					$period_entry_record = df_get_record('payroll_entries',array('payroll_period_id'=>$payroll_period->val('payroll_period_id'),'employee_id'=>$entry->val('employee_id')));
+					if($period_entry_record != null){
+						//echo $payroll_period->val('payroll_period_id') . ' - ' . $period_entry_record->val('total_income') . '<br>';
+						$ytd_wages += $period_entry_record->val('net_pay');
+						$ytd_ss_wages += $period_entry_record->val('ss_wages');
+						$ytd_gross_income += $period_entry_record->val('total_income');
+					}
+				}
+				
 				//End Table
 				$childString .= '<tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>';
-				$childString .= '<tr><td><b>Total Income</b></td><td></td><td></td><td></td><td></td><td style="text-align: right"><b>$'.number_format($total_income,2).'</b></td><td style="text-align: right">$'.number_format($total_income_ytd,2).'</td></tr>';
-				$childString .= '<tr><td>Taxable</td><td></td><td></td><td></td><td></td><td style="text-align: right">$'.number_format($total_taxable_income,2).'</td></tr></table>';
+				$childString .= '<tr><td><b>Total Income</b></td><td></td><td></td><td></td><td></td><td style="text-align: right"><b>$'.number_format($total_income,2).'</b></td><td style="text-align: right">$'.number_format($total_income_ytd,2).' / '.$ytd_gross_income.'</td></tr>';
+				//$childString .= '<tr><td>Wages</td><td></td><td></td><td></td><td></td><td style="text-align: right">$'.number_format($total_taxable_income,2).'</td></tr>';
+				$childString .= '<tr><td>Wages</td><td></td><td></td><td></td><td></td><td style="text-align: right">$'.number_format($total_wages,2).'</td><td>$'.$ytd_wages.'</td></tr>';
+				$childString .= '<tr><td>Social Security Wages</td><td></td><td></td><td></td><td></td><td style="text-align: right">$'.number_format($total_ss_wages,2).'</td><td>$'.$ytd_ss_wages.'</td></tr></table>';
 
 				
 				//Save $total_taxable_income to the global taxable income
@@ -214,7 +252,8 @@ class tables_payroll_period {
 							$exemption_amount = $exemption_record->val($payroll_config->val('payroll_period')) * $employee_record->val('exemptions_federal');
 
 							//Total taxable income minus exemptions
-							$taxable_income_minus_exemptions = $total_taxable_income - $exemption_amount;
+							//$taxable_income_minus_exemptions = $total_taxable_income - $exemption_amount;
+							$taxable_income_minus_exemptions = $total_wages - $exemption_amount;
 
 							//Calculate Income Tax - This function is from payroll_entries.php
 							$subtotal = calculate_tax_table($taxable_income_minus_exemptions, $employee_record->val("marital_status"), "FED");
@@ -233,7 +272,8 @@ class tables_payroll_period {
 							$exemption_amount = $exemption_record->val($payroll_config->val('payroll_period')) * $employee_record->val('exemptions_state');
 
 							//Total taxable income minus exemptions
-							$taxable_income_minus_exemptions = $total_taxable_income - $exemption_amount;
+							//$taxable_income_minus_exemptions = $total_taxable_income - $exemption_amount;
+							$taxable_income_minus_exemptions = $total_wages - $exemption_amount;
 
 							//Calculate Income Tax - This function is from payroll_entries.php
 							$subtotal = calculate_tax_table($taxable_income_minus_exemptions, $employee_record->val("marital_status"), $employee_record->val("state"));
@@ -256,10 +296,16 @@ class tables_payroll_period {
 					//Amount - Multiply
 					if($addition_record->val('amount_multiply') != null){
 						$childString .= '<td style="text-align: right">' . $addition_record->val('amount_multiply') . '</td>';
-						//if($addition_record->val('pre_tax') == 1)
-						//	$subtotal += $total_income * $addition_record->val('amount_multiply');
-						//else
-							$subtotal += $total_taxable_income * $addition_record->val('amount_multiply');
+
+						//If pre-tax, or type is "401K" (which handles kind of like pre-tax)
+						if($addition_record->val('pre_tax') == 1 || $addition_record->val('type') == $payroll_config->val('401k_deduction_type'))
+							$subtotal += $total_income * $addition_record->val('amount_multiply');
+						//If type is "FICA" or "Medicare"
+						elseif($addition_record->val('type') == $payroll_config->val('fica_deduction_type') || $addition_record->val('type') == $payroll_config->val('medicare_deduction_type'))
+							//$subtotal += $total_taxable_income * $addition_record->val('amount_multiply');
+							$subtotal += $total_ss_wages * $addition_record->val('amount_multiply');
+						else //E.g. 401R (Roth)
+							$subtotal += $total_wages * $addition_record->val('amount_multiply');
 					}
 					else
 						$childString .= '<td style="text-align: center">---</td>';
@@ -353,7 +399,20 @@ class tables_payroll_period {
 					//Amount - Multiply
 					if($addition_record->val('amount_multiply') != null){
 						$childString .= '<td style="text-align: right">' . $addition_record->val('amount_multiply') . '</td>';
-						$subtotal += $total_taxable_income * $addition_record->val('amount_multiply');
+						//$subtotal += $total_taxable_income * $addition_record->val('amount_multiply');
+						
+						//If type is "401K"
+						if($addition_record->val('type') == $payroll_config->val('401k_contribution_type'))
+							$subtotal += $total_income * $addition_record->val('amount_multiply');
+						//If type is "FICA" or "Medicare"
+						elseif($addition_record->val('type') == $payroll_config->val('fica_contribution_type') || $addition_record->val('type') == $payroll_config->val('medicare_contribution_type'))
+							//$subtotal += $total_taxable_income * $addition_record->val('amount_multiply');
+							$subtotal += $total_ss_wages * $addition_record->val('amount_multiply');
+						else //E.g. 401R (Roth)
+							$subtotal += $total_wages * $addition_record->val('amount_multiply');
+						
+						
+						
 					}
 					else
 						$childString .= '<td style="text-align: center">---</td>';
@@ -521,10 +580,12 @@ class tables_payroll_period {
 				foreach($payroll_entries as $entry){
 					//Reset Variables
 					$entry_total_gross_income = 0;
-					$entry_total_taxable_income = 0;
+					//$entry_total_taxable_income = 0;
 					$entry_total_deductions = 0;
 					//$entry_total_contributions = 0;
 					//$entry_total_net_pay = 0;
+					$entry_total_wages = 0;
+					$entry_total_ss_wages = 0;
 
 					//Get Employee Record Information
 					$employee_record = df_get_record("employees", array('employee_id'=>$entry->val('employee_id')));

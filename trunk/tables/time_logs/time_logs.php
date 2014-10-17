@@ -7,7 +7,7 @@ class tables_time_logs {
 	function getPermissions(&$record){
 		//Check if the user is logged in & what their permissions for this table are.
 		if( isUser() ){
-			$userperms = get_userPerms('customers');
+			$userperms = get_userPerms('time_logs');
 			if($userperms == "view")
 				return Dataface_PermissionsTool::getRolePermissions("READ ONLY"); //Assign Read Only Permissions
 			elseif($userperms == "edit"){
@@ -56,8 +56,8 @@ class tables_time_logs {
 			$record->setValue('rate_per_hour', 0.00);
 		if($this->rate_type == 'custom')
 			$record->setValue('rate_per_hour', $record->val('custom_rph'));
-//		elseif($this->rate_type != ''){		//This line was causing problems with editing entries in a call slip
-		elseif($this->rate_type == ''){		//Looked wrong anyway, so changed it to this - VERIFY
+		elseif($this->rate_type != ''){		//This line was causing problems with editing entries in a call slip
+//		elseif($this->rate_type == ''){		//Looked wrong anyway, so changed it to this - VERIFY -- > this line causes problems with generating payroll
 			$call_rec = df_get_record('call_slips', array('call_id'=>$record->val('category')));
 			$cust_rec = df_get_record('customers', array('customer_id'=>$call_rec->val('customer_id')));
 			$rate_rec = df_get_record('rates', array('rate_id'=>$cust_rec->val('rate')));

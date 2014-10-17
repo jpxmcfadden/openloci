@@ -1,12 +1,12 @@
 <?php
 
-class tables_accounts_payable_batch {
+class tables_accounts_receivable_batch {
 
 	//Permissions
 	function getPermissions(&$record){
 		//Check if the user is logged in & what their permissions for this table are.
 		if( isUser() ){
-			$userperms = get_userPerms('accounts_payable');
+			$userperms = get_userPerms('accounts_receivable');
 			if($userperms == "view")
 				return Dataface_PermissionsTool::getRolePermissions("READ ONLY"); //Assign Read Only Permissions
 			elseif($userperms == "edit" || $userperms == "post"){
@@ -24,14 +24,14 @@ class tables_accounts_payable_batch {
 	function after_action_new($params=array()){
 		$record =& $params['record'];
 		$msg = "Voucher records added to Batch #" . $record->val('batch_id');
-		header('Location: index.php?-action=list&-table=accounts_payable'.'&--msg='.urlencode($msg)); //Go back to Accounts Payable
+		header('Location: index.php?-action=list&-table=accounts_receivable'.'&--msg='.urlencode($msg)); //Go back to Accounts Receivable
 		exit;
 	}
 	
 	function after_action_edit($params=array()){
 		$record =& $params['record'];
 		$msg = "Voucher records in Batch #" . $record->val('batch_id') . ' modified.';
-		header('Location: index.php?-action=list&-table=accounts_payable'.'&--msg='.urlencode($msg)); //Go back to Accounts Payable
+		header('Location: index.php?-action=list&-table=accounts_receivable'.'&--msg='.urlencode($msg)); //Go back to Accounts Receivable
 		exit;
 	}
 
@@ -51,18 +51,18 @@ class tables_accounts_payable_batch {
 							</tr>';
 								
 			foreach($voucherRecords as $voucherRecord){
-				$ap_voucherRecord = df_get_record('accounts_payable', array('voucher_id'=>$voucherRecord['voucher_id']));
+				$ar_voucherRecord = df_get_record('accounts_receivable', array('voucher_id'=>$voucherRecord['voucher_id']));
 				$childString .= '<tr>' .
-									'<td><a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=accounts_payable">' . $voucherRecord['voucher_id'] . '</a></td>' .
-									'<td>' . $ap_voucherRecord->strval('voucher_date') . '</td>' .
-									'<td>' . $ap_voucherRecord->strval('post_date') . '</td>' .
+									'<td><a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=accounts_receivable">' . $voucherRecord['voucher_id'] . '</a></td>' .
+									'<td>' . $ar_voucherRecord->strval('voucher_date') . '</td>' .
+									'<td>' . $ar_voucherRecord->strval('post_date') . '</td>' .
 								'</tr>';
 			}
 			$childString .= '</table>';
 		}
 		else
 			$childString .= "No Vouchers have been selected.";
-			
+		
 		return array(
 			'content' => "$childString",
 			'class' => 'main',

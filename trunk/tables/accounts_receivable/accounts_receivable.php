@@ -26,6 +26,7 @@ class tables_accounts_receivable {
 
 	
 	function getTitle(&$record){
+		return "Accounts Receivable Entry for Voucher " . $record->val('voucher_id');
 		//$po_type = substr($record->val('purchase_order_id'),0,1);
 		//return 'Voucher ID #' . $record->val('voucher_id') . " (" . $record->strval('voucher_date') . ") - Type: " . $po_type . ", Invoice ID: " . $record->val('invoice_id');
 
@@ -36,6 +37,15 @@ class tables_accounts_receivable {
 	//	return 'CONCAT("Invoice ID: ", invoice_id," - Status: ",post_status)';
 	//}	
 
+	
+	function account__default(){
+		//Get default Accounts Receivable acct
+		$default_accounts = df_get_record('_account_defaults', array('default_id'=>1));
+		$ar_account = $default_accounts->val('accounts_receivable');
+		
+		return $ar_account;
+	}
+	
 	function voucher_date__default(){
 		return date('Y-m-d');
 	}
@@ -158,7 +168,7 @@ class tables_accounts_receivable {
 		);
 	}	
 */
-/*	
+
 	function section__status(&$record){
 		$app =& Dataface_Application::getInstance(); 
 		$query =& $app->getQuery();
@@ -202,7 +212,7 @@ class tables_accounts_receivable {
 			$childString .= '</form>';
 		}
 		//If the "Create Credit Voucher" button has been pressed.
-		elseif(($_GET['-credit'] == $query['-recordid']) && ($query['-recordid'] != "")){
+/*		elseif(($_GET['-credit'] == $query['-recordid']) && ($query['-recordid'] != "")){
 			//Create the Credit Voucher Record
 			$new_record = new Dataface_Record('accounts_payable', array());
 			$new_record->setValue('voucher_date',date('Y-m-d'));
@@ -296,7 +306,7 @@ class tables_accounts_receivable {
 
 			$childString .= '</form>';
 		}
-		//elseif(	$record->val('post_status') == 'Pending'){ //---can do this by linking to -action=ledger_post&selected="this_one"
+*/		//elseif(	$record->val('post_status') == 'Pending'){ //---can do this by linking to -action=ledger_post&selected="this_one"
 		//	$childString .= 'Post';
 		//}
 		else {
@@ -311,7 +321,7 @@ class tables_accounts_receivable {
 			'order' => 10
 		);
 	}
-*/
+
 /*
 	function beforeSave(&$record){
 		//Check if the PO field has been changed... if so, we need to null the po's assigned_voucher_id field

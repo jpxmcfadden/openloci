@@ -29,7 +29,7 @@ class tables__payroll_config {
 
 	//Remove the "view", "show all", "list", and "find" tabs - since there is only 1 record in this table.
 	function init(){
-		echo "<style>#record-tabs-view{display: none;} #actions-menu-show_all{display: none;} #table-tabs-list{display: none;} #table-tabs-find{display: none;}</style";
+		echo "<style>#record-tabs-view{display: none;} #actions-menu-show_all{display: none;} #table-tabs-list{display: none;} #table-tabs-find{display: none;}</style>";
 	}
 
 	function getTitle(&$record){
