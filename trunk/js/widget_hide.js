@@ -1,3 +1,29 @@
+//require <jquery.packed.js>
+
+function widget_hide(modifier_field, toggled_field, required_field){
+
+	var $ = jQuery;
+	
+	registerXatafaceDecorator(function(){
+		var mod = $(modifier_field);
+		var tog = $(toggled_field);
+		
+		if(typeof required_field != 'undefined'){
+			var req_label = $(required_field);
+			req_label.append('<span style="color: #ff0000" class="fieldRequired" title="required">&nbsp;</span>')
+		}
+		
+		mod.change(function() {
+			if( $(this).is(':checked')) {
+				tog.show();
+			} else {
+				tog.hide();
+			}
+		});
+	});
+};
+
+/*
 function unhide_widget(value){
 	var elem = document.getElementById(value+'_form_row');
 	elem.style.display = "none";
@@ -35,3 +61,4 @@ function change_field(field, value){
 //	document.getElementsByName(field)[0].nextSibling.value = value;
 
 }
+*/
