@@ -29,6 +29,23 @@ class tables_vendors {
 		return "FL";
 	}
 
+	function block__before_rec_1099_widget(){
+		$app =& Dataface_Application::getInstance(); 
+		$record =& $app->getRecord();
+		
+		//If not checked, hide tax_id field
+		if($record->val('rec_1099') != 1)
+			echo '<style>#tax_id_form_row{display: none}</style>';
+		
+		//Load JS to hide widget
+		//Dataface_JavascriptTool::getInstance()->import('widget_hide.js'); //presumably this gets loaded at the end, so "widget_hide" function is undefined at this point.
+		echo '<script src="js/widget_hide.js" type="text/javascript" language="javascript"></script>';
+		echo "<script>widget_hide('.checkbox-of-rec_1099','#tax_id_form_row','#vendors-tax_id-label-wrapper');</script>";		
+	}	
+	
+	
+	
+	
 	function section__contact(&$record){
 		$childString = "";
 		
@@ -65,11 +82,10 @@ class tables_vendors {
 	
 	
 	
-	function tax_id__validate( &$record, $value, $params=array()){
-		if( !$value && ($record->_values['rec_1099'][0] == 1) ){
-		//if( !$value ){
-			echo "<script language=javascript>alert('ERROR: You have selected \"Requires 1099\", but provided no Tax ID / SSN.')</script>";
-            //$params['message'] = "Sorry, this is an invalid.";
+	function tax_id__validate( &$record, $value, &$params=array()){
+		//If field is empty and the requires1099 checkbox has been checked.
+		if( $value=="" && $record->_values['rec_1099'][1] == 1 ){
+            $params['message'] = "You have selected \"Requires 1099\", but provided no Tax ID / SSN.";
             return false;
 		}
 
