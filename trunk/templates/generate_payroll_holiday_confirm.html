@@ -1,0 +1,30 @@
+{use_macro file="Dataface_Main_Template.html"}
+	{fill_slot name="main_column"}
+
+		<h1>Generate Payroll</h1>
+		<br>
+		<p>The following holidays occur during the selected payroll period:</p>
+		
+		<table class="listing resultList">
+			<th>Description</th>
+			<th>Date</th>
+			<th>Hours</th>
+			{foreach from=$holidays item=list}
+				<tr>
+					<td>{$list.description}</td>
+					<td>{$list.date}</td>
+					<td>{$list.hours}</td>
+			{/foreach}
+		</table>
+		<br>
+		<p>Do you wish to include <b><u>{$hours} hours</u></b> of holiday pay? (Cancel will return you to the date selection screen.)</p>
+		<form name="use_holidays_listed" id="use_holidays_listed">
+			<input type="hidden" name="-action" value="generate_payroll">
+			<input type="hidden" name="selected_date" value="{$selected_date}">
+			<input type="submit" name="use_holidays" value="Yes">
+			<input type="submit" name="use_holidays" value="No">
+			<input type="submit" name="use_holidays" value="Cancel">
+		</form>
+
+	{/fill_slot}
+{/use_macro}

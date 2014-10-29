@@ -160,7 +160,8 @@ class tables_employees {
 		unset($value["__loaded__"]);
 
 		//Assign current percent to 0.
-		$total_percent = 0;
+		$total_percent_reg = 0;
+		$total_percent_ot = 0;
 		
 		//Parse through all the data in $value
 		foreach($value as $wage_account){
@@ -172,15 +173,25 @@ class tables_employees {
 					return false;
 				}
 				
-				$total_percent += $wage_account["amount_percent"];
-				
+				//Add total percent
+				if($wage_account["overtime"] == 1) //Overtime
+					$total_percent_ot += $wage_account["amount_percent"];
+				else //Regular
+					$total_percent_reg += $wage_account["amount_percent"];
+					
 			}
 		}
 		
-		if($total_percent != 100){
+		if($total_percent_reg != 100){
 			$params['message'] = "The total percent assigned for wage accounts does not equal 100%.";
 			return false;
 		}
+		
+		if($total_percent_ot != 0 && $total_percent_ot != 100){
+			$params['message'] = "Overtime wage accounts have been assigned, and the total percent them does not equal 100%.";
+			return false;
+		}
+
 		
 		return true;
 	}

@@ -13,10 +13,11 @@
 		<br>2. If possible, have only proper dates selectable - unsure if this can be done with this particular calendar widget. Maybe find one that can.
 		<br>3. Insure that for non-weekly periods, can't accidentally select an off week.
 		<br>4. Semimonthly & monthly payroll periods are not implemented yet.
+		<br>5. Currently assigns overtime for hourly employees based on hours per payroll period. For weekly pay, this isn't an issue, but for others need to calculate hours / week > 40.
 		<br>***
 		<br><br>
 
-		<form name="select_date">
+		<form name="select_date" id="select_date">
 			<input type="hidden" name="-action" value="generate_payroll">
 	
 			Select Payroll Period
@@ -46,7 +47,7 @@
 			
 			<br><br>
 			
-			<input type="submit" value="Submit">
+			<input type="submit" id="submit" value="Submit">
 			
 		</form>
 

@@ -13,12 +13,15 @@ class actions_generate_payroll {
 		//Pull selected date if submitted, else null.
 		$selected_date = isset($_GET['selected_date']) ? $_GET['selected_date'] : null;
 		
+		//Check for holidays.
+		$use_holidays = isset($_GET['use_holidays']) ? $_GET['use_holidays'] : null;
+
 		//Pull Payroll Configuration Information
 		$payroll_config = df_get_record('_payroll_config', array('config_id'=>1));
 		$payroll_config = $payroll_config->vals();
 
-		//If data has not been submitted, or there was a problem with the submitted date - Display selection menu
-		if($selected_date == null){
+		//If data has not been submitted, or there was a problem with the submitted date, or the user hit the cancel button - Display selection menu
+		if($selected_date == null || $use_holidays == "Cancel"){
 		
 
 			//Auto Select - last week
@@ -27,7 +30,7 @@ class actions_generate_payroll {
 			$default_date = date('Y/m/d', strtotime($payroll_config['week_start'] . " -2 week", time())); //Previous (week start) day
 			
 			//Display Selection Page
-			df_display(array("default_date" => $default_date, "weekstart"=>1), 'generate_payroll.html');
+			df_display(array("default_date" => $default_date, "weekstart"=>$payroll_config['week_start']), 'generate_payroll.html');
 		}
 		else{
 			//Get payroll period start date
@@ -50,17 +53,23 @@ class actions_generate_payroll {
 				return 0;
 			}
 
+			//Initialize the holiday hours variable.
+			$holiday_hours = 0;
+
+			
+			//**********************<Check for Errors>**********************//
+			$errors = 0;
+			$err_msg = "";
+			
 			//Check to make sure date selected is on [week_start] day & that payroll for that period has not already been done.
 			$period_record = df_get_record('payroll_period', array("period_start" => $selected_date));
 			if($period_record != null){
-				$msg = "ERROR: You have already generated payroll for the date: $selected_date";
-				header('Location: index.php?-action=generate_payroll'.'&--msg='.urlencode($msg)); //Reset page w/ Error Msg.
-				return 0;
+				$err_msg = "ERROR: You have already generated payroll for the date: $selected_date\n";
+				$errors++;
 			}
 			else if(date("l", strtotime($selected_date)) != $payroll_config['week_start']){
-				$msg = "ERROR: The selected date: $selected_date, is a " . date("l", strtotime($selected_date)) . ". The system is configured to start payroll on " . $payroll_config['week_start'] . "s. Please check and change the date accordingly.";
-				header('Location: index.php?-action=generate_payroll'.'&--msg='.urlencode($msg)); //Reset page w/ Error Msg
-				return 0;
+				$err_msg = "ERROR: The selected date: $selected_date, is a " . date("l", strtotime($selected_date)) . ". The system is configured to start payroll on " . $payroll_config['week_start'] . "s. Please check and change the date accordingly.\n";
+				$errors++;
 			}
 
 			//Check to insure there are no NULL values for "start_time" in the entire time_log table. If so, user must fix before running payroll.
@@ -69,39 +78,60 @@ class actions_generate_payroll {
 				$msg = "ERROR: The following entries have invalid *Arrive Times* in the Time Log and must be corrected before payroll can be processed: ";
 				foreach($employee_timelogs as $timelog){
 					$employee = df_get_record('employees', array('employee_id' => $timelog->val('employee_id')));
-					$msg .= "(" . $employee->val('first_name') . " " . $employee->val('last_name') . " - Log ID " . $timelog->val('log_id') . " " . $timelog->val('start_time') . ")";
+					$err_msg .= "(" . $employee->val('first_name') . " " . $employee->val('last_name') . " - Log ID " . $timelog->val('log_id') . " " . $timelog->val('start_time') . ")\n";
 				}
-				header('Location: index.php?-action=generate_payroll'.'&--msg='.urlencode($msg)); //Reset page w/ Error Msg
-				return 0;
+				$errors++;
 			}
 						
 			//Check to insure there are no NULL values for "end_time" in the selected payroll period. If so, user must fix before running payroll.
-			$employee_timelogs = df_get_records_array('time_logs', array('start_time'=>"> $period_start AND < $period_end", 'end_time'=>'='));
+			$employee_timelogs = df_get_records_array('time_logs', array('start_time'=>">= $period_start AND <= $period_end", 'end_time'=>'='));
 			if($employee_timelogs != null){
 				$msg = "ERROR: The following entries have invalid *Depart Times* in the Time Log for the selected period and must be corrected before payroll can be processed: ";
 				foreach($employee_timelogs as $timelog){
 					$employee = df_get_record('employees', array('employee_id' => $timelog->val('employee_id')));
-					$msg .= "(" . $employee->val('first_name') . " " . $employee->val('last_name') . " - Log ID " . $timelog->val('log_id') . " " . $timelog->val('start_time') . ")";
+					$err_msg .= "(" . $employee->val('first_name') . " " . $employee->val('last_name') . " - Log ID " . $timelog->val('log_id') . " " . $timelog->val('start_time') . ")\n";
 				}
-				header('Location: index.php?-action=generate_payroll'.'&--msg='.urlencode($msg)); //Reset page w/ Error Msg
-				return 0;
+				$errors++;
 			}
 
 			//Check to insure that all 'active' employees have been appropriately set up.
 			$employees = df_get_records_array('employees', array('active'=>'Y'));
 			foreach($employees as $payroll_entry => $employee){
-				//Check to insure that there is at least 1 wage expense account for all salaried employees.
-				if($employee->val("employee_type") == "Salary"){
-					$wage_accounts = df_get_records_array("employees_wage_accounts", array("employee_id"=>$employee->val("employee_id")));
-					if(empty($wage_accounts)){
-						$msg .= "The following employee's wage expense account(s) have not been set up correctly: " . $employee->val("last_name") . ", " . $employee->val("first_name") . "\n";
-						header('Location: index.php?-action=generate_payroll'.'&--msg='.urlencode($msg)); //Reset page w/ Error Msg
-						return 0;
+				//Check to make sure employee type (salary / hourly) is set. - This should only occur if payroll information has not been set up at all for an employee.
+				if($employee->val("employee_type") != "Salary" && $employee->val("employee_type") != "Hourly"){
+					$msg .= "The following employee's employment type status (Salary / Hourly) has not been set up correctly: " . $employee->val("last_name") . ", " . $employee->val("first_name") . "\n";
+					$errors++;
+				}
+			
+				//Load wage accounts for employee
+				$wage_accounts = df_get_records_array("employees_wage_accounts", array("employee_id"=>$employee->val("employee_id")));
+
+				//Check to insure that there is at least 1 wage expense account for all employees. - This should only occur if payroll information has not been set up at all for an employee.
+				if(empty($wage_accounts)){
+					$msg .= "The following employee's wage expense accounts have not been set up: " . $employee->val("last_name") . ", " . $employee->val("first_name") . "\n";
+					$errors++;
+				}
+				//Check to insure that there is at least 1 overtime wage expense account for all hourly employees.
+				elseif($employee->val("employee_type") == "Hourly"){
+					$ot_wage_accts = 0;
+					foreach($wage_accounts as $wage_account)
+						if($wage_account->val("overtime") == 1)
+							$ot_wage_accts++;
+							
+					if($ot_wage_accts == 0){
+						$msg .= "The following hourly employee is missing an overtime wage expense account: " . $employee->val("last_name") . ", " . $employee->val("first_name") . "\n";
+						$errors++;
 					}
 				}
 			}			
 
-
+			//If there are any errors, display them and return to the initial date selection screen.
+			if($errors > 0){
+				header('Location: index.php?-action=generate_payroll'.'&--msg='.urlencode($msg)); //Reset page w/ Error Msg
+				return 0;
+			}
+			
+			//**********************</Check for Errors>**********************//
 			//If there are no errors with the date selection, time logs, or employee file, start collecting the payroll data
 			
 			$payroll_data = array();
@@ -109,6 +139,39 @@ class actions_generate_payroll {
 			$payroll_data['period_end'] = $period_end;
 			$payroll_data['month_period_number'] = monthPeriod($period_start, $payroll_config['payroll_period']);
 
+			//**********************<Check for Holidays>**********************//
+			//If we haven't checked for holidays yet, or we have and the answer was to use them
+			if($use_holidays != "No"){ //Same as: ($use_holidays == null || $use_holidays == "Yes")
+				//Load holiday records
+				$holiday_records = df_get_records_array("_payroll_config_holiday",array("holiday_date"=>">= $period_start AND <= $period_end"));
+
+				//If there are holiday records... 
+				if($holiday_records != null){
+					//If the user hasn't selected whether to use them or not, give them the select option.
+					if($use_holidays == null){
+						$holiday_hours_total = 0;
+					
+						//Create labels
+						foreach($holiday_records as $key => $holiday_record){
+							$holidays[$key]["description"] = $holiday_record->val("description");
+							$holidays[$key]["date"] = $holiday_record->display("holiday_date") . " (" .date("l",strtotime($holiday_record->display("holiday_date"))). ")";
+							$holidays[$key]["hours"] = $holiday_record->val("holiday_hours");
+							$holiday_hours_total += $holiday_record->val("holiday_hours");
+						}
+
+						//Display the "use holidays y/n page", and stop page execution.
+						df_display(array("selected_date" => $selected_date, "holidays"=>$holidays, "hours"=>$holiday_hours_total), 'generate_payroll_holiday_confirm.html');
+						return 0;
+					}
+
+					//Otherwise, get the total # of holiday hours for the payroll period. - if($use_holidays == "Yes") is implied
+					foreach($holiday_records as $key => $holiday_record){
+						$holiday_hours += $holidays[$key]["hours"] = $holiday_record->val("holiday_hours");
+					}
+				}
+			}
+			
+			//**********************</Check for Holidays>**********************//
 			
 			//Go through all active employees
 			foreach($employees as $payroll_entry => $employee){
@@ -116,6 +179,10 @@ class actions_generate_payroll {
 				$employee_id = $employee->val('employee_id');
 				$payroll_data[$payroll_entry]['employee_id'] = $employee->val('employee_id');
 				$payroll_data[$payroll_entry]['name'] = $employee->val('first_name') . ' ' . $employee->val('last_name');
+
+				//Load wage accounts for employee
+				$wage_accounts = df_get_records_array("employees_wage_accounts", array("employee_id"=>$employee->val("employee_id")));
+
 				
 				//Check to insure all necessary types are assigned
 				//Federal Income Tax
@@ -124,21 +191,27 @@ class actions_generate_payroll {
 				//Medicare - Deduction & Contribution
 				//FUTA
 				//*SUTA - From Employee
-				
+
+
+				//Holiday Hours
+				$payroll_data[$payroll_entry]['holiday_hours'] = $holiday_hours;
 				
 				//Check if employee is salary or hourly, and assign hours accordingly
-				if($employee->val('employee_type') == "Salary")
-					$payroll_data[$payroll_entry]['hours'] = $period_hours;
-				else if($employee->val('employee_type') == "Hourly")
-					$payroll_data[$payroll_entry]['hours'] = 0;
-				else
-					return false;
-				
-				//Employee Hours
-					$employee_timelogs = df_get_records_array('time_logs', array('employee_id'=>$employee_id, 'start_time'=>"> $period_start AND < $period_end"));
+				if($employee->val('employee_type') == "Salary"){ //Salary
+					//Calculate the number of work hours to be the number of hours in the payroll period.
+					//	If there are holiday hours, subtract the holiday hours from regular salary hours and add as holiday pay. ($holiday_hours is normally 0)
+					$regular_hours = $period_hours - $holiday_hours;
+					$payroll_data[$payroll_entry]['regular_hours'] = $regular_hours;
+				}
+				else{ //Hourly
+					$worked_hours = 0;
+					$regular_hours = 0;
+					$overtime_hours = 0;
+
+					//Calculate hours from employee time logs
+					$employee_timelogs = df_get_records_array('time_logs', array('employee_id'=>$employee_id, 'start_time'=>">= $period_start AND <= $period_end"));
 
 					foreach($employee_timelogs as $entry => $timelog){
-
 						//Set status to 'locked', to prevent changes to the record after this point.
 						$timelog->setValues(array('status'=>"Locked")); //Set data
 						$check = $timelog->save(null, true); //Check Permissions & Save
@@ -147,14 +220,95 @@ class actions_generate_payroll {
 						$start_time = strtotime(Dataface_converters_date::datetime_to_string($timelog->val('start_time')));
 						$end_time = strtotime(Dataface_converters_date::datetime_to_string($timelog->val('end_time')));					
 						$hours = number_format((($end_time - $start_time) / 3600),1);
-						$payroll_data[$payroll_entry]['hours'] += $hours;
 						
-						//Assign overtime if over 40 hours  --- *** NEED SOME STUFF HERE TO CALCULATE 40hrs/week IF PAY PERIOD != WEEKLY ***
-						if($payroll_data[$payroll_entry]['hours'] > 40){
-							$payroll_data[$payroll_entry]['overtime_hours'] = $payroll_data[$payroll_entry]['hours'] - 40;
-							$payroll_data[$payroll_entry]['hours'] = 40;
+						//Check if time log entry has been assigned to a call slip. If so, use the CS type - for keeping track of expense accounts.
+						if($timelog->val("category") == "CALL"){
+							$call_slip_record = df_get_record("call_slips", array("call_id"=>$timelog->val("callslip_id")));
+							$hour_type = strtolower($call_slip_record->val("type"));
+
+							//CS Time Income
+							if(!isset($payroll_data[$payroll_entry]['income']["hourly_" . $hour_type])){ //If null assign full entry
+								//$payroll_data[$payroll_entry][$hour_type] = $hours;
+								$income_type_record = df_get_record("payroll_income_type",array("type_id"=>$payroll_config["expense_" . $hour_type . "_type"]));
+								
+								$payroll_data[$payroll_entry]['income']["hourly_" . $hour_type]['employee'] = $employee_id;
+								$payroll_data[$payroll_entry]['income']["hourly_" . $hour_type]['type'] = $payroll_config["expense_" . $hour_type . "_type"];
+								$payroll_data[$payroll_entry]['income']["hourly_" . $hour_type]['taxable'] = 1;
+								$payroll_data[$payroll_entry]['income']["hourly_" . $hour_type]['amount_base'] = "";
+								$payroll_data[$payroll_entry]['income']["hourly_" . $hour_type]['amount_multiply'] = $employee->val('pay_rate');
+								$payroll_data[$payroll_entry]['income']["hourly_" . $hour_type]['account_number'] = $income_type_record->val('account_number');
+
+								//Assign Hours
+								$payroll_data[$payroll_entry]['income']["hourly_" . $hour_type]['hours'] = $hours;
+							}
+							else{
+								//Add Hours
+								$payroll_data[$payroll_entry]['income']["hourly_" . $hour_type]['hours'] += $hours;
+							}
+						}
+						else
+							$regular_hours += $hours;
+
+						//Add to total hours worked.
+						$worked_hours += $hours;
+					}
+
+					//For Reference
+					$payroll_data[$payroll_entry]['total_log_hours'] = $worked_hours;
+
+					//Assign overtime if over 40 hours / week  --- *** NEED SOME STUFF HERE TO CALCULATE 40hrs/week IF PAY PERIOD != WEEKLY ***
+					//Currently calculates based on period, not weeks - *** need to change this.
+					//Include holiday hours in regular time
+					if(($worked_hours + $holiday_hours) > $period_hours){
+						//$payroll_data[$payroll_entry]['overtime_hours'] = ($worked_hours + $holiday_hours) - $period_hours;
+						$overtime_hours = ($worked_hours + $holiday_hours) - $period_hours;
+					}
+
+				}
+
+					//Regular Pay Income Entry - Check to make sure hours > 0, & loop through the non-overtime wage accounts and assign as appropriate to each.
+					if($regular_hours > 0){
+						foreach($wage_accounts as $entry => $wage_account){
+							//Regular Salary Income Entry
+							if($wage_account->val("overtime") != 1){ //Exclude overtime accounts
+								$payroll_data[$payroll_entry]['income']["regular_hours_" . $entry]['employee'] = $employee_id;
+								$payroll_data[$payroll_entry]['income']["regular_hours_" . $entry]['type'] = $payroll_config["expense_wage_type"];
+								$payroll_data[$payroll_entry]['income']["regular_hours_" . $entry]['taxable'] = 1;
+								$payroll_data[$payroll_entry]['income']["regular_hours_" . $entry]['amount_base'] = "";
+								$payroll_data[$payroll_entry]['income']["regular_hours_" . $entry]['amount_multiply'] = $employee->val('pay_rate');
+								$payroll_data[$payroll_entry]['income']["regular_hours_" . $entry]['account_number'] = $wage_account->val('account_id');
+
+								//Calculate the number of hours per account based on the percent assigned to it.
+								$payroll_data[$payroll_entry]['income']["regular_hours_" . $entry]['hours'] = $regular_hours * ($wage_account->val('amount_percent') / 100.0);
+							}
 						}
 					}
+						
+					//Overtime Pay Income Entry - Check to make sure hours > 0, & loop through the overtime wage accounts and assign as appropriate to each.
+					if(isset($overtime_hours) && $overtime_hours > 0){
+						foreach($wage_accounts as $entry => $wage_account){
+							//Overtime Hourly Income Entry
+							if($wage_account->val("overtime") == 1){ //Overtime accounts
+								$payroll_data[$payroll_entry]['income']["overtime_hours_" . $entry]['employee'] = $employee_id;
+								$payroll_data[$payroll_entry]['income']["overtime_hours_" . $entry]['type'] = $payroll_config["expense_overtime_type"];
+								$payroll_data[$payroll_entry]['income']["overtime_hours_" . $entry]['taxable'] = 1;
+								$payroll_data[$payroll_entry]['income']["overtime_hours_" . $entry]['amount_base'] = "";
+								$payroll_data[$payroll_entry]['income']["overtime_hours_" . $entry]['amount_multiply'] = $employee->val('pay_rate')*0.5;
+								$payroll_data[$payroll_entry]['income']["overtime_hours_" . $entry]['account_number'] = $wage_account->val('account_id');
+
+								//Calculate the number of hours per account based on the percent assigned to it.
+								$payroll_data[$payroll_entry]['income']["overtime_hours_" . $entry]['hours'] = $overtime_hours * ($wage_account->val('amount_percent') / 100.0);
+							}
+						}					
+					}				
+				
+				
+				
+				
+				
+				
+				
+				
 				
 				//Create Payroll Entries Array
 					$query = array(
@@ -164,39 +318,21 @@ class actions_generate_payroll {
 						'repeat_period'=>"All OR " . $payroll_data['month_period_number']
 					);
 
-				//Income Entries
+				//Additional Income Entries
 				
-					//Load Payroll Income Type for Wages
-					$entry_type = df_get_record('payroll_income_type', array("type_id"=>$payroll_config["wage_type"]));
-
-					//Regular Hourly Income Entry
-					$entry = "pay_reg";
-					if($payroll_data[$payroll_entry]['hours'] > 0){
-						$payroll_data[$payroll_entry]['income'][$entry]['employee'] = $employee_id;
-						$payroll_data[$payroll_entry]['income'][$entry]['type'] = $payroll_config["wage_type"];
-						$payroll_data[$payroll_entry]['income'][$entry]['taxable'] = 1;
-						if($payroll_data[$payroll_entry]['hours'] <= $period_hours)
-							$payroll_data[$payroll_entry]['income'][$entry]['hours'] = $payroll_data[$payroll_entry]['hours'];
-						else
-							$payroll_data[$payroll_entry]['income'][$entry]['hours'] = $period_hours;
-						$payroll_data[$payroll_entry]['income'][$entry]['amount_base'] = "";
-						$payroll_data[$payroll_entry]['income'][$entry]['amount_multiply'] = $employee->val('pay_rate');
-						$payroll_data[$payroll_entry]['income'][$entry]['account_number'] = $entry_type->val('account_number');
+					//Holiday Hours Income Entry
+					if($holiday_hours > 0){
+						$holiday_type = df_get_record("payroll_income_type",array("type_id"=>$payroll_config["holiday_hours_type"]));
+						$payroll_data[$payroll_entry]['income']["holiday"]['employee'] = $employee_id;
+						$payroll_data[$payroll_entry]['income']["holiday"]['type'] = $payroll_config["holiday_hours_type"];
+						$payroll_data[$payroll_entry]['income']["holiday"]['taxable'] = 1;
+						$payroll_data[$payroll_entry]['income']["holiday"]['amount_base'] = "";
+						$payroll_data[$payroll_entry]['income']["holiday"]['amount_multiply'] = $employee->val('pay_rate');
+						$payroll_data[$payroll_entry]['income']["holiday"]['account_number'] = $holiday_type->val('account_number');
+						$payroll_data[$payroll_entry]['income']["holiday"]['hours'] = $holiday_hours;
 					}
-					
-					//Overtime Hourly Income Entry
-					if(isset($payroll_data[$payroll_entry]['overtime_hours'])){
-						$entry = "pay_ot";
-						$payroll_data[$payroll_entry]['income'][$entry]['employee'] = $employee_id;
-						$payroll_data[$payroll_entry]['income'][$entry]['type'] = $payroll_config["wage_overtime_type"];
-						$payroll_data[$payroll_entry]['income'][$entry]['taxable'] = 1;
-						$payroll_data[$payroll_entry]['income'][$entry]['hours'] = $payroll_data[$payroll_entry]['overtime_hours'];
-						$payroll_data[$payroll_entry]['income'][$entry]['amount_base'] = "";
-						$payroll_data[$payroll_entry]['income'][$entry]['amount_multiply'] = $employee->val('pay_rate')*1.5;
-						$payroll_data[$payroll_entry]['income'][$entry]['account_number'] = $entry_type->val('account_number');
-					}					
-					
-					//Income
+						
+					//Additional Income
 					$item_entries = df_get_records_array('payroll_income', $query);
 					foreach($item_entries as $entry => $item_entry){
 						$entry_type = df_get_record('payroll_income_type', array("type_id"=>$item_entry->val('type')));
@@ -334,11 +470,6 @@ class actions_generate_payroll {
 						$payroll_data[$payroll_entry]['contributions'][$entry]['annual_limit'] = $entry_type->val('annual_limit');
 					}
 			}
-
-//echo "<pre>";
-//print_r($payroll_data);
-//echo "</pre>";
-//echo "The payroll period from $period_start to $period_end has been created.<br>";
 
 			//Create new payroll period record
 			$payroll_period_record = new Dataface_Record('payroll_period', array()); //Create new record
