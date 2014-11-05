@@ -1,10 +1,5 @@
 <?php
 
-//Use global scope variables for totals so that other sections can access them.
-$totals_gross_income = 0;
-$totals_net_income = 0;
-$totals_deductions = 0;
-		
 class tables__payroll_config {
 
 	//Permissions
@@ -53,6 +48,14 @@ class tables__payroll_config {
 
 	//Blank this to properly redirect to Dashboard on Save
 	function after_action_edit(){
+	}
+
+	function afterRemoveRelatedRecord(&$record){
+		//Take 'related' record and get the 'actual' associated record
+		$rec = $record->toRecord();
+		
+		//Delete the record.
+		$rec->delete();
 	}
 	
 }

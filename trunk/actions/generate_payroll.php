@@ -64,18 +64,18 @@ class actions_generate_payroll {
 			//Check to make sure date selected is on [week_start] day & that payroll for that period has not already been done.
 			$period_record = df_get_record('payroll_period', array("period_start" => $selected_date));
 			if($period_record != null){
-				$err_msg = "ERROR: You have already generated payroll for the date: $selected_date\n";
+				$err_msg .= "ERROR: You have already generated payroll for the date: $selected_date\n";
 				$errors++;
 			}
 			else if(date("l", strtotime($selected_date)) != $payroll_config['week_start']){
-				$err_msg = "ERROR: The selected date: $selected_date, is a " . date("l", strtotime($selected_date)) . ". The system is configured to start payroll on " . $payroll_config['week_start'] . "s. Please check and change the date accordingly.\n";
+				$err_msg .= "ERROR: The selected date: $selected_date, is a " . date("l", strtotime($selected_date)) . ". The system is configured to start payroll on " . $payroll_config['week_start'] . "s. Please check and change the date accordingly.\n";
 				$errors++;
 			}
 
 			//Check to insure there are no NULL values for "start_time" in the entire time_log table. If so, user must fix before running payroll.
 			$employee_timelogs = df_get_records_array('time_logs', array('start_time'=>'=')); //Query any NULL values.
 			if($employee_timelogs != null){
-				$msg = "ERROR: The following entries have invalid *Arrive Times* in the Time Log and must be corrected before payroll can be processed: ";
+				$err_msg = "ERROR: The following entries have invalid *Arrive Times* in the Time Log and must be corrected before payroll can be processed: ";
 				foreach($employee_timelogs as $timelog){
 					$employee = df_get_record('employees', array('employee_id' => $timelog->val('employee_id')));
 					$err_msg .= "(" . $employee->val('first_name') . " " . $employee->val('last_name') . " - Log ID " . $timelog->val('log_id') . " " . $timelog->val('start_time') . ")\n";
@@ -86,7 +86,7 @@ class actions_generate_payroll {
 			//Check to insure there are no NULL values for "end_time" in the selected payroll period. If so, user must fix before running payroll.
 			$employee_timelogs = df_get_records_array('time_logs', array('start_time'=>">= $period_start AND <= $period_end", 'end_time'=>'='));
 			if($employee_timelogs != null){
-				$msg = "ERROR: The following entries have invalid *Depart Times* in the Time Log for the selected period and must be corrected before payroll can be processed: ";
+				$err_msg = "ERROR: The following entries have invalid *Depart Times* in the Time Log for the selected period and must be corrected before payroll can be processed: ";
 				foreach($employee_timelogs as $timelog){
 					$employee = df_get_record('employees', array('employee_id' => $timelog->val('employee_id')));
 					$err_msg .= "(" . $employee->val('first_name') . " " . $employee->val('last_name') . " - Log ID " . $timelog->val('log_id') . " " . $timelog->val('start_time') . ")\n";
@@ -99,7 +99,7 @@ class actions_generate_payroll {
 			foreach($employees as $payroll_entry => $employee){
 				//Check to make sure employee type (salary / hourly) is set. - This should only occur if payroll information has not been set up at all for an employee.
 				if($employee->val("employee_type") != "Salary" && $employee->val("employee_type") != "Hourly"){
-					$msg .= "The following employee's employment type status (Salary / Hourly) has not been set up correctly: " . $employee->val("last_name") . ", " . $employee->val("first_name") . "\n";
+					$err_msg .= "The following employee's employment type status (Salary / Hourly) has not been set up correctly: " . $employee->val("last_name") . ", " . $employee->val("first_name") . "\n";
 					$errors++;
 				}
 			
@@ -108,7 +108,7 @@ class actions_generate_payroll {
 
 				//Check to insure that there is at least 1 wage expense account for all employees. - This should only occur if payroll information has not been set up at all for an employee.
 				if(empty($wage_accounts)){
-					$msg .= "The following employee's wage expense accounts have not been set up: " . $employee->val("last_name") . ", " . $employee->val("first_name") . "\n";
+					$err_msg .= "The following employee's wage expense accounts have not been set up: " . $employee->val("last_name") . ", " . $employee->val("first_name") . "\n";
 					$errors++;
 				}
 				//Check to insure that there is at least 1 overtime wage expense account for all hourly employees.
@@ -119,7 +119,7 @@ class actions_generate_payroll {
 							$ot_wage_accts++;
 							
 					if($ot_wage_accts == 0){
-						$msg .= "The following hourly employee is missing an overtime wage expense account: " . $employee->val("last_name") . ", " . $employee->val("first_name") . "\n";
+						$err_msg .= "The following hourly employee is missing an overtime wage expense account: " . $employee->val("last_name") . ", " . $employee->val("first_name") . "\n";
 						$errors++;
 					}
 				}
@@ -127,7 +127,7 @@ class actions_generate_payroll {
 
 			//If there are any errors, display them and return to the initial date selection screen.
 			if($errors > 0){
-				header('Location: index.php?-action=generate_payroll'.'&--msg='.urlencode($msg)); //Reset page w/ Error Msg
+				header('Location: index.php?-action=generate_payroll'.'&--msg='.urlencode($err_msg)); //Reset page w/ Error Msg
 				return 0;
 			}
 			
