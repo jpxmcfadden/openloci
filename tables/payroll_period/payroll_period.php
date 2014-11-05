@@ -35,6 +35,148 @@ class tables_payroll_period {
 		$query =& $app->getQuery();
 		$childString = '';
 		
+		//Check if the payroll period has been posted, or is still open.
+		if($record->val("status") == "Posted")
+			$payroll_data = $this->payroll_from_entries($record);
+		else
+			$payroll_data = $this->calculate_payroll($record);
+
+
+		//Traverse through all data in the payroll_data array
+		foreach($payroll_data as $payroll_entry){
+			//Check to see if the entry is an array (if not ignore)
+			if(is_array($payroll_entry)){
+
+				//Pull the Employee Record for the associated Employee
+				$childString .= "<b><u>" . $payroll_entry["employee_name"] . "</a></u></b>";
+				
+				//If the Payroll Period has not yet been closed, include a link to edit the entry.
+				if($record->val("status") != "Closed")
+					$childString .= " - <a href=index.php?-table=payroll_entries&-action=edit&-recordid=".$payroll_entry["entry_id"]."&-review=" . $record->getID() . ">Edit this Entry</a><br><br>";
+
+				//Indent the following sections
+				$childString .= '<table><tr><td style="padding-left:15px; padding-right:15px; width: 600px;">';
+
+					//********** INCOME ENTRIES **********//
+					//Create Table
+					$childString .= '<b><u>Income</u></b><br><br>';
+					$childString .= '<table class="view_add"><tr>
+										<th>Description</th>
+										<th>Account</th>
+										<th>Taxable</th>
+										<th>Hours</th>
+										<th>Amount Base</th>
+										<th>Multiply</th>
+										<th>Total</th>'
+										. ($record->val("status") == "Posted" ? '<th>YTD</th>' : '') . //If Posted, include YTD
+										'</tr>';
+
+					foreach($payroll_entry["income"] as $addition_entry){
+						$childString .= '<tr>
+											<td>'.$addition_entry["description"].'</td>
+											<td>'.$addition_entry["account"].'</td>
+											<td>'.$addition_entry["taxable"].'</td>
+											<td>'.$addition_entry["hours"].'</td>
+											<td>'.$addition_entry["base"].'</td>
+											<td>'.$addition_entry["multiply"].'</td>
+											<td>$'.$addition_entry["total_amount"].'</td>'
+											. ($record->val("status") == "Posted" ? '<td>'.$addition_entry["ytd"].'</td>' : '') . //If Posted, include YTD
+										'</tr>';
+					}
+								
+					$childString .= '</table><br><br>';
+
+					//********** DEDUCTION ENTRIES **********//
+					//Create Table
+					$childString .= '<b><u>Deductions</u></b><br><br>';
+					$childString .= '<table class="view_add"><tr>
+										<th>Description</th>
+										<th>Account</th>
+										<th>Pre Tax</th>
+										<th>Amount Base</th>
+										<th>Multiply</th>
+										<th>Annual Limit</th>
+										<th>Total</th>'
+										. ($record->val("status") == "Posted" ? '<th>YTD</th>' : '') . //If Posted, include YTD
+										'</tr>';
+
+					foreach($payroll_entry["deductions"] as $addition_entry){
+						$childString .= '<tr>
+											<td>'.$addition_entry["description"].'</td>
+											<td>'.$addition_entry["account"].'</td>
+											<td>'.$addition_entry["pre_tax"].'</td>
+											<td>'.$addition_entry["base"].'</td>
+											<td>'.$addition_entry["multiply"].'</td>
+											<td>'.$addition_entry["annual_limit"].'</td>
+											<td>$'.$addition_entry["total_amount"].'</td>'
+											. ($record->val("status") == "Posted" ? '<td>'.$addition_entry["ytd"].'</td>' : '') . //If Posted, include YTD
+										'</tr>';
+					}
+								
+					$childString .= '</table><br><br>';
+					
+					//********** CONTRIBUTION ENTRIES **********//
+					//Create Table
+					$childString .= '<b><u>Contributions</u></b><br><br>';
+					$childString .= '<table class="view_add"><tr>
+										<th>Description</th>
+										<th>Account</th>
+										<th>Amount Base</th>
+										<th>Multiply</th>
+										<th>Annual Limit</th>
+										<th>Total</th>'
+										. ($record->val("status") == "Posted" ? '<th>YTD</th>' : '') . //If Posted, include YTD
+										'</tr>';
+
+					foreach($payroll_entry["contributions"] as $addition_entry){
+						$childString .= '<tr>
+											<td>'.$addition_entry["description"].'</td>
+											<td>'.$addition_entry["account"].'</td>
+											<td>'.$addition_entry["base"].'</td>
+											<td>'.$addition_entry["multiply"].'</td>
+											<td>'.$addition_entry["annual_limit"].'</td>
+											<td>$'.$addition_entry["total_amount"].'</td>'
+											. ($record->val("status") == "Posted" ? '<td>'.$addition_entry["ytd"].'</td>' : '') . //If Posted, include YTD
+										'</tr>';
+					}
+								
+					$childString .= '</table>';		
+
+					//********** TOTALS **********//
+					$childString .= '</td><td style="padding-left:15px; border-left:1px solid #000000; vertical-align:top;">';
+					$childString .= '<b><u>Totals</u></b><br><br>';
+					$childString .= '<table class="view_add_totals">';
+
+					$childString .= '<tr><th>Gross Income</th><td>$' . $payroll_entry["gross_income"] .
+										'</td><th>YTD</th><td>$'. $payroll_entry["gross_income_ytd"] . '</td></tr>';
+					$childString .= '<tr><th>Wages</th><td>$' . $payroll_entry["wages"] .
+										'</td><th>YTD</th><td>$'. $payroll_entry["wages_ytd"] . '</td></tr>';
+					$childString .= '<tr><th>SS Wages</th><td>$' . $payroll_entry["ss_wages"] .
+										'</td><th>YTD</th><td>$'. $payroll_entry["ss_wages_ytd"] . '</td></tr>';
+					$childString .= '<tr><th>Deductions</th><td>$' . $payroll_entry["total_deductions"] .
+										'</td><th>YTD</th><td>$'. $payroll_entry["total_deductions_ytd"] . '</td></tr>';
+
+					$childString .= '</table>';
+
+					
+				$childString .= '</td></tr></table><br><hr width="850px" align="left"><br>';
+
+			}
+			
+		}
+
+$childString .= "<pre>".print_r($payroll_data,true)."</pre>";
+
+
+
+
+
+
+
+
+//**************************************************************//
+/*
+
 		//Pull Payroll Configuration Information
 		$payroll_config = df_get_record('_payroll_config', array('config_id'=>1));
 		
@@ -54,7 +196,8 @@ class tables_payroll_period {
 			//Indent the following sections
 			$childString .= '<table><tr><td style="padding-left:15px; padding-right:15px; width: 600px;">';
 
-			// **** INCOME SECTION ****
+			
+			// ********** INCOME SECTION **********
 			
 				//Initialize Variables
 				$total_income = 0;
@@ -67,6 +210,7 @@ class tables_payroll_period {
 				$childString .= '<b><u>Income</u></b><br><br>';
 				$childString .= '<table class="view_add"><tr>
 									<th>Description</th>
+									<th>Account</th>
 									<th>Taxable</th>
 									<th>Hours</th>
 									<th>Amount Base</th>
@@ -85,6 +229,10 @@ class tables_payroll_period {
 
 					//Description
 					$childString .= '<td>' . $type_record->val('name') . '</td>';
+
+					//Account
+					$account_record = df_get_record('chart_of_accounts',array('account_id'=>$type_record->val('account_number')));
+					$childString .= '<td>' . $account_record->val('account_number') . " (" . $account_record->val('account_name') . ')</td>';
 
 					//Taxable
 					if($addition_record->val('taxable') == 1)
@@ -123,28 +271,37 @@ class tables_payroll_period {
 					$childString .= '<td style="text-align: right">$' . number_format($subtotal,2) . '</td>';
 
 					//Get YTD Amount - If already posted, use that amount, otherwise pull from the YTD Record
-					if($addition_record->val('posted_ytd') != null && $addition_record->val('posted_ytd') != 0)
-						$ytd_amount = $addition_record->val('posted_ytd');
-					else{
-						//Get YTD record / amount for the given Employee & Type
-						$ytd_record = df_get_record("payroll_entries_income_ytd",array("employee_id"=>$employee_record->val("employee_id"),"type"=>$addition_record->val('type'),"year"=>date('Y')));
-						$ytd_amount = isset($ytd_record) ? $ytd_record->val('ytd_amount') : 0;
-					}
+					//if($addition_record->val('posted_ytd') != null && $addition_record->val('posted_ytd') != 0){
+					//	$ytd_amount = $addition_record->val('posted_ytd');
+					//}
+					//else{
+					//	//Get YTD record / amount for the given Employee & Type
+					//	$ytd_record = df_get_record("payroll_entries_income_ytd",array("employee_id"=>$employee_record->val("employee_id"),"type"=>$addition_record->val('type'),"year"=>">= " . date('Y-01-01') . " AND <=" . date('Y-12-31')));
+					//	//$ytd_record = df_get_record("payroll_entries_income_ytd",array("employee_id"=>$employee_record->val("employee_id"),"type"=>$addition_record->val('type')));
+					//	$ytd_amount = isset($ytd_record) ? $ytd_record->val('ytd_amount') : 0;
+					//}
+
+					//Show YTD Values - check to see if they have already been assigned to the entry (ie. has it been posted)
+					//if($addition_record->val('posted_ytd') != null && $addition_record->val('posted_ytd') != 0)
+					//	$childString .= '<td style="text-align: right">$' . number_format($ytd_amount, 2) . '</td>';
+					//else
+					//	$childString .= '<td style="text-align: right">$' . number_format($ytd_amount, 2) . " + $". number_format($subtotal, 2) .'</td>';
+
 
 					//Show YTD Values - check to see if they have already been assigned to the entry (ie. has it been posted)
 					if($addition_record->val('posted_ytd') != null && $addition_record->val('posted_ytd') != 0)
-						$childString .= '<td style="text-align: right">$' . number_format($ytd_amount, 2) . '</td>';
+						$childString .= '<td style="text-align: right">$' . number_format($addition_record->val('posted_ytd'), 2) . '</td>';
 					else
-						$childString .= '<td style="text-align: right">$' . number_format($ytd_amount + $subtotal, 2) . '</td>';
-				
+						$childString .= '<td style="text-align: right">---';
+					
 					$childString .= '</tr>';
 
 					//Save income to total
 					$total_income += round($subtotal,2);
-					if($addition_record->val('posted_ytd') != null && $addition_record->val('posted_ytd') != 0)
-						$total_income_ytd += $ytd_amount;
-					else
-						$total_income_ytd += $ytd_amount + $subtotal;
+					//if($addition_record->val('posted_ytd') != null && $addition_record->val('posted_ytd') != 0)
+					//	$total_income_ytd += $ytd_amount;
+					//else
+					//	$total_income_ytd += $ytd_amount + $subtotal;
 					
 					//Save taxable income to taxable total
 					if($addition_record->val('taxable') == 1){
@@ -186,7 +343,9 @@ class tables_payroll_period {
 				$ytd_wages = 0;
 				$ytd_ss_wages = 0;
 				$ytd_net_income = 0;
-				$payroll_periods = df_get_records_array('payroll_period',array('period_start'=>'>=2014-01-01','period_start'=>'<=2014-12-31'));
+				
+				//Get all the payroll periods that count for the current YTD and add the employee income totals
+				$payroll_periods = df_get_records_array('payroll_period',array('period_start'=>'>='.date('Y-01-01'),'period_start'=>'<='.date('Y-12-31')));
 				foreach($payroll_periods as $payroll_period){
 					$period_entry_record = df_get_record('payroll_entries',array('payroll_period_id'=>$payroll_period->val('payroll_period_id'),'employee_id'=>$entry->val('employee_id')));
 					if($period_entry_record != null){
@@ -198,11 +357,11 @@ class tables_payroll_period {
 				}
 				
 				//End Table
-				$childString .= '<tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>';
-				$childString .= '<tr><td><b>Total Income</b></td><td></td><td></td><td></td><td></td><td style="text-align: right"><b>$'.number_format($total_income,2).'</b></td><td style="text-align: right">$'.number_format($total_income_ytd,2).' / '.$ytd_gross_income.'</td></tr>';
+				$childString .= '<tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>';
+				$childString .= '<tr><td><b>Total Income</b></td><td></td><td></td><td></td><td></td><td></td><td style="text-align: right"><b>$'.number_format($total_income,2).'</b></td><td style="text-align: right">$'.number_format($total_income_ytd,2).' / '.$ytd_gross_income.'</td></tr>';
 				//$childString .= '<tr><td>Wages</td><td></td><td></td><td></td><td></td><td style="text-align: right">$'.number_format($total_taxable_income,2).'</td></tr>';
-				$childString .= '<tr><td>Wages</td><td></td><td></td><td></td><td></td><td style="text-align: right">$'.number_format($total_wages,2).'</td><td>$'.$ytd_wages.'</td></tr>';
-				$childString .= '<tr><td>Social Security Wages</td><td></td><td></td><td></td><td></td><td style="text-align: right">$'.number_format($total_ss_wages,2).'</td><td>$'.$ytd_ss_wages.'</td></tr></table>';
+				$childString .= '<tr><td>Wages</td><td></td><td></td><td></td><td></td><td></td><td style="text-align: right">$'.number_format($total_wages,2).'</td><td>$'.$ytd_wages.'</td></tr>';
+				$childString .= '<tr><td>Social Security Wages</td><td></td><td></td><td></td><td></td><td></td><td style="text-align: right">$'.number_format($total_ss_wages,2).'</td><td>$'.$ytd_ss_wages.'</td></tr></table>';
 
 				
 				//Save $total_taxable_income to the global taxable income
@@ -219,6 +378,7 @@ class tables_payroll_period {
 				$childString .= '<br><br><b><u>Deductions</u></b><br><br>';
 				$childString .= '<table class="view_add"><tr>
 									<th>Description</th>
+									<th>Account</th>
 									<th>Pre Tax</th>
 									<th>Amount Base</th>
 									<th>Multiply</th>
@@ -238,12 +398,19 @@ class tables_payroll_period {
 					//Description
 					$childString .= '<td>' . $type_record->val('name') . '</td>';
 
+					//Account
+					$account_record = df_get_record('chart_of_accounts',array('account_id'=>$type_record->val('account_number')));
+					$childString .= '<td>' . $account_record->val('account_number') . " (" . $account_record->val('account_name') . ')</td>';
+
 					//Pre Tax
 					if($addition_record->val('pre_tax') == 1)
 						$childString .= "<td>Yes</td>";
 					else
 						$childString .= "<td></td>";
 
+					//Check if the payroll period has been posted
+						
+						
 					//Amount - Base
 						//Check if type is Federal Income Tax
 						if($addition_record->val('type') == $payroll_config->val('federal_type')){
@@ -269,18 +436,18 @@ class tables_payroll_period {
 						elseif($addition_record->val('type') == $payroll_config->val('state_type')){
 							//Exemption Amount - Where state is the state from the employee record
 							$exemption_record = df_get_record("_payroll_config_tax_exemptions",array("state"=>$employee_record->val("state")));
-							$exemption_amount = $exemption_record->val($payroll_config->val('payroll_period')) * $employee_record->val('exemptions_state');
+//							$exemption_amount = $exemption_record->val($payroll_config->val('payroll_period')) * $employee_record->val('exemptions_state');
 
 							//Total taxable income minus exemptions
 							//$taxable_income_minus_exemptions = $total_taxable_income - $exemption_amount;
-							$taxable_income_minus_exemptions = $total_wages - $exemption_amount;
+//							$taxable_income_minus_exemptions = $total_wages - $exemption_amount;
 
 							//Calculate Income Tax - This function is from payroll_entries.php
-							$subtotal = calculate_tax_table($taxable_income_minus_exemptions, $employee_record->val("marital_status"), $employee_record->val("state"));
+//							$subtotal = calculate_tax_table($taxable_income_minus_exemptions, $employee_record->val("marital_status"), $employee_record->val("state"));
 
 							//Check for modifications and add in
-							if($addition_record->val('amount_base') != null)
-								$subtotal += $addition_record->val('amount_base');
+//							if($addition_record->val('amount_base') != null)
+//								$subtotal += $addition_record->val('amount_base');
 							
 							//Display
 							$childString .= '<td style="text-align: right">$' . $subtotal . '</td>';
@@ -355,8 +522,8 @@ class tables_payroll_period {
 				}
 				
 				//End Table
-				$childString .= '<tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>';
-				$childString .= '<tr><td><b>Total Deductions</b></td><td></td><td></td><td></td><td></td><td><b>$' . number_format($total_deductions,2).'</b></td><td>$' . number_format($total_deductions_ytd,2) . '</td></tr></table>';
+				$childString .= '<tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>';
+				$childString .= '<tr><td><b>Total Deductions</b></td><td></td><td></td><td></td><td></td><td></td><td><b>$' . number_format($total_deductions,2).'</b></td><td>$' . number_format($total_deductions_ytd,2) . '</td></tr></table>';
 
 
 			// **** CONTRIBUTIONS SECTION ****
@@ -365,6 +532,7 @@ class tables_payroll_period {
 				$childString .= '<br><br><b><u>Contributions</u></b><br><br>';
 				$childString .= '<table class="view_add"><tr>
 									<th>Description</th>
+									<th>Account</th>
 									<th>Amount Base</th>
 									<th>Multiply</th>
 									<th>Annual Limit</th>
@@ -388,6 +556,10 @@ class tables_payroll_period {
 					//Description
 					$childString .= '<td>' . $type_record->val('name') . '</td>';
 					
+					//Account
+					$account_record = df_get_record('chart_of_accounts',array('account_id'=>$type_record->val('account_number')));
+					$childString .= '<td>' . $account_record->val('account_number') . " (" . $account_record->val('account_name') . ')</td>';
+
 					//Amount - Base
 					if($addition_record->val('amount_base') != null){
 						$childString .= '<td style="text-align: right">$' . $addition_record->val('amount_base') . '</td>';
@@ -497,7 +669,8 @@ class tables_payroll_period {
 			$childString .= '<hr width="850px" align="left">';
 
 		}
-
+*/
+//**************************************************************//
 /*
 		//Pull Payroll Configuration Information
 		$payroll_config = df_get_record('_payroll_config', array('config_id'=>1));
@@ -879,12 +1052,429 @@ class tables_payroll_period {
 
 	
 	function beforeSave(&$record){
+	
 	}
 
 	function afterSave(&$record){
 	}
+
+	function beforeDelete(&$record){
+		//Delete all Entries & Sub-Entries before deleting the main Payroll Period record.
+		
+		//Array of all the tables that entries will be deleted from
+		$tables = array("payroll_entries","payroll_entries_income","payroll_entries_deductions","payroll_entries_contributions");
+		
+		//Loop through the assigned tables
+		foreach($tables as $table){
+			//Pull all entry records within the given Payroll Period
+			$entries =& df_get_records_array($table,array("payroll_period_id"=>$record->val("payroll_period_id")));
+			
+			//Loop through each entry and delete it.
+			foreach($entries as $entry)
+				$entry->delete();
+		}
+		
+	}
+
+	//*****************************************************************************************//
+	//*****************************************************************************************//
+	//*****************************************************************************************//
+	//*****************************************************************************************//
+	//*****************************************************************************************//
+
+	function payroll_from_entries($record){
+		return "entries";
+	}
+
+	function calculate_payroll($record){
+$year = "2014";
+
+
+
+		//Initialize data
+		$payroll_data = array();
+		//$payroll_data['gross'] = 0;
+		//$payroll_data['net'] = 0;
+		//$payroll_data['deductions'] = 0;
+		//$payroll_data['contributions'] = 0;
+		
+		//Pull Payroll Configuration Information
+		$payroll_config = df_get_record('_payroll_config', array('config_id'=>1));
+		
+		//Pull all Payroll Entries associated with this Payroll Period & go through each.
+		$payroll_entries = df_get_records_array("payroll_entries", array("payroll_period_id"=>$record->val('payroll_period_id')));
+		foreach($payroll_entries as $e_key=>$entry){
+			//Pull the Employee Record for the associated Employee
+			$employee_record = df_get_record('employees',array('employee_id'=>$entry->val('employee_id')));
+
+			$payroll_data[$e_key]["employee_id"] = $entry->val('employee_id');
+			$payroll_data[$e_key]["employee_name"] = $employee_record->val("first_name") . " " . $employee_record->val("last_name");
+			$payroll_data[$e_key]["entry_id"] = $entry->getID();
+			
+			//Initialize Variables
+			$payroll_data[$e_key]["gross_income"] = 0;
+			$payroll_data[$e_key]["wages"] = 0;
+			$payroll_data[$e_key]["ss_wages"] = 0;
+			$payroll_data[$e_key]["total_deductions"] = 0;
+			$payroll_data[$e_key]["total_contributions"] = 0;
+			$payroll_data[$e_key]["gross_income_ytd"] = 0;
+			$payroll_data[$e_key]["wages_ytd"] = 0;
+			$payroll_data[$e_key]["ss_wages_ytd"] = 0;
+			$payroll_data[$e_key]["total_deductions_ytd"] = 0;
+
+			// ********** INCOME SECTION **********
+
+				//Parse through all Income Records for the Payroll Entry
+				$addition_records = df_get_records_array('payroll_entries_income',array('payroll_entry_id'=>$entry->val('payroll_entry_id')));
+				foreach($addition_records as $a_key=>$addition_record){
+					$subtotal = 0;
+					
+					//Pull the "type" record for the current entry
+					$type_record = df_get_record('payroll_income_type',array('type_id'=>$addition_record->val('type')));
+
+					//Description
+					$payroll_data[$e_key]["income"]["income_entry_".$a_key]["description"] = $type_record->val('name');
+
+					//Account
+					$account_record = df_get_record('chart_of_accounts',array('account_id'=>$type_record->val('account_number')));
+					$payroll_data[$e_key]["income"]["income_entry_".$a_key]["account"] = $account_record->val('account_number') . " (" . $account_record->val('account_name') . ')';
+
+					//Taxable
+					if($addition_record->val('taxable') == 1)
+						$payroll_data[$e_key]["income"]["income_entry_".$a_key]["taxable"] = 'Yes';
+					else
+						$payroll_data[$e_key]["income"]["income_entry_".$a_key]["taxable"] = '---';
+
+					//Hours
+					if($addition_record->val('hours') != null){
+						//Check if type is Vacation Hours & if Negative make box show red
+						if($addition_record->val('type') == $payroll_config->val('vacation_hours_type') && $employee_record->val('hours_remain_vacation') < $addition_record->val('hours') && $record->val('status') == null)
+							$payroll_data[$e_key]["income"]["income_entry_".$a_key]["hours"] = '<div style="background-color: red;">' . $addition_record->val('hours') . '</div>';
+						else
+							$payroll_data[$e_key]["income"]["income_entry_".$a_key]["hours"] = $addition_record->val('hours');
+					}
+					else
+						$payroll_data[$e_key]["income"]["income_entry_".$a_key]["hours"] = "---";
+
+					//Amount - Base
+					if($addition_record->val('amount_base') != null){
+						$payroll_data[$e_key]["income"]["income_entry_".$a_key]["base"] = $addition_record->val('amount_base');
+						$subtotal += $addition_record->val('amount_base');
+					}
+					else
+						$payroll_data[$e_key]["income"]["income_entry_".$a_key]["base"] = "---";
+
+					//Amount - Multiply (by hours)
+					if($addition_record->val('amount_multiply') != null){
+						$payroll_data[$e_key]["income"]["income_entry_".$a_key]["multiply"] = $addition_record->val('amount_multiply');
+						$subtotal += $addition_record->val('hours') * $addition_record->val('amount_multiply');
+					}
+					else
+						$payroll_data[$e_key]["income"]["income_entry_".$a_key]["multiply"] = "---";
+					
+					//Total
+					$payroll_data[$e_key]["income"]["income_entry_".$a_key]["total_amount"] = number_format($subtotal,2);
+					
+					//YTD
+					$payroll_data[$e_key]["income"]["income_entry_".$a_key]["ytd"] = "---";
+
+					//Save income to total
+					$payroll_data[$e_key]["gross_income"] += round($subtotal,2);
+
+					//Save taxable income to taxable total
+					if($addition_record->val('taxable') == 1){
+						$payroll_data[$e_key]["ss_wages"] += round($subtotal,2);
+					}
+
+				} //End foreach
+
+				//Pull all Pre-Tax Deductions, subtract from taxable income - Calculate Taxable Income for FICA / Medicare
+				$addition_records = df_get_records_array('payroll_entries_deductions',array('payroll_entry_id'=>$entry->val('payroll_entry_id'),'pre_tax'=>1));
+				foreach($addition_records as $addition_record){
+					//Subtract from taxable income.
+					$payroll_data[$e_key]["ss_wages"] -= ($addition_record->val('amount_base') + ($total_income * $addition_record->val('amount_multiply')));
+					
+					//Sanity check and fix
+					if($payroll_data[$e_key]["ss_wages"] < 0)
+						$payroll_data[$e_key]["ss_wages"] = 0;
+				}
+
+				//Total Wages is the Total SS Wages [minus the deductions (401K) that don't decrease SS wages]. Set equal and then subtract.
+				$payroll_data[$e_key]["wages"] = $payroll_data[$e_key]["ss_wages"];
+
+				//Pull all 401K Deductions, subtract from social security wages - Calculate Taxable Income for Federal / State Taxes
+				$addition_records = df_get_records_array('payroll_entries_deductions',array('payroll_entry_id'=>$entry->val('payroll_entry_id'),'type'=>$payroll_config->val('401k_deduction_type')));
+				foreach($addition_records as $addition_record){
+					//Subtract from taxable income.
+					$payroll_data[$e_key]["wages"] -= ($addition_record->val('amount_base') + ($payroll_data[$e_key]["gross_income"] * $addition_record->val('amount_multiply')));
+
+					//Sanity check and fix
+					if($payroll_data[$e_key]["wages"] < 0)
+						$payroll_data[$e_key]["wages"] = 0;
+				}
+
+				//Save $total_taxable_income to the global taxable income
+				//$GLOBALS['taxable_income'] = $total_taxable_income;
+
+
+			// **** DEDUCTIONS SECTION ****
+
+				//Initialize Variables
+				//$total_deductions = 0;
+				//$total_deductions_ytd = 0;
+				
+				//Parse through all Deduction Records for the Payroll Entry
+				$addition_records = df_get_records_array('payroll_entries_deductions',array('payroll_entry_id'=>$entry->val('payroll_entry_id')));
+				foreach($addition_records as $a_key=>$addition_record){
+					$subtotal = 0;
+					
+					//Pull the "type" record for the current entry
+					$type_record = df_get_record('payroll_deductions_type',array('type_id'=>$addition_record->val('type')));
+
+					//Description
+					$payroll_data[$e_key]["deductions"]["deduction_entry_".$a_key]["description"] = $type_record->val('name');
+
+					//Account
+					$account_record = df_get_record('chart_of_accounts',array('account_id'=>$type_record->val('account_number')));
+					$payroll_data[$e_key]["deductions"]["deduction_entry_".$a_key]["account"] = $account_record->val('account_number') . " (" . $account_record->val('account_name') . ')';
+
+					//Pre Tax
+					if($addition_record->val('pre_tax') == 1)
+						$payroll_data[$e_key]["deductions"]["deduction_entry_".$a_key]["pre_tax"] = 'Yes';
+					else
+						$payroll_data[$e_key]["deductions"]["deduction_entry_".$a_key]["pre_tax"] = '---';
+
+					//Amount - Base
+						//Check if type is Federal Income Tax
+						if($addition_record->val('type') == $payroll_config->val('federal_type')){
+							//Exemption Amount - Where 'state' is FED = federal
+							$exemption_record = df_get_record("_payroll_config_tax_exemptions",array("state"=>"FED"));
+							$exemption_amount = $exemption_record->val($payroll_config->val('payroll_period')) * $employee_record->val('exemptions_federal');
+
+							//Total taxable income minus exemptions
+							$taxable_income_minus_exemptions = $payroll_data[$e_key]["wages"] - $exemption_amount;
+
+							//Calculate Income Tax - This function is from payroll_entries.php
+							$subtotal = calculate_tax_table($taxable_income_minus_exemptions, $employee_record->val("marital_status"), "FED");
+
+							//Check for modifications and add in
+							if($addition_record->val('amount_base') != null)
+								$subtotal += $addition_record->val('amount_base');
+							
+							//Total
+							$payroll_data[$e_key]["deductions"]["deduction_entry_".$a_key]["base"] = number_format($subtotal,2);
+						}
+						//Check if type is State Income Tax
+						elseif($addition_record->val('type') == $payroll_config->val('state_type')){
+							//Exemption Amount - Where state is the state from the employee record
+							$exemption_record = df_get_record("_payroll_config_tax_exemptions",array("state"=>$employee_record->val("state")));
+							
+							//If record does not exist exemption amount = 0, else get from database.
+							if($exemption_record == null)
+								$exemption_amount = 0;
+							else
+								$exemption_amount = $exemption_record->val($payroll_config->val('payroll_period')) * $employee_record->val('exemptions_state');
+
+							//Total taxable income minus exemptions
+							$taxable_income_minus_exemptions = $payroll_data[$e_key]["wages"] - $exemption_amount;
+
+							//Calculate Income Tax - This function is from payroll_entries.php
+							$subtotal = calculate_tax_table($taxable_income_minus_exemptions, $employee_record->val("marital_status"), $employee_record->val("state"));
+
+							//Check for modifications and add in
+							if($addition_record->val('amount_base') != null)
+								$subtotal += $addition_record->val('amount_base');
+							
+							//Total
+							$payroll_data[$e_key]["deductions"]["deduction_entry_".$a_key]["base"] = number_format($subtotal,2);
+						}
+						//Check if null
+						elseif($addition_record->val('amount_base') != null){
+							//Pull from record
+							$subtotal += $addition_record->val('amount_base');
+							
+							//Total
+							$payroll_data[$e_key]["deductions"]["deduction_entry_".$a_key]["base"] = number_format($subtotal,2);
+						}
+						else
+							$payroll_data[$e_key]["deductions"]["deduction_entry_".$a_key]["base"] = "---";
+
+					//Amount - Multiply
+					if($addition_record->val('amount_multiply') != null){
+						$payroll_data[$e_key]["deductions"]["deduction_entry_".$a_key]["multiply"] = $addition_record->val('amount_multiply');
+
+						//If pre-tax, or type is "401K" (which handles kind of like pre-tax)
+						if($addition_record->val('pre_tax') == 1 || $addition_record->val('type') == $payroll_config->val('401k_deduction_type'))
+							$subtotal += $payroll_data[$e_key]["gross_income"] * $addition_record->val('amount_multiply');
+						//If type is "FICA" or "Medicare"
+						elseif($addition_record->val('type') == $payroll_config->val('fica_deduction_type') || $addition_record->val('type') == $payroll_config->val('medicare_deduction_type'))
+							//$subtotal += $total_taxable_income * $addition_record->val('amount_multiply');
+							$subtotal += $payroll_data[$e_key]["ss_wages"] * $addition_record->val('amount_multiply');
+						else //E.g. 401R (Roth)
+							$subtotal += $payroll_data[$e_key]["wages"] * $addition_record->val('amount_multiply');
+					}
+					else
+						$payroll_data[$e_key]["deductions"]["deduction_entry_".$a_key]["multiply"] = "---";
+					
+					//Get YTD Amount - pull from the YTD Record - for the given Employee & Type
+					$ytd_record = df_get_record("payroll_entries_deductions_ytd",array("employee_id"=>$employee_record->val("employee_id"),"type"=>$addition_record->val('type'),"year"=>">= " . date('Y-01-01',$year) . " AND <=" . date('Y-12-31',$year)));
+					$ytd_amount = isset($ytd_record) ? $ytd_record->val('ytd_amount') : 0;
+					
+					//YTD
+					$payroll_data[$e_key]["deductions"]["deduction_entry_".$a_key]["ytd"] = $ytd_amount;
+
+					//Annual Limit
+						//Check for Annual Limits
+						if($addition_record->val('annual_limit') != null){
+							//Check to make sure employee hasn't yet paid the maximum amount for FICA tax - pay to max & then make $0.00;
+								if($ytd_amount >= $addition_record->val('annual_limit'))
+									$subtotal = 0.0;
+								elseif($subtotal + $ytd_amount > $addition_record->val('annual_limit'))
+										$subtotal = $addition_record->val('annual_limit') - $ytd_amount;
+
+							$payroll_data[$e_key]["deductions"]["deduction_entry_".$a_key]["annual_limit"] = $addition_record->val('annual_limit');
+						}
+						else
+							$payroll_data[$e_key]["deductions"]["deduction_entry_".$a_key]["annual_limit"] = "---";
+
+	
+					//Total
+					$payroll_data[$e_key]["deductions"]["deduction_entry_".$a_key]["total_amount"] = number_format($subtotal,2);
+
+					//Save deductions to total
+					$payroll_data[$e_key]["total_deductions"] += round($subtotal,2);
+
+				}
+
+
+			// **** CONTRIBUTIONS SECTION ****
+			
+				//Parse through all Contribution Records for the Payroll Entry
+				$addition_records = df_get_records_array('payroll_entries_contributions',array('payroll_entry_id'=>$entry->val('payroll_entry_id')));
+				foreach($addition_records as $a_key=>$addition_record){
+					//Initialize Variables
+					$subtotal = 0;
+
+					//Pull the "type" record for the current entry
+					$type_record = df_get_record('payroll_contributions_type',array('type_id'=>$addition_record->val('type')));
+
+					//Description
+					$payroll_data[$e_key]["contributions"]["contribution_entry_".$a_key]["description"] = $type_record->val('name');
+
+					//Account
+					$account_record = df_get_record('chart_of_accounts',array('account_id'=>$type_record->val('account_number')));
+					$payroll_data[$e_key]["contributions"]["contribution_entry_".$a_key]["account"] = $account_record->val('account_number') . " (" . $account_record->val('account_name') . ')';
+					
+					//Amount - Base
+					if($addition_record->val('amount_base') != null){
+						$payroll_data[$e_key]["contributions"]["contribution_entry_".$a_key]["base"] = $addition_record->val('amount_base');
+						$subtotal += $addition_record->val('amount_base');
+					}
+					else
+						$payroll_data[$e_key]["contributions"]["contribution_entry_".$a_key]["base"] = "---";
+						
+					//Amount - Multiply
+					if($addition_record->val('amount_multiply') != null){
+						$payroll_data[$e_key]["contributions"]["contribution_entry_".$a_key]["base"] = $addition_record->val('amount_multiply');
+						
+						//If type is "401K"
+						if($addition_record->val('type') == $payroll_config->val('401k_contribution_type'))
+							$subtotal += $payroll_data[$e_key]["gross_income"] * $addition_record->val('amount_multiply');
+						//If type is "FICA" or "Medicare"
+						elseif($addition_record->val('type') == $payroll_config->val('fica_contribution_type') || $addition_record->val('type') == $payroll_config->val('medicare_contribution_type'))
+							//$subtotal += $total_taxable_income * $addition_record->val('amount_multiply');
+							$subtotal += $payroll_data[$e_key]["ss_wages"] * $addition_record->val('amount_multiply');
+						else //E.g. 401R (Roth)
+							$subtotal += $payroll_data[$e_key]["wages"] * $addition_record->val('amount_multiply');
+					}
+					else
+						$payroll_data[$e_key]["contributions"]["contribution_entry_".$a_key]["base"] = "---";
+
+					//Get YTD Amount - pull from the YTD Record - for the given Employee & Type
+					$ytd_record = df_get_record("payroll_entries_contributions_ytd",array("employee_id"=>$employee_record->val("employee_id"),"type"=>$addition_record->val('type'),"year"=>">= " . date('Y-01-01',$year) . " AND <=" . date('Y-12-31',$year)));
+					$ytd_amount = isset($ytd_record) ? $ytd_record->val('ytd_amount') : 0;
+					
+					//YTD
+					$payroll_data[$e_key]["contributions"]["contribution_entry_".$a_key]["ytd"] = $ytd_amount;
+
+					//Annual Limit
+						//Check for Annual Limits
+						if($addition_record->val('annual_limit') != null){
+							//Check to make sure employee hasn't yet paid the maximum amount for FICA tax - pay to max & then make $0.00;
+								if($ytd_amount >= $addition_record->val('annual_limit'))
+									$subtotal = 0.0;
+								elseif($subtotal + $ytd_amount > $addition_record->val('annual_limit'))
+										$subtotal = $addition_record->val('annual_limit') - $ytd_amount;
+
+							$payroll_data[$e_key]["contributions"]["contribution_entry_".$a_key]["annual_limit"] = $addition_record->val('annual_limit');
+						}
+						else
+							$payroll_data[$e_key]["contributions"]["contribution_entry_".$a_key]["annual_limit"] = "---";
+
+					//Total
+					$payroll_data[$e_key]["contributions"]["contribution_entry_".$a_key]["total_amount"] = number_format($subtotal,2);
+					
+					//Show YTD Values - check to see if they have already been assigned to the entry (ie. has it been posted)
+					//if($addition_record->val('posted_ytd') != null && $addition_record->val('posted_ytd') != 0)
+					//	$childString .= '<td style="text-align: right">$' . number_format($ytd_amount, 2) . '</td>';
+					//else
+					//	$childString .= '<td style="text-align: right">$' . number_format($ytd_amount + $subtotal, 2) . '</td>';
+					
+					//$childString .= '</tr>';					
+				}
+/*				
+			//*** NET ***
+
+			//This may end up in a $0.01 difference between the above totals due to rounding.
+			$net_pay = $total_income - $total_deductions;
+
+			//Get YTD records / amount for the given Employee
+			//$ytd_record = df_get_record("payroll_entries_income_ytd",array("employee_id"=>$employee_record->val("employee_id")));
+			
+			$ytd_gross = $total_income_ytd;
+			$ytd_net = $total_income_ytd - $total_deductions_ytd;
+			//if(isset($ytd_record)){
+			//	$ytd_gross += $ytd_record->val('ytd_gross');
+			//	$ytd_net += $ytd_record->val('ytd_net');
+			//}
+			
+			$childString .= '<td style="padding-left:15px; border-left:1px solid #000000; vertical-align:top;">';
+				$childString .= '<table>';
+				$childString .= '<th></th>';
+				$childString .= '<th style="border-bottom: 1px solid #000000;">Current</th>';
+				$childString .= '<th style="border-bottom: 1px solid #000000;">YTD</th>';
+				$childString .= '<tr><td><b>Gross Income:</b></td><td style="text-align: right;">$' . number_format($total_income,2) . '</td><td style="text-align: right;">$' . number_format($ytd_gross,2) . '</td></tr>';
+				$childString .= '<tr><td><b>Deductions:</b></td><td style="text-align: right;">$' . number_format($total_deductions,2) . '</td><td style="text-align: right;">$' . number_format($total_deductions_ytd,2) . '</td></tr>';
+				$childString .= '<tr><td></td></tr>';
+				$childString .= '<tr><td style="border-bottom: 1px solid #000000;"><b>Net Pay:</b></td><td style="border-bottom: 1px solid #000000; text-align: right;"><b>$' . number_format($net_pay,2) . '</b></td><td style="border-bottom: 1px solid #000000; text-align: right;">$' . number_format($ytd_net, 2) . '</td></tr>';
+				$childString .= '</table>';
+			$childString .= '</td>';
+
+			$GLOBALS['totals_gross_income'] += $total_income;
+			$GLOBALS['$totals_net_income'] += round($net_pay,2);
+			$GLOBALS['$totals_deductions'] += $total_deductions;
+
+*/
+		}
+
+
+
+
+
+
+
+	return $payroll_data;
+
+	}
+
+
 	
 }
+
+
+
+
+
 
 
 /*

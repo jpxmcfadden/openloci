@@ -42,6 +42,9 @@ class tables_payroll_entries {
 			
 			$myfield =& $table->getField('deductions');
 			$myfield['widget']['type'] = 'hidden';
+
+			$myfield =& $table->getField('contributions');
+			$myfield['widget']['type'] = 'hidden';
 		}
 	}	
 	
