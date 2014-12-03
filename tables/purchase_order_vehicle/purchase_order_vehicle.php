@@ -1,6 +1,6 @@
 <?php
 
-class tables_purchase_order_service {
+class tables_purchase_order_vehicle {
 
 	//Class Variables
 	private $total_item_purchase = array(); //Create a class variable to store the values for modifying the inventory
@@ -9,7 +9,7 @@ class tables_purchase_order_service {
 	function getPermissions(&$record){
 		//Check if the user is logged in & what their permissions for this table are.
 		if( isUser() ){
-			$userperms = get_userPerms('purchase_order_service');
+			$userperms = get_userPerms('purchase_order_vehicle');
 			if($userperms == "view")
 				return Dataface_PermissionsTool::getRolePermissions("READ ONLY"); //Assign Read Only Permissions
 			elseif($userperms == "edit" || $userperms == "post"){
@@ -26,23 +26,18 @@ class tables_purchase_order_service {
 	}
 
 	function getTitle(&$record){
-		return "Service Purchase Order #" . $record->strval('purchase_id');
+		return "Rendered Services Purchase Order #" . $record->strval('purchase_id');
 	}
 
 	function purchase_id__display(&$record){
-		return "S".$record->val('purchase_id');
+		return "R".$record->val('purchase_id');
 	}
-	
+
 	function purchase_date__default(){
 		return date('Y-m-d');
 	}
 	
-	function callslip_id__display(&$record){
-		$callslip_record = df_get_record('call_slips', array('call_id'=>$record->val('callslip_id')));
-		return $callslip_record->getTitle();
-	}
-	
-	//Add attitional details to the view tab
+	//Add additional details to the view tab
 	function section__pricing(&$record){
 
 		$childString = "";
@@ -51,11 +46,11 @@ class tables_purchase_order_service {
 			$childString .= '<b><u>Item List</u></b><br><br>';
 			$childString .= '<table class="view_add"><tr><th>Item</th><th>Quantity</th><th>Purchase Price</th><th>Total (per item)</th></tr>';
 
-			$purchaseorderRecords = $record->getRelatedRecords('purchase_order_service_items');
+			$purchaseorderRecords = $record->getRelatedRecords('purchase_order_rendered_services_items');
 			$total_all_items = 0;
 			
 			foreach ($purchaseorderRecords as $purchaseorderRecord){
-				//$inventory_record = df_get_record('inventory', array('inventory_id'=>$purchaseorderRecord['inventory_id']));
+			//	$inventory_record = df_get_record('inventory', array('inventory_id'=>$purchaseorderRecord['inventory_id']));
 				$item_total = number_format($purchaseorderRecord['quantity'] * $purchaseorderRecord['purchase_price'],2);
 				//$total_all_items += $purchaseorderRecord['quantity'] * $purchaseorderRecord['purchase_price'];
 				$quantity = explode('.',$purchaseorderRecord['quantity']);
@@ -65,7 +60,7 @@ class tables_purchase_order_service {
 					$quantity[1] = '';
 
 				
-				$childString .= '<tr><td>' . $purchaseorderRecord['item_name'] .
+				$childString .= '<tr><td>' . $purchaseorderRecord['item'] .
 								'</td><td style="text-align: right"><table style="width: 100%; border-collapse:collapse;"><tr>' .
 																						'<td style="border: 0px solid black; padding: 0; text-align: right; width: 100%;">' . $quantity[0] .
 																						'</td><td style="border: 0px solid black; padding: 0; text-align: left; width: 10px;">'.$quantity[1].'</td></tr></table>' .
@@ -120,7 +115,7 @@ class tables_purchase_order_service {
 		foreach ($value as $x){
 
 			//Skip empty lines - do nothing (unless a quantity has been assigned, and then return an error)
-			if($x['item_name'] == ''){
+			if($x['item'] == ''){
 				if($x['quantity']){ //Case where the 'item_name' field has been left empty, but a quantity has been given
 					$params['message'] .= $msg.'A quantity has been given, but an "Item" has not been assigned.';
 					return false;
@@ -147,7 +142,6 @@ class tables_purchase_order_service {
 		//If no errors have occured, move along.
 		return 1;
 	}
-	
 
 	function section__status(&$record){
 		$app =& Dataface_Application::getInstance(); 
@@ -203,7 +197,6 @@ class tables_purchase_order_service {
 	}
 	
 	
-	
 
 	function beforeSave(&$record){
 		if($this->total_item_purchase){
@@ -213,6 +206,7 @@ class tables_purchase_order_service {
 
 			$record->setValue('item_total', $total_item_purchase_price);
 			$record->setValue('total', $total);
+			
 		}
 		//If "shipping" if left blank, set to 0.00
 		if($record->val('shipping') == null)
@@ -221,15 +215,11 @@ class tables_purchase_order_service {
 
 	function afterInsert(&$record){
 		//PO Full ID: prefix+purchase_id
-		$record->setValue('purchase_order_id', "S".$record->val('purchase_id'));
+		$record->setValue('purchase_order_id', "R".$record->val('purchase_id'));
 		$record->save();
-	}
-
-
-
-
-
-
+	}	
+	
+	
 	/*
 		//Create purchase history records for all items. -- Goes in Action.
 		//Get items list
@@ -248,72 +238,6 @@ class tables_purchase_order_service {
 									);
 		$purchase_history_record->save(null, true);
 	*/
-
-	/*
-		//$response =& Dataface_Application::getResponse();
-		//$rlist = 'a';
-		
-		if($record->val('status') == '')
-			$record->setValue('status','NCO');
-		
-		if($record->val('call_datetime') == '')
-			$record->setValue('call_datetime',date('Y-m-d g:i a'));
-
-		//*****************************************************************
-		//********************Inventory Management Code********************
-		//*****************************************************************
-
-		//Get inventory modification values from the class variable cs_modify_inventory
-		foreach($this->cs_modify_inventory as $iid=>$modify){
-			$gen_inv = df_get_record('inventory', array('inventory_id'=>$iid));
-			$gen_inv->setValue('quantity',($gen_inv->val('quantity') + $modify));
-			//$gen_inv->save(null, true);
-			$gen_inv->save();
-			//return PEAR::raiseError('END',DATAFACE_E_NOTICE);
-		}
-
-		$inventoryRecords = $record->getRelatedRecords('call_slip_inventory');
-		foreach ($inventoryRecords as $cs_ir){
-			if ($cs_ir['sell_cost'] == ''){
-				$inv_rec = df_get_record('inventory', array('inventory_id'=>$cs_ir['inventory_id']));
-				$csi_rec = df_get_record('call_slip_inventory', array('csi_id'=>$cs_ir['csi_id']));
-				$csi_rec->setValue('sell_cost', $inv_rec->val('sell_cost'));
-				$csi_rec->setValue('purchase_cost', $inv_rec->val('purchase_cost'));
-				$csi_rec->save();
-			}
-		}
-		
-		//*********************************************************************
-		//********************END Inventory Management Code********************
-		//*********************************************************************
-
-		//if($rlist){
-		//	$response['--msg'] = "Data: ".$rlist;
-		//	return PEAR::raiseError("FIN",DATAFACE_E_NOTICE);
-		//}
-	*/
-	//}
-	
-	//function afterSave(&$record){
-		//Calculate and Save the TOTAL
-	
-		//$itemRecords = $record->getRelatedRecords('purchase_order_inventory_items');
-		
-		//$total_item_purchase_price = 0;
-		//foreach ($itemRecords as $itemRecord){
-		//	$total_item_purchase_price += $itemRecord['purchase_price'] * $itemRecord['quantity'];
-		//}
-		
-		//$total = $total_item_purchase_price + ( $total_item_purchase_price * $record->val('tax') ) + $record->val('shipping');
-		
-		//$record->setValue('total', $total);
-		//$record->save(null, true);
-		//$record->save();
-	//}
-	
-	
-	
-	
 	
 }
 

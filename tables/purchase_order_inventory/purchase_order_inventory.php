@@ -3,6 +3,7 @@
 class tables_purchase_order_inventory {
 
 	//Class Variables
+	private $po_prefix = "I";
 	private $total_item_purchase = array(); //Create a class variable to store the values for modifying the inventory
 
 	//Permissions
@@ -14,7 +15,7 @@ class tables_purchase_order_inventory {
 				return Dataface_PermissionsTool::getRolePermissions("READ ONLY"); //Assign Read Only Permissions
 			elseif($userperms == "edit" || $userperms == "post"){
 				if ( isset($record) ){
-					if(	$record->val('post_status') == 'Posted')
+					if(	$record->val('post_status') == 'Posted' || $record->val('post_status') == 'Received' )
 						return Dataface_PermissionsTool::getRolePermissions('NO_EDIT_DELETE');
 				}
 				return Dataface_PermissionsTool::getRolePermissions(myRole()); //Assign Permissions based on user Role (typically USER)
@@ -30,7 +31,7 @@ class tables_purchase_order_inventory {
 	}
 
 	function purchase_id__display(&$record){
-		return "I".$record->val('purchase_id');
+		return $po_prefix.$record->val('purchase_id');
 	}
 
 	function purchase_date__default(){
@@ -149,10 +150,10 @@ class tables_purchase_order_inventory {
 		$query =& $app->getQuery();
 		$childString = '';
 
-		//If the "Change Status To: Pending" button has been pressed.
+		//If the "Change Status To: Received" button has been pressed.
 		//Because both the $_GET and $query will be "" on a new record, check to insure that they are not empty.
-		if(($_GET['-pending'] == $query['-recordid']) && ($query['-recordid'] != "")){
-			$record->setValue('post_status',"Pending"); //Set status to Pending.
+		if(($_GET['-received'] == $query['-recordid']) && ($query['-recordid'] != "")){
+			$record->setValue('post_status',"Received"); //Set status to Received.
 			$res = $record->save(null, true); //Save Record w/ permission check.
 
 			//Check for errors.
@@ -162,7 +163,7 @@ class tables_purchase_order_inventory {
 				$msg = '<input type="hidden" name="--error" value="Unable to change status. This is most likely because you do not have the required permissions.">';
 			}
 			else
-				$msg = '<input type="hidden" name="--msg" value="Status Changed to: Pending">';
+				$msg = '<input type="hidden" name="--msg" value="Status Changed to: Received">';
 			
 			$childString .= '<form name="status_change">';
 			$childString .= '<input type="hidden" name="-table" value="'.$query['-table'].'">';
@@ -180,14 +181,11 @@ class tables_purchase_order_inventory {
 			$childString .= '<input type="hidden" name="-action" value="'.$query['-action'].'">';
 			$childString .= '<input type="hidden" name="-recordid" value="'.$record->getID().'">';
 			
-			$childString .= '<input type="hidden" name="-pending" value="'.$record->getID().'">';
-			$childString .= '<input type="submit" value="Change Status to: Pending">';
+			$childString .= '<input type="hidden" name="-received" value="'.$record->getID().'">';
+			$childString .= '<input type="submit" value="Change Status to: Received">';
 
 			$childString .= '</form>';
 		}
-		//elseif(	$record->val('post_status') == 'Pending'){ //---can do this by linking to -action=ledger_post&selected="this_one"
-		//	$childString .= 'Post';
-		//}
 		else {
 			$childString .= "No further options available";
 		}
@@ -221,7 +219,7 @@ class tables_purchase_order_inventory {
 
 	function afterInsert(&$record){
 		//PO Full ID: prefix+purchase_id
-		$record->setValue('purchase_order_id', "I".$record->val('purchase_id'));
+		$record->setValue('purchase_order_id', $po_prefix.$record->val('purchase_id'));
 		$record->save();
 	}	
 	

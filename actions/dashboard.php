@@ -36,13 +36,13 @@ class actions_dashboard {
 				$status = df_get_records_array('purchase_order_service', array('post_status'=>'Pending'));
 				$dashboard_display_info['spo_pending'] = count($status);
 			}
-			if($dashboard_display_info['purchase_order_office'] == "post"){
-				$status = df_get_records_array('purchase_order_office', array('post_status'=>'Pending'));
-				$dashboard_display_info['opo_pending'] = count($status);
+			if($dashboard_display_info['purchase_order_tool'] == "post"){
+				$status = df_get_records_array('purchase_order_tool', array('post_status'=>'Pending'));
+				$dashboard_display_info['tpo_pending'] = count($status);
 			}
-			if($dashboard_display_info['purchase_order_rendered_services'] == "post"){
-				$status = df_get_records_array('purchase_order_rendered_services', array('post_status'=>'Pending'));
-				$dashboard_display_info['rpo_pending'] = count($status);
+			if($dashboard_display_info['purchase_order_vehicle'] == "post"){
+				$status = df_get_records_array('purchase_order_vehicle', array('post_status'=>'Pending'));
+				$dashboard_display_info['vpo_pending'] = count($status);
 			}
 
 			if($dashboard_display_info['accounts_payable'] == "post"){
