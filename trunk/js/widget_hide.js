@@ -7,7 +7,7 @@ function widget_hide(modifier_field, toggled_field, required_field){
 	registerXatafaceDecorator(function(){
 		var mod = $(modifier_field);
 		var tog = $(toggled_field);
-		
+
 		if(typeof required_field != 'undefined'){
 			var req_label = $(required_field);
 			req_label.append('<span style="color: #ff0000" class="fieldRequired" title="required">&nbsp;</span>')

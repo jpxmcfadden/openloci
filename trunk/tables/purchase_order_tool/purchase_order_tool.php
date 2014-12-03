@@ -1,6 +1,6 @@
 <?php
 
-class tables_purchase_order_rendered_services {
+class tables_purchase_order_tool {
 
 	//Class Variables
 	private $total_item_purchase = array(); //Create a class variable to store the values for modifying the inventory
@@ -9,7 +9,7 @@ class tables_purchase_order_rendered_services {
 	function getPermissions(&$record){
 		//Check if the user is logged in & what their permissions for this table are.
 		if( isUser() ){
-			$userperms = get_userPerms('purchase_order_rendered_services');
+			$userperms = get_userPerms('purchase_order_tool');
 			if($userperms == "view")
 				return Dataface_PermissionsTool::getRolePermissions("READ ONLY"); //Assign Read Only Permissions
 			elseif($userperms == "edit" || $userperms == "post"){
@@ -26,18 +26,18 @@ class tables_purchase_order_rendered_services {
 	}
 
 	function getTitle(&$record){
-		return "Rendered Services Purchase Order #" . $record->strval('purchase_id');
+		return "Tool Purchase Order #" . $record->strval('purchase_id');
 	}
 
 	function purchase_id__display(&$record){
-		return "R".$record->val('purchase_id');
+		return "T".$record->val('purchase_id');
 	}
 
 	function purchase_date__default(){
 		return date('Y-m-d');
 	}
 	
-	//Add additional details to the view tab
+	//Add attitional details to the view tab
 	function section__pricing(&$record){
 
 		$childString = "";
@@ -46,11 +46,11 @@ class tables_purchase_order_rendered_services {
 			$childString .= '<b><u>Item List</u></b><br><br>';
 			$childString .= '<table class="view_add"><tr><th>Item</th><th>Quantity</th><th>Purchase Price</th><th>Total (per item)</th></tr>';
 
-			$purchaseorderRecords = $record->getRelatedRecords('purchase_order_rendered_services_items');
+			$purchaseorderRecords = $record->getRelatedRecords('purchase_order_tool_items');
 			$total_all_items = 0;
 			
 			foreach ($purchaseorderRecords as $purchaseorderRecord){
-			//	$inventory_record = df_get_record('inventory', array('inventory_id'=>$purchaseorderRecord['inventory_id']));
+				$inventory_record = df_get_record('tool_inventory', array('tool_id'=>$purchaseorderRecord['tool_id']));
 				$item_total = number_format($purchaseorderRecord['quantity'] * $purchaseorderRecord['purchase_price'],2);
 				//$total_all_items += $purchaseorderRecord['quantity'] * $purchaseorderRecord['purchase_price'];
 				$quantity = explode('.',$purchaseorderRecord['quantity']);
@@ -60,7 +60,7 @@ class tables_purchase_order_rendered_services {
 					$quantity[1] = '';
 
 				
-				$childString .= '<tr><td>' . $purchaseorderRecord['item'] .
+				$childString .= '<tr><td>' . $inventory_record->val('item_name') .
 								'</td><td style="text-align: right"><table style="width: 100%; border-collapse:collapse;"><tr>' .
 																						'<td style="border: 0px solid black; padding: 0; text-align: right; width: 100%;">' . $quantity[0] .
 																						'</td><td style="border: 0px solid black; padding: 0; text-align: left; width: 10px;">'.$quantity[1].'</td></tr></table>' .
@@ -115,7 +115,7 @@ class tables_purchase_order_rendered_services {
 		foreach ($value as $x){
 
 			//Skip empty lines - do nothing (unless a quantity has been assigned, and then return an error)
-			if($x['item'] == ''){
+			if($x['tool_id'] == ''){
 				if($x['quantity']){ //Case where the 'item_name' field has been left empty, but a quantity has been given
 					$params['message'] .= $msg.'A quantity has been given, but an "Item" has not been assigned.';
 					return false;
@@ -142,16 +142,17 @@ class tables_purchase_order_rendered_services {
 		//If no errors have occured, move along.
 		return 1;
 	}
+	
 
 	function section__status(&$record){
 		$app =& Dataface_Application::getInstance(); 
 		$query =& $app->getQuery();
 		$childString = '';
 
-		//If the "Change Status To: Pending" button has been pressed.
+		//If the "Change Status To: Received" button has been pressed.
 		//Because both the $_GET and $query will be "" on a new record, check to insure that they are not empty.
-		if(($_GET['-pending'] == $query['-recordid']) && ($query['-recordid'] != "")){
-			$record->setValue('post_status',"Pending"); //Set status to Pending.
+		if(($_GET['-received'] == $query['-recordid']) && ($query['-recordid'] != "")){
+			$record->setValue('post_status',"Received"); //Set status to Received.
 			$res = $record->save(null, true); //Save Record w/ permission check.
 
 			//Check for errors.
@@ -161,7 +162,7 @@ class tables_purchase_order_rendered_services {
 				$msg = '<input type="hidden" name="--error" value="Unable to change status. This is most likely because you do not have the required permissions.">';
 			}
 			else
-				$msg = '<input type="hidden" name="--msg" value="Status Changed to: Pending">';
+				$msg = '<input type="hidden" name="--msg" value="Status Changed to: Received">';
 			
 			$childString .= '<form name="status_change">';
 			$childString .= '<input type="hidden" name="-table" value="'.$query['-table'].'">';
@@ -179,19 +180,15 @@ class tables_purchase_order_rendered_services {
 			$childString .= '<input type="hidden" name="-action" value="'.$query['-action'].'">';
 			$childString .= '<input type="hidden" name="-recordid" value="'.$record->getID().'">';
 			
-			$childString .= '<input type="hidden" name="-pending" value="'.$record->getID().'">';
-			$childString .= '<input type="submit" value="Change Status to: Pending">';
+			$childString .= '<input type="hidden" name="-received" value="'.$record->getID().'">';
+			$childString .= '<input type="submit" value="Change Status to: Received">';
 
 			$childString .= '</form>';
 		}
-		//elseif(	$record->val('post_status') == 'Pending'){ //---can do this by linking to -action=ledger_post&selected="this_one"
-		//	$childString .= 'Post';
-		//}
 		else {
 			$childString .= "No further options available";
 		}
 		
-		//if(	$record->val('post_status') == '')
 		return array(
 			'content' => "$childString",
 			'class' => 'main',
@@ -199,6 +196,7 @@ class tables_purchase_order_rendered_services {
 			'order' => 10
 		);
 	}
+	
 	
 	
 
@@ -219,7 +217,7 @@ class tables_purchase_order_rendered_services {
 
 	function afterInsert(&$record){
 		//PO Full ID: prefix+purchase_id
-		$record->setValue('purchase_order_id', "R".$record->val('purchase_id'));
+		$record->setValue('purchase_order_id', "T".$record->val('purchase_id'));
 		$record->save();
 	}	
 	

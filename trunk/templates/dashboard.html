@@ -195,7 +195,7 @@
 				</ul>			
 			{/if}
 			
-			{if $purchase_order_inventory != "" || $purchase_order_service != "" || $purchase_order_office != "" || $purchase_order_services_rendered != ""}
+			{if $purchase_order_inventory != "" || $purchase_order_service != "" || $purchase_order_tool != "" || $purchase_order_vehicle != ""}
 				<br><b>PURCHASE ORDERS</b><br>
 				<ul>
 					{if $purchase_order_inventory == "view"}
@@ -218,23 +218,23 @@
 						</li>
 					{/if}
 						
-					{if $purchase_order_office == "view"}
+					{if $purchase_order_tool == "view"}
 						<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
-							<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=purchase_order_office"> View Office Purchase Orders</a>
+							<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=purchase_order_tool"> View Tool Purchase Orders</a>
 						</li>
-					{elseif $purchase_order_office == "edit" || $purchase_order_office == "post"}
+					{elseif $purchase_order_tool == "edit" || $purchase_order_tool == "post"}
 						<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
-							<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=purchase_order_office"> View / Edit Office Purchase Orders</a>
+							<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=purchase_order_tool"> View / Edit Office Purchase Orders</a>
 						</li>
 					{/if}
 
-					{if $purchase_order_rendered_services == "view"}
+					{if $purchase_order_vehicle == "view"}
 						<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
-							<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=purchase_order_rendered_services"> View Rendered Services Purchase Orders</a>
+							<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=purchase_order_vehicle"> View Vehicle Purchase Orders</a>
 						</li>
-					{elseif $purchase_order_rendered_services == "edit" || $purchase_order_rendered_services == "post"}
+					{elseif $purchase_order_vehicle == "edit" || $purchase_order_vehicle == "post"}
 						<li><img src="{$ENV.DATAFACE_URL}/images/view.gif"/>
-							<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=purchase_order_rendered_services"> View / Edit Rendered Services Purchase Orders</a>
+							<a href="{$ENV.DATAFACE_SITE_HREF}?-action=list&-table=purchase_order_vehicle"> View / Edit Rendered Services Purchase Orders</a>
 						</li>
 					{/if}
 
@@ -248,14 +248,14 @@
 							<a href="{$ENV.DATAFACE_SITE_HREF}?-action=purchase_order_post_service"> Post Service Purchase Orders</a> (Pending: {$spo_pending})
 						</li>
 					{/if}
-					{if $purchase_order_office == "post"}
+					{if $purchase_order_tool == "post"}
 						<li><img src="{$ENV.DATAFACE_URL}/images/topic_icon.gif"/>
-							<a href="{$ENV.DATAFACE_SITE_HREF}?-action=purchase_order_post_office"> Post Office Purchase Orders</a> (Pending: {$opo_pending})
+							<a href="{$ENV.DATAFACE_SITE_HREF}?-action=purchase_order_post_office"> Post Office Purchase Orders</a> (Pending: {$tpo_pending})
 						</li>
 					{/if}
-					{if $purchase_order_rendered_services == "post"}
+					{if $purchase_order_vehicle == "post"}
 						<li><img src="{$ENV.DATAFACE_URL}/images/topic_icon.gif"/>
-							<a href="{$ENV.DATAFACE_SITE_HREF}?-action=purchase_order_post_rendered_services"> Post Rendered Services Purchase Orders</a> (Pending: {$rpo_pending})
+							<a href="{$ENV.DATAFACE_SITE_HREF}?-action=purchase_order_post_rendered_services"> Post Rendered Services Purchase Orders</a> (Pending: {$vpo_pending})
 						</li>
 					{/if}
 

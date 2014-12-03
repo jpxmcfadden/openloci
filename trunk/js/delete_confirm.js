@@ -6,6 +6,9 @@ var button_title;
 //Disable multiple submit presses
 jQuery(document).ready(function(){
 
+	//alert("something happened");
+
+
 	//When deleting a record
 	//jQuery("#actions-menu-delete").click(function(){
 	//	return confirm("Are you sure that you want to delete the current record?");
