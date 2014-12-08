@@ -6,31 +6,61 @@ class tables_purchase_order_vehicle {
 	private $total_item_purchase = array(); //Create a class variable to store the values for modifying the inventory
 
 	//Permissions
-	function getPermissions(&$record){
-		//Check if the user is logged in & what their permissions for this table are.
-		if( isUser() ){
-			$userperms = get_userPerms('purchase_order_vehicle');
-			if($userperms == "view")
-				return Dataface_PermissionsTool::getRolePermissions("READ ONLY"); //Assign Read Only Permissions
-			elseif($userperms == "edit" || $userperms == "post"){
-				if ( isset($record) ){
-					if(	$record->val('post_status') == 'Posted')
-						return Dataface_PermissionsTool::getRolePermissions('NO_EDIT_DELETE');
+		function getPermissions(&$record){
+			//Check if the user is logged in & what their permissions for this table are.
+			if( isUser() ){
+				$userperms = get_userPerms('purchase_order_vehicle');
+				if($userperms == "view")
+					return Dataface_PermissionsTool::getRolePermissions("READ ONLY"); //Assign Read Only Permissions
+				elseif($userperms == "edit" || $userperms == "received" || $userperms == "post"){
+					if ( isset($record) ){
+						if(	$record->val('post_status') == 'Posted' )
+							return Dataface_PermissionsTool::getRolePermissions('NO_EDIT_DELETE');
+					}
+					return Dataface_PermissionsTool::getRolePermissions(myRole()); //Assign Permissions based on user Role (typically USER)
 				}
-				return Dataface_PermissionsTool::getRolePermissions(myRole()); //Assign Permissions based on user Role (typically USER)
 			}
+
+			//Default: No Access
+			return Dataface_PermissionsTool::NO_ACCESS();
 		}
 
-		//Default: No Access
-		return Dataface_PermissionsTool::NO_ACCESS();
-	}
+		function __field__permissions($record){
+			if ( isset($record) && ($record->val('post_status') == 'Posted' || $record->val('post_status') == 'Received') )
+				return array('edit'=>0, 'delete'=>0);
+		}
+		
+		//Remove the "edit" tab, if applicable. --- Field permissions are set to 'edit'=>0 anyway, but since changing "status" required general edit access via getPermissions(), which then automatically shows the tab - this needs to be visually disabled.
+		function init(){
+			$app =& Dataface_Application::getInstance();
+			$query =& $app->getQuery();
+			$record =& $app->getRecord();
+			
+			//Only on the 'view' page. Otherwise, causes issues with looking at the entire table (i.e. user sees a blank page).
+			//If record exists & the status is set such that the record shouldn't be editable.
+			if($query['-action'] == 'view' && ( isset($record) && ($record->val('post_status') == 'Posted' || $record->val('post_status') == 'Received') ))
+				echo "<style>#record-tabs-edit{display: none;}</style>";
+		}
+
+		function post_status__permissions(&$record){
+			//Check permissions & if allowed, set edit permissions for "account_status"
+			if(get_userPerms('purchase_order_vehicle') == "receive" || get_userPerms('purchase_order_vehicle') == "post")
+				return array("edit"=>1);
+		}
+
+		function received_date__permissions(&$record){
+			//Check permissions & if allowed, set edit permissions for "account_status"
+			if(get_userPerms('purchase_order_vehicle') == "receive" || get_userPerms('purchase_order_vehicle') == "post")
+				return array("edit"=>1);
+		}
+
 
 	function getTitle(&$record){
-		return "Rendered Services Purchase Order #" . $record->strval('purchase_id');
+		return "Vehicle Purchase Order #" . $record->strval('purchase_id');
 	}
 
 	function purchase_id__display(&$record){
-		return "R".$record->val('purchase_id');
+		return "V".$record->val('purchase_id');
 	}
 
 	function purchase_date__default(){
@@ -44,9 +74,9 @@ class tables_purchase_order_vehicle {
 
 			//Materials
 			$childString .= '<b><u>Item List</u></b><br><br>';
-			$childString .= '<table class="view_add"><tr><th>Item</th><th>Quantity</th><th>Purchase Price</th><th>Total (per item)</th></tr>';
+			$childString .= '<table class="view_add"><tr><th>Category</th><th>Description</th><th>Quantity</th><th>Purchase Price</th><th>Total (per item)</th></tr>';
 
-			$purchaseorderRecords = $record->getRelatedRecords('purchase_order_rendered_services_items');
+			$purchaseorderRecords = $record->getRelatedRecords('purchase_order_vehicle_items');
 			$total_all_items = 0;
 			
 			foreach ($purchaseorderRecords as $purchaseorderRecord){
@@ -59,8 +89,9 @@ class tables_purchase_order_vehicle {
 				else
 					$quantity[1] = '';
 
-				
-				$childString .= '<tr><td>' . $purchaseorderRecord['item'] .
+				$category = df_get_record("purchase_order_vehicle_category", array("category_id"=>$purchaseorderRecord['category_id']));
+				$childString .= '<tr><td>' . $category->val('category_name') .
+								'<td>' . $purchaseorderRecord['description'] .
 								'</td><td style="text-align: right"><table style="width: 100%; border-collapse:collapse;"><tr>' .
 																						'<td style="border: 0px solid black; padding: 0; text-align: right; width: 100%;">' . $quantity[0] .
 																						'</td><td style="border: 0px solid black; padding: 0; text-align: left; width: 10px;">'.$quantity[1].'</td></tr></table>' .
@@ -115,9 +146,9 @@ class tables_purchase_order_vehicle {
 		foreach ($value as $x){
 
 			//Skip empty lines - do nothing (unless a quantity has been assigned, and then return an error)
-			if($x['item'] == ''){
+			if($x['category_id'] == ''){
 				if($x['quantity']){ //Case where the 'item_name' field has been left empty, but a quantity has been given
-					$params['message'] .= $msg.'A quantity has been given, but an "Item" has not been assigned.';
+					$params['message'] .= $msg.'A quantity has been given, but a "Category" has not been assigned.';
 					return false;
 				}
 			}
@@ -152,6 +183,8 @@ class tables_purchase_order_vehicle {
 		//Because both the $_GET and $query will be "" on a new record, check to insure that they are not empty.
 		if(($_GET['-received'] == $query['-recordid']) && ($query['-recordid'] != "")){
 			$record->setValue('post_status',"Received"); //Set status to Received.
+			if($record->val('received_date') == null)
+				$record->setValue('received_date',date("Y-m-d")); //Set received date, if not already entered.
 			$res = $record->save(null, true); //Save Record w/ permission check.
 
 			//Check for errors.
@@ -173,7 +206,30 @@ class tables_purchase_order_vehicle {
 			$childString .= '</form>';
 			$childString .= '<script language="Javascript">document.status_change.submit();</script>';
 		}
-		elseif(	$record->val('post_status') == ''){
+		elseif(($_GET['-unreceive'] == $query['-recordid']) && ($query['-recordid'] != "")){
+			$record->setValue('post_status',""); //Set status to null.
+			$res = $record->save(null, true); //Save Record w/ permission check.
+
+			//Check for errors.
+			if ( PEAR::isError($res) ){
+				// An error occurred
+				//throw new Exception($res->getMessage());
+				$msg = '<input type="hidden" name="--error" value="Unable to change status. This is most likely because you do not have the required permissions.">';
+			}
+			else
+				$msg = '<input type="hidden" name="--msg" value="PO has been Un-Received">';
+			
+			$childString .= '<form name="status_change">';
+			$childString .= '<input type="hidden" name="-table" value="'.$query['-table'].'">';
+			$childString .= '<input type="hidden" name="-action" value="'.$query['-action'].'">';
+			$childString .= '<input type="hidden" name="-recordid" value="'.$record->getID().'">';
+
+			$childString .= $msg;
+
+			$childString .= '</form>';
+			$childString .= '<script language="Javascript">document.status_change.submit();</script>';
+		}
+		elseif($record->val('post_status') == ''){
 			$childString .= '<form>';
 			$childString .= '<input type="hidden" name="-table" value="'.$query['-table'].'">';
 			$childString .= '<input type="hidden" name="-action" value="'.$query['-action'].'">';
@@ -181,6 +237,17 @@ class tables_purchase_order_vehicle {
 			
 			$childString .= '<input type="hidden" name="-received" value="'.$record->getID().'">';
 			$childString .= '<input type="submit" value="Change Status to: Received">';
+
+			$childString .= '</form>';
+		}
+		elseif($record->val('post_status') == 'Received'){
+			$childString .= '<form>';
+			$childString .= '<input type="hidden" name="-table" value="'.$query['-table'].'">';
+			$childString .= '<input type="hidden" name="-action" value="'.$query['-action'].'">';
+			$childString .= '<input type="hidden" name="-recordid" value="'.$record->getID().'">';
+			
+			$childString .= '<input type="hidden" name="-unreceive" value="'.$record->getID().'">';
+			$childString .= '<input type="submit" value="Change Status to: Un-Receive">';
 
 			$childString .= '</form>';
 		}
@@ -215,7 +282,7 @@ class tables_purchase_order_vehicle {
 
 	function afterInsert(&$record){
 		//PO Full ID: prefix+purchase_id
-		$record->setValue('purchase_order_id', "R".$record->val('purchase_id'));
+		$record->setValue('purchase_order_id', "V".$record->val('purchase_id'));
 		$record->save();
 	}	
 	
