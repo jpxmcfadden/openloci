@@ -5,7 +5,6 @@ class tables_call_slips {
 	//Class Variables
 	private $cs_modify_inventory = array(); //Create a class variable to store the values for modifying the inventory
 
-
 	//Permissions
 		function getPermissions(&$record){
 			//Check if the user is logged in & what their permissions for this table are.
@@ -38,7 +37,8 @@ class tables_call_slips {
 			
 			//Only on the 'view' page. Otherwise, causes issues with looking at the entire table (i.e. user sees a blank page).
 			//If record exists & the status is set such that the record shouldn't be editable.
-			if($query['-action'] == 'view' && ( isset($record) && ($record->val('status') != 'NCO' && $record->val('status') != 'NCP' && $record->val('status') != 'CMP' ) ))
+			//Make sure table is "call slips" otherwise screws up other tables that call call_slips.
+			if($query['-action'] == 'view' && $query['-table'] == 'call_slips' && ( isset($record) && ($record->val('status') != 'NCO' && $record->val('status') != 'NCP' && $record->val('status') != 'CMP' ) ))
 				echo "<style>#record-tabs-edit{display: none;}</style>";
 		}
 		
@@ -75,6 +75,7 @@ class tables_call_slips {
 				);
 			}
 		}
+
 
 	//Set the record title
 		function getTitle(&$record){
@@ -946,7 +947,6 @@ class tables_call_slips {
 		$record->setValue('site_instructions', $site_record->val('site_instructions'));
 		//$record->setValue('status', "NCO");
 	}
-
 
 
 

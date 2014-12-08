@@ -38,8 +38,11 @@ class tables_purchase_order_service {
 	}
 	
 	function callslip_id__display(&$record){
-		$callslip_record = df_get_record('call_slips', array('call_id'=>$record->val('callslip_id')));
-		return $callslip_record->getTitle();
+		if($record->val("callslip_id") != null){
+			$callslip_record = df_get_record("call_slips", array('call_id'=>$record->val('callslip_id')));
+			//return $callslip_record->getTitle();
+		}
+		//return $record->val("callslip_id");
 	}
 	
 	//Add attitional details to the view tab
