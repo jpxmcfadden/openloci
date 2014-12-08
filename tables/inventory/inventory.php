@@ -17,7 +17,23 @@ class tables_inventory {
 		//Default: No Access
 		return Dataface_PermissionsTool::NO_ACCESS();
 	}
-
+	
+	function rel_inventory_purchase_history__permissions($record){
+		return array(
+			'add new related record' => 0,
+			'add existing related record' => 0,
+			'remove related record' => 0,
+			'delete related record' => 0			
+		);
+	}
+	function rel_inventory_locations__permissions($record){
+		return array(
+			'add new related record' => 0,
+			'add existing related record' => 0,
+			'remove related record' => 0,
+			'delete related record' => 0			
+		);
+	}
 /*	function block__after_rate_label_widget(){
 		echo '<table class="rate_codes"><tr><td>';
 	}
