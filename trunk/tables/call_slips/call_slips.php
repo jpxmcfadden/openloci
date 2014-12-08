@@ -14,7 +14,6 @@ class tables_call_slips {
 					return Dataface_PermissionsTool::getRolePermissions("READ ONLY"); //Assign Read Only Permissions
 				elseif($userperms == "edit"){
 					$perms = Dataface_PermissionsTool::getRolePermissions(myRole()); //Assign Permissions based on user Role (typically USER)
-					//if ( isset($record) && ( $record->val('status') != 'NCO' && $record->val('status') != 'NCP' && $record->val('status') != 'CMP' ) )
 						unset($perms['delete']);
 					return $perms;
 				}
@@ -25,7 +24,14 @@ class tables_call_slips {
 		}
 
 		function __field__permissions($record){
-			if ( isset($record) && ($record->val('status') != 'NCO' && $record->val('status') != 'NCP' && $record->val('status') != 'CMP' ) )
+			if ( isset($record) &&
+					(
+						$record->val('status') == 'PPR' ||
+						$record->val('status') == 'PRE' ||
+						$record->val('status') == 'CRD' ||
+						$record->val('status') == 'VOID' 
+					)
+				)
 					return array('edit'=>0);
 		}
 
@@ -38,7 +44,16 @@ class tables_call_slips {
 			//Only on the 'view' page. Otherwise, causes issues with looking at the entire table (i.e. user sees a blank page).
 			//If record exists & the status is set such that the record shouldn't be editable.
 			//Make sure table is "call slips" otherwise screws up other tables that call call_slips.
-			if($query['-action'] == 'view' && $query['-table'] == 'call_slips' && ( isset($record) && ($record->val('status') != 'NCO' && $record->val('status') != 'NCP' && $record->val('status') != 'CMP' ) ))
+			if($query['-action'] == 'view' && $query['-table'] == 'call_slips' &&
+					( isset($record) && 
+						(
+							$record->val('status') == 'PPR' ||
+							$record->val('status') == 'PRE' ||
+							$record->val('status') == 'CRD' ||
+							$record->val('status') == 'VOID' 
+						)
+					)
+				)
 				echo "<style>#record-tabs-edit{display: none;}</style>";
 		}
 		
@@ -139,13 +154,13 @@ class tables_call_slips {
 				
 			}
 
-			//Add link to print work order (if appropriate)
+			//Add link to print call slip (if appropriate)
 			if($record->val('status') == 'NCO' || $record->val('status') == 'NCP'){
 				echo '	<div class="dataface-view-record-actions">
 							<ul>
-								<li id="print_work_order" class="plain">
-									<a class="" id="print_work_order-link" href="'.$app->url('-action=call_slip_print_work_order').' title="" data-xf-permission="view">
-										<img id="call_slip_invoice-icon" src="images/report_icon.png" alt="Print Work Order">                   <span class="action-label">Print Work Order</span>
+								<li id="print_call_slip" class="plain">
+									<a class="" id="print_call_slip-link" href="'.$app->url('-action=call_slip_print_call_slip').' title="" data-xf-permission="view">
+										<img id="call_slip_invoice-icon" src="images/report_icon.png" alt="Print Call Slip">                   <span class="action-label">Print Call Slip</span>
 									</a>
 								</li>
 							</ul>

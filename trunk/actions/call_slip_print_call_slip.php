@@ -1,6 +1,6 @@
 <?php
 
-class actions_call_slip_print_work_order {
+class actions_call_slip_print_call_slip {
 	
 	function handle(&$params){
 
@@ -17,10 +17,10 @@ class actions_call_slip_print_work_order {
 		
 		if(isset($query['-recordid'])){
 			$record =& $app->getRecord();
-			echo '<div class="print">' . getHTMLReport($record,"call_slip_work_order") . '</div>';			
+			echo '<div class="print">' . getHTMLReport($record,"call_slip_printable") . '</div>';			
 			//Update record status (only if status is NCO)
 			if($record->val('status') == "NCO"){
-				$record->setValue('status',"NCP"); //Set status to "Not Complete - Work Order Printed".
+				$record->setValue('status',"NCP"); //Set status to "Not Complete - Call Slip Printed".
 				$res = $record->save(null, true); //Save w/ permission check
 			}
 
@@ -28,7 +28,7 @@ class actions_call_slip_print_work_order {
 			print '<script type="text/javascript">window.print();</script>';
 
 			//Redirect back to the previous page
-			$url = $app->url('-action=browse') . '&--msg='.urlencode('Work Order(s) Printed.');;
+			$url = $app->url('-action=browse') . '&--msg='.urlencode('Call Slip(s) Printed.');;
 		}
 		else{
 			$query['status'] = "NCO";
@@ -36,14 +36,14 @@ class actions_call_slip_print_work_order {
 
 			if(!empty($records)){
 				foreach ($records as $record){
-					echo '<div class="print">' . getHTMLReport($record,'call_slip_work_order') . '</div>';
+					echo '<div class="print">' . getHTMLReport($record,'call_slip_printable') . '</div>';
 
 					//Update record status
-					$record->setValue('status',"NCP"); //Set status to "Not Complete - Work Order Printed".
+					$record->setValue('status',"NCP"); //Set status to "Not Complete - Call Slip Printed".
 					$res = $record->save(null, true); //Save w/ permission check
 				}
 
-				$msg = 'Work Order(s) Printed.';
+				$msg = 'Call Slip(s) Printed.';
 				
 				//Auto Print
 				print '<script type="text/javascript">window.print();</script>';
