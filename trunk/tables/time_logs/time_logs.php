@@ -56,8 +56,7 @@ class tables_time_logs {
 			$record->setValue('rate_per_hour', 0.00);
 		if($this->rate_type == 'custom')
 			$record->setValue('rate_per_hour', $record->val('custom_rph'));
-		elseif($this->rate_type != ''){		//This line was causing problems with editing entries in a call slip
-//		elseif($this->rate_type == ''){		//Looked wrong anyway, so changed it to this - VERIFY -- > this line causes problems with generating payroll
+		elseif($this->rate_type != ''){
 			$call_rec = df_get_record('call_slips', array('call_id'=>$record->val('category')));
 			$cust_rec = df_get_record('customers', array('customer_id'=>$call_rec->val('customer_id')));
 			$rate_rec = df_get_record('rates', array('rate_id'=>$cust_rec->val('rate')));
@@ -67,8 +66,8 @@ class tables_time_logs {
 			$record->setValue('rate_id', $rate_rec->val('rate_id'));
 			$record->setValue('rate_per_hour', $rate_rec->val($this->rate_type));
 		}
-		
-		//return PEAR::raiseError("FIN",DATAFACE_E_NOTICE);
+		else
+			return PEAR::raiseError("Rate Type not set.",DATAFACE_E_NOTICE);
 	}
 	
 	

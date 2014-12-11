@@ -12,7 +12,7 @@ class tables_call_slips {
 				$userperms = get_userPerms('call_slips');
 				if($userperms == "view")
 					return Dataface_PermissionsTool::getRolePermissions("READ ONLY"); //Assign Read Only Permissions
-				elseif($userperms == "edit"){
+				elseif($userperms == "edit" || $userperms == "post"){
 					$perms = Dataface_PermissionsTool::getRolePermissions(myRole()); //Assign Permissions based on user Role (typically USER)
 						unset($perms['delete']);
 					return $perms;
@@ -24,15 +24,8 @@ class tables_call_slips {
 		}
 
 		function __field__permissions($record){
-			if ( isset($record) &&
-					(
-						$record->val('status') == 'PPR' ||
-						$record->val('status') == 'PRE' ||
-						$record->val('status') == 'CRD' ||
-						$record->val('status') == 'VOID' 
-					)
-				)
-					return array('edit'=>0);
+			if ( isset($record) && $record->val('post_status') == "Posted" )
+				return array('edit'=>0);
 		}
 
 		//Remove the "edit" tab, if applicable. --- Field permissions are set to 'edit'=>0 anyway, but since changing "status" required general edit access via getPermissions(), which then automatically shows the tab - this needs to be visually disabled.
@@ -45,21 +38,14 @@ class tables_call_slips {
 			//If record exists & the status is set such that the record shouldn't be editable.
 			//Make sure table is "call slips" otherwise screws up other tables that call call_slips.
 			if($query['-action'] == 'view' && $query['-table'] == 'call_slips' &&
-					( isset($record) && 
-						(
-							$record->val('status') == 'PPR' ||
-							$record->val('status') == 'PRE' ||
-							$record->val('status') == 'CRD' ||
-							$record->val('status') == 'VOID' 
-						)
-					)
-				)
+					( isset($record) && $record->val('post_status') == "Posted" )
+			  )
 				echo "<style>#record-tabs-edit{display: none;}</style>";
 		}
 		
 		function status__permissions(&$record){
 			//Check permissions & if allowed, set edit permissions for "account_status"
-			if(get_userPerms('call_slips') == "edit")
+			if(get_userPerms('call_slips') == "edit" || get_userPerms('call_slips') == "post")
 				return array("edit"=>1);
 		}
 
@@ -187,7 +173,8 @@ class tables_call_slips {
 				'TM'=>'Time & Material',
 				'QU'=>'Quoted Repairs',
 				'SW'=>'Service Warranty',
-				'NC'=>'No Charge'
+				'NC'=>'No Charge',
+				'CR'=>'Credit'
 			);
 		}
 
@@ -203,6 +190,7 @@ class tables_call_slips {
 			$list["QU"] = "Quoted Repairs";
 			$list["SW"] = "Service Warranty";
 			$list["NC"] = "No Charge";
+			$list["CR"] = "Credit";
 
 			
 			//Return the type as per the list.
@@ -696,8 +684,13 @@ class tables_call_slips {
 			$new_cs_record->setValue($name,$value);
 			//$ret .= $name . "=" . $value . " - ";
 		}
+		$new_cs_record->setValue('type','CR');
 		$new_cs_record->setValue('status','CMP');
 		$new_cs_record->setValue('credit','Credit for Call ID '.$record->val('call_id'));
+		if($record->val('type') == "TM"){ //If type if 'Time & Materials', calculate total
+			$cs_inv_total = (float) str_replace(',', '', $this->field__invoice_total($record)); //Remove comma, and cast as float. (Output from function is in number_format form)
+			$new_cs_record->setValue('quoted_cost',$cs_inv_total);
+		}
 		
 		//$res = $record->save();   // Doesn't check permissions
 		$res = $new_cs_record->save(null, true);  // checks permissions
@@ -710,7 +703,7 @@ class tables_call_slips {
 		
 
 		//Get & parse through call slip inventory records
-		$csi_records = df_get_records_array('call_slip_inventory',array('call_id'=>$record->val('call_id')));
+	/*	$csi_records = df_get_records_array('call_slip_inventory',array('call_id'=>$record->val('call_id')));
 		foreach($csi_records as $csi_record){
 			//Create new call slip inventory entries
 			$new_csi_record = new Dataface_Record('call_slip_inventory', array());
@@ -764,7 +757,7 @@ class tables_call_slips {
 				throw new Exception($res->getMessage());
 			}
 		}
-
+	*/
 		return $new_cs_record->val('call_id');
 	}
 	
