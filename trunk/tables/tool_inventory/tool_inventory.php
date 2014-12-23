@@ -10,40 +10,42 @@ class tables_tool_inventory {
 			$userperms = get_userPerms('inventory');
 			if($userperms == "view")
 				return Dataface_PermissionsTool::getRolePermissions("READ ONLY"); //Assign Read Only Permissions
-			elseif($userperms == "edit")
-				return Dataface_PermissionsTool::getRolePermissions(myRole()); //Assign Permissions based on user Role (typically USER)
-		}
+			elseif($userperms == "edit" || $userperms == "overide"){
+				$perms = Dataface_PermissionsTool::getRolePermissions(myRole()); //Assign Permissions based on user Role (typically USER)
+				unset($perms['delete']);
+				return $perms;
+			}		}
 
 		//Default: No Access
 		return Dataface_PermissionsTool::NO_ACCESS();
 	}
 
-/*	function block__after_rate_label_widget(){
-		echo '<table class="rate_codes"><tr><td>';
+	
+	function block__before_record_actions(){
+		$app =& Dataface_Application::getInstance(); 
+	//	$record =& $app->getRecord();
+
+		if(get_userPerms('inventory') == "overide")
+			echo '	<div class="dataface-view-record-actions">
+						<ul>
+							<li id="inventory_overide" class="plain">
+								<a class="" id="inventory_overide-link" href="'.$app->url('-action=inventory_overide').' title="" data-xf-permission="view">
+									<img id="inventory_overide-icon" src="images/report_icon.png" alt="Adjust Quantity">
+									<span class="action-label">Adjust Quantity</span>
+								</a>
+							</li>
+						</ul>
+					</div>';
+
+		//Prompt.
+		echo '	<script>
+					jQuery("#inventory_overide").click(function(){
+						return confirm("NOTICE: You are about to edit the inventory quantity. Do you wish to proceed?");
+					});
+				</script>';
 	}
-
-	function block__after_supr_tt_widget(){
-		echo '</td></tr></table>';
-	}
-*/
-
-/*	function rate_data__renderCell(&$record){
-		$result = '<table class="rate_codes">';
-		foreach ( $record->val('rate_data') as $vals){ $result .= '<tr><th>' . $vals['type'] . '</th><th>' . $vals['rate'] . '</th></tr>'; };
-		$result .= "</table>";
-
-		return $result;
-	}
-
-	function rate_data__htmlValue(&$record){
-		$result = '<table class="rate_codes">';
-		foreach ( $record->val('rate_data') as $vals){ $result .= '<tr><th>' . $vals['type'] . '</th><th>' . $vals['rate'] . '</th></tr>'; };
-		$result .= "</table>";
-
-		return $result;
-	}
-*/	
-
+	
+	
 	function quantity__display(&$record){
 		$quantity = explode('.',$record->val('quantity'));
 		if($quantity[1] != 0)

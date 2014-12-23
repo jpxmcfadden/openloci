@@ -12,7 +12,7 @@ class tables_purchase_order_vehicle {
 				$userperms = get_userPerms('purchase_order_vehicle');
 				if($userperms == "view")
 					return Dataface_PermissionsTool::getRolePermissions("READ ONLY"); //Assign Read Only Permissions
-				elseif($userperms == "edit" || $userperms == "received" || $userperms == "post"){
+				elseif($userperms == "edit" || $userperms == "receive" || $userperms == "post"){
 					if ( isset($record) ){
 						if(	$record->val('post_status') == 'Posted' )
 							return Dataface_PermissionsTool::getRolePermissions('NO_EDIT_DELETE');

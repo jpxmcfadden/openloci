@@ -55,6 +55,18 @@ class tables__system_users {
 		return array(null=>'No Access', 'view'=>'View', 'edit'=>'Edit', 'post'=>'Post');
 	}
 
+	function valuelist__view_edit_overide(){
+		//Get query to determine the mode
+		$app = Dataface_Application::getInstance();
+		$query = $app->getQuery();
+
+		//If the user is in view / list mode, show "-" for null, otherwise show "No Access"
+		if ( $query['-table'] == '_system_users' and ($query['-action'] == 'view' or $query['-action'] == 'list') )
+			return array(null=>'-', 'view'=>'View', 'edit'=>'Edit', 'overide'=>'Overide');
+			
+		return array(null=>'No Access', 'view'=>'View', 'edit'=>'Edit', 'overide'=>'Overide');
+	}
+	
 	function valuelist__view_edit_receive_post(){
 		//Get query to determine the mode
 		$app = Dataface_Application::getInstance();
@@ -64,7 +76,7 @@ class tables__system_users {
 		if ( $query['-table'] == '_system_users' and ($query['-action'] == 'view' or $query['-action'] == 'list') )
 			return array(null=>'-', 'view'=>'View', 'edit'=>'Edit', 'receive'=>'Receive', 'post'=>'Post');
 			
-		return array(null=>'No Access', 'view'=>'View', 'edit'=>'Edit', 'post'=>'Post');
+		return array(null=>'No Access', 'view'=>'View', 'edit'=>'Edit', 'receive'=>'Receive', 'post'=>'Post');
 	}
 	
 	function valuelist__view_edit_post_close(){
