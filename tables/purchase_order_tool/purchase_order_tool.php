@@ -6,25 +6,57 @@ class tables_purchase_order_tool {
 	private $total_item_purchase = array(); //Create a class variable to store the values for modifying the inventory
 
 	//Permissions
-	function getPermissions(&$record){
-		//Check if the user is logged in & what their permissions for this table are.
-		if( isUser() ){
-			$userperms = get_userPerms('purchase_order_tool');
-			if($userperms == "view")
-				return Dataface_PermissionsTool::getRolePermissions("READ ONLY"); //Assign Read Only Permissions
-			elseif($userperms == "edit" || $userperms == "post"){
-				if ( isset($record) ){
-					if(	$record->val('post_status') == 'Posted')
-						return Dataface_PermissionsTool::getRolePermissions('NO_EDIT_DELETE');
+		function getPermissions(&$record){
+			//Check if the user is logged in & what their permissions for this table are.
+			if( isUser() ){
+				$userperms = get_userPerms('purchase_order_tool');
+				if($userperms == "view")
+					return Dataface_PermissionsTool::getRolePermissions("READ ONLY"); //Assign Read Only Permissions
+				elseif($userperms == "edit" || $userperms == "receive" || $userperms == "post"){
+					if ( isset($record) ){
+						if(	$record->val('post_status') == 'Posted' )
+							return Dataface_PermissionsTool::getRolePermissions('NO_EDIT_DELETE');
+					}
+					return Dataface_PermissionsTool::getRolePermissions(myRole()); //Assign Permissions based on user Role (typically USER)
 				}
-				return Dataface_PermissionsTool::getRolePermissions(myRole()); //Assign Permissions based on user Role (typically USER)
 			}
+
+			//Default: No Access
+			return Dataface_PermissionsTool::NO_ACCESS();
 		}
 
-		//Default: No Access
-		return Dataface_PermissionsTool::NO_ACCESS();
-	}
+		function __field__permissions($record){
+			if ( isset($record) && ($record->val('post_status') == 'Posted' || $record->val('post_status') == 'Received') )
+				return array('edit'=>0, 'delete'=>0);
+		}
+		
+		//Remove the "edit" tab, if applicable. --- Field permissions are set to 'edit'=>0 anyway, but since changing "status" required general edit access via getPermissions(), which then automatically shows the tab - this needs to be visually disabled.
+		function init(){
+			$app =& Dataface_Application::getInstance();
+			$query =& $app->getQuery();
+			$record =& $app->getRecord();
+			
+			//Only on the 'view' page. Otherwise, causes issues with looking at the entire table (i.e. user sees a blank page).
+			//If record exists & the status is set such that the record shouldn't be editable.
+			if($query['-action'] == 'view' && ( isset($record) && ($record->val('post_status') == 'Posted' || $record->val('post_status') == 'Received') ))
+				echo "<style>#record-tabs-edit{display: none;}</style>";
+		}
 
+		function post_status__permissions(&$record){
+			//Check permissions & if allowed, set edit permissions for "account_status"
+			if(get_userPerms('purchase_order_vehicle') == "receive" || get_userPerms('purchase_order_vehicle') == "post")
+				return array("edit"=>1);
+		}
+
+		function received_date__permissions(&$record){
+			//Check permissions & if allowed, set edit permissions for "account_status"
+			if(get_userPerms('purchase_order_vehicle') == "receive" || get_userPerms('purchase_order_vehicle') == "post")
+				return array("edit"=>1);
+		}
+	
+	
+	
+	
 	function getTitle(&$record){
 		return "Tool Purchase Order #" . $record->strval('purchase_id');
 	}

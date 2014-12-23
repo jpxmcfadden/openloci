@@ -117,7 +117,7 @@ function getNavItem($key, $label){
 			if( $query['-table'] == 'dashboard' and ($query['-action'] == 'browse' or $query['-action'] == 'list') ){
 				$query['-action'] = 'dashboard';
 			}
-			
+
 			if(!isAdmin()){
 				//Makes sure that the NavMenu cannot see these tables 
 				//	unset($app->_conf['_tables']['users']); 
@@ -196,11 +196,16 @@ function getNavItem($key, $label){
 	function block__custom_stylesheets(){
 		echo '<link href="style.css" rel="stylesheet" type="text/css"/>';
 		//echo '<link rel="stylesheet" href="print.css" type="text/css" media="print" />';
+		//echo '<script src="navigate_away.js" type="text/javascript" language="javascript"></script>';
+		Dataface_JavascriptTool::getInstance()->import('navigate_away.js');
+		Dataface_JavascriptTool::getInstance()->import('submithandler.js');
 	}
 	
+	//*** -- This block seems to have stopped working, moved to custom stylesheets...
 	function block__custom_javascripts(){
+	//echo "foo!";
 	//	echo '<script src="javascripts.js" type="text/javascript" language="javascript"></script>';
-		Dataface_JavascriptTool::getInstance()->import('submithandler.js');
+	//	Dataface_JavascriptTool::getInstance()->import('navigate_away.js');
 	//	Dataface_JavascriptTool::getInstance()->import('delete_confirm.js');
 	//	Dataface_JavascriptTool::getInstance()->import('widget_hide.js');
 	//echo '<script src="js/widget hide.js" type="text/javascript" language="javascript"></script>';
