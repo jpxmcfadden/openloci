@@ -477,21 +477,23 @@ class tables_call_slips {
 	
 	function section__status(&$record){
 		//Check permissions & if allowed, show Change Status button
-		if(get_userPerms('call_slips') == "edit"){
+		if(get_userPerms('call_slips') == "edit" || get_userPerms('call_slips') == "post"){
 
 			$app =& Dataface_Application::getInstance(); 
 			$query =& $app->getQuery();
 			$childString = '';
 
-			//If the "Change Status To: Complete / Ready" button has been pressed.
+			//If the shown button has been pressed.
 			//Because both the $_GET and $query will be "" on a new record, check to insure that they are not empty.
 			if(($_GET['-status_change'] == $query['-recordid']) && ($query['-recordid'] != "")){
+
 				//Set status to "Complete"
 				if($record->val('status') == "NCO" || $record->val('status') == "NCP"){
 					$record->setValue('status',"CMP"); //Set status to Complete.
 					if($record->val('completion_date') == "")
 						$record->setValue('completion_date',date("Y-m-d")); //Set Job Completion Date.
 				}
+
 				//Create Credit
 				elseif($record->val('status') == "SNT"){
 					//Create Credit CS
@@ -499,6 +501,7 @@ class tables_call_slips {
 					$record->setValue('status',"CRD");
 					$record->setValue('credit',"Credited (Call ID " . $credit_call_id . ")");
 				}
+
 				//Set status to "Ready" - also, save all inventory material sale values (so that they don't change once the invoice has been printed)
 				else{
 					$record->setValue('status',"RDY"); //Set status to Ready.
@@ -624,10 +627,12 @@ class tables_call_slips {
 				
 				$childString .= '<input type="hidden" name="-status_change" value="'.$record->getID().'">';
 
+				//Job Complete Button
 				if($record->val('status') == "NCO" || $record->val('status') == "NCP")
 					$childString .= '<input type="submit" value="Change Status to: Job Completed">';
-				elseif($record->val('status') == "CMP"){
 
+				//Invoice Ready Button
+				elseif($record->val('status') == "CMP"){
 					//Check if all purchase orders associated with the Call Slip have been posted.
 					//If so, allow to be set to RDY, else don't.
 
@@ -646,6 +651,8 @@ class tables_call_slips {
 					else
 						$childString .= '<input type="submit" value="Change Status to: Invoice Ready to Print / Send">';
 				}
+				
+				//Credit Invoice Button
 				elseif($record->val('status') == "SNT")
 					$childString .= '<input type="submit" value="Credit Invoice">';
 				$childString .= '</form>';
@@ -656,7 +663,7 @@ class tables_call_slips {
 			else {
 				$childString .= "No further options available";
 			}
-			
+
 			//if(	$record->val('post_status') == '')
 			return array(
 				'content' => "$childString",
