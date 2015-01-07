@@ -24,8 +24,12 @@ jQuery(document).ready(function(){
 
 	//Reset
 	jQuery(":input").change(function(){
-		pressed = 0;
+		reset_submit();
 	});
 	
 });
 
+//Reset the pressed variable - this also gets called by the navigate away script.
+function reset_submit(){
+	pressed = 0;
+}
