@@ -32,18 +32,6 @@ class actions_call_slip_print_invoice {
 				$amount = $record->val('quoted_cost');
 			}
 			
-			//Update record status (only if status is RDY & user has higher than 'no access' permissions)
-			if($record->val('status') == "RDY" && get_userPerms('call_slips') != null){
-				$record->setValue('status',"SNT"); //Set status to "Not Complete - Work Order Printed".
-				$res = $record->save(); //Save w/o a permission check so that a user with only "view" permissions will still cause the status to update on printing - hence the check to deny 'no access' above.
-
-				//Create Accounts Receivable Entry
-				require_once('tables/accounts_receivable/accounts_receivable.php');
-				$res = tables_accounts_receivable::create_accounts_receivable_entry($record->val('call_id'), $record->val('customer_id'), $amount, $record->val('customer_po'));
-
-				//Check for errors?
-			}
-
 			//Auto Print
 			print '<script type="text/javascript">window.print();</script>';
 
@@ -119,24 +107,6 @@ class actions_call_slip_print_invoice {
 							$amount = $record->val('quoted_cost');
 						}
 
-
-						//Update record status (only if user has higher than 'no access' permissions)
-						if(get_userPerms('call_slips') != null){
-							$record->setValue('status',"SNT"); //Set status to "Not Complete - Work Order Printed".
-							$res = $record->save(); //Save w/o a permission check so that a user with only "view" permissions will still cause the status to update on printing - hence the check to deny 'no access' above.
-
-							//Create Accounts Receivable Entry
-							require_once('tables/accounts_receivable/accounts_receivable.php');
-							$res = tables_accounts_receivable::create_accounts_receivable_entry($record->val('call_id'), $record->val('customer_id'), $amount, $record->val('customer_po'));
-
-							//Check for errors?
-						}
-
-
-							//Update record status
-						$record->setValue('status',"SNT"); //Set status to "Not Complete - Work Order Printed".
-						$res = $record->save(); //Save w/o a permission check so that a user with only "view" permissions will still cause the status to update on printing - hence the check to deny 'no access' above.
-					
 						$url .= $record->val('call_id').',';
 					}
 					

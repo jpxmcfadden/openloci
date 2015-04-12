@@ -13,7 +13,11 @@ class tables_accounts_receivable_batch {
 				//Check status, determine if record should be uneditable.
 				if ( isset($record) && $record->val('post_status') == 'Posted')
 						return Dataface_PermissionsTool::getRolePermissions('NO_EDIT_DELETE');
-				return Dataface_PermissionsTool::getRolePermissions(myRole()); //Assign Permissions based on user Role (typically USER)
+
+				//return Dataface_PermissionsTool::getRolePermissions(myRole()); //Assign Permissions based on user Role (typically USER)
+				$perms = Dataface_PermissionsTool::getRolePermissions(myRole()); //Assign Permissions based on user Role (typically USER)
+					unset($perms['delete']);
+				return $perms;
 			}
 		}
 
@@ -21,7 +25,7 @@ class tables_accounts_receivable_batch {
 		return Dataface_PermissionsTool::NO_ACCESS();
 	}
 
-	function after_action_new($params=array()){
+/*	function after_action_new($params=array()){
 		$record =& $params['record'];
 		$msg = "Voucher records added to Batch #" . $record->val('batch_id');
 		header('Location: index.php?-action=list&-table=accounts_receivable'.'&--msg='.urlencode($msg)); //Go back to Accounts Receivable
@@ -34,7 +38,7 @@ class tables_accounts_receivable_batch {
 		header('Location: index.php?-action=list&-table=accounts_receivable'.'&--msg='.urlencode($msg)); //Go back to Accounts Receivable
 		exit;
 	}
-
+*/
 	
 	//Add included vouchers the view tab
 	function section__vouchers(&$record){

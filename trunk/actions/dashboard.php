@@ -29,19 +29,19 @@ class actions_dashboard {
 			}
 
 			if($dashboard_display_info['purchase_order_inventory'] == "post"){
-				$status = df_get_records_array('purchase_order_inventory', array('post_status'=>'Pending'));
+				$status = df_get_records_array('purchase_order_inventory', array('post_status'=>'Received'));
 				$dashboard_display_info['ipo_pending'] = count($status);
 			}
 			if($dashboard_display_info['purchase_order_service'] == "post"){
-				$status = df_get_records_array('purchase_order_service', array('post_status'=>'Pending'));
+				$status = df_get_records_array('purchase_order_service', array('post_status'=>'Received'));
 				$dashboard_display_info['spo_pending'] = count($status);
 			}
 			if($dashboard_display_info['purchase_order_tool'] == "post"){
-				$status = df_get_records_array('purchase_order_tool', array('post_status'=>'Pending'));
+				$status = df_get_records_array('purchase_order_tool', array('post_status'=>'Received'));
 				$dashboard_display_info['tpo_pending'] = count($status);
 			}
 			if($dashboard_display_info['purchase_order_vehicle'] == "post"){
-				$status = df_get_records_array('purchase_order_vehicle', array('post_status'=>'Pending'));
+				$status = df_get_records_array('purchase_order_vehicle', array('post_status'=>'Received'));
 				$dashboard_display_info['vpo_pending'] = count($status);
 			}
 

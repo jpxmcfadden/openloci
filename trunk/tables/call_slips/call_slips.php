@@ -1,5 +1,21 @@
 <?php
 
+/****
+
+Call Slip Status State Table
+
+Status			  |			Options			| 	 Editable
+
+Not Complete		Complete/Void					Y
+Complete			Create Billing / Void			Y
+Billing Pending		Recall Billing					N
+Billed				Credit							N
+Reversed/Credited	---								N
+VOID				---								N
+
+***/
+
+
 class tables_call_slips {
 
 	//Class Variables
@@ -24,8 +40,15 @@ class tables_call_slips {
 		}
 
 		function __field__permissions($record){
-			if ( isset($record) && $record->val('post_status') == "Posted" )
-				return array('edit'=>0);
+		
+			if ( isset($record) )
+				switch($record->val('status')){
+					case "BPD":
+					case "BLD":
+					case "CRD":
+					case "VOID":
+						return array('edit'=>0);
+				}
 		}
 
 		//Remove the "edit" tab, if applicable. --- Field permissions are set to 'edit'=>0 anyway, but since changing "status" required general edit access via getPermissions(), which then automatically shows the tab - this needs to be visually disabled.
@@ -37,10 +60,14 @@ class tables_call_slips {
 			//Only on the 'view' page. Otherwise, causes issues with looking at the entire table (i.e. user sees a blank page).
 			//If record exists & the status is set such that the record shouldn't be editable.
 			//Make sure table is "call slips" otherwise screws up other tables that call call_slips.
-			if($query['-action'] == 'view' && $query['-table'] == 'call_slips' &&
-					( isset($record) && $record->val('post_status') == "Posted" )
-			  )
-				echo "<style>#record-tabs-edit{display: none;}</style>";
+			if($query['-action'] == 'view' && $query['-table'] == 'call_slips')
+				switch($record->val('status')){
+					case "BPD":
+					case "BLD":
+					case "CRD":
+					case "VOID":
+					echo "<style>#record-tabs-edit{display: none;}</style>";
+				}
 		}
 		
 		function status__permissions(&$record){
@@ -48,6 +75,19 @@ class tables_call_slips {
 			if(get_userPerms('call_slips') == "edit" || get_userPerms('call_slips') == "post")
 				return array("edit"=>1);
 		}
+		
+		function ar_billing_id__permissions(&$record){
+			//Check permissions & if allowed, set edit permissions for "account_status"
+			if(get_userPerms('call_slips') == "edit" || get_userPerms('call_slips') == "post")
+				return array("edit"=>1);
+		}
+
+		function credit__permissions(&$record){
+			//Check permissions & if allowed, set edit permissions for "account_status"
+			if(get_userPerms('call_slips') == "edit" || get_userPerms('call_slips') == "post")
+				return array("edit"=>1);
+		}
+
 
 		function rel_call_slip_purchase_orders__permissions(&$record){
 			return array(
@@ -118,7 +158,7 @@ class tables_call_slips {
 			$record =& $app->getRecord();
 
 			//Add link to print invoice (if appropriate)
-			if($record->val('status') == 'RDY' || $record->val('status') == 'SNT' || $record->val('status') == 'PPR'){
+			/*if($record->val('status') == 'RDY' || $record->val('status') == 'SNT' || $record->val('status') == 'PPR'){
 				echo '	<div class="dataface-view-record-actions">
 							<ul>
 								<li id="call_slip_invoice" class="plain">
@@ -139,7 +179,8 @@ class tables_call_slips {
 							</script>';
 				
 			}
-
+			*/
+			
 			//Add link to print call slip (if appropriate)
 			if($record->val('status') == 'NCO' || $record->val('status') == 'NCP'){
 				echo '	<div class="dataface-view-record-actions">
@@ -154,16 +195,18 @@ class tables_call_slips {
 			}
 		}
 	
-		//Hide the "type" field if the record type is set as "PM"
+		//Hide the "type" field if the record type is for 'Preventative Maintenance' or 'Credit'
 		function block__before_type_widget(){
 			$app =& Dataface_Application::getInstance(); 
 			$record =& $app->getRecord();
 			$query =& $app->getQuery();
 		
 			if($query['-action'] != 'new'){ //We do this b/c when getRecord() is used on a "new record" it returns the data from the last saved record.
-				if($record->val('type') == "PM"){ //Check if type == "PK" and if so replace the dropdown menu with static text.
+				if($record->val('type') == "PM"){ //Check if type == "PM" and if so replace the dropdown menu with static text.
 					echo 'Preventative Maintenance<style>#type {display:none;}</style>';
-				
+				}
+				elseif($record->val('type') == "CR"){ //Check if type == "CR" and if so replace the dropdown menu with static text.
+					echo 'Credit<style>#type {display:none;}</style>';
 				}
 			}
 		}
@@ -174,7 +217,6 @@ class tables_call_slips {
 				'QU'=>'Quoted Repairs',
 				'SW'=>'Service Warranty',
 				'NC'=>'No Charge',
-				'CR'=>'Credit'
 			);
 		}
 
@@ -183,14 +225,14 @@ class tables_call_slips {
 			//Pull the "type" valuelist
 //			$list = $record->_table->_valuelistsConfig['type_list'];
 
-			//Add PM to the list
+			//Add PM and CR to the list
 			$list["PM"]="Preventative Maintenance";
+			$list["CR"] = "Credit";
 
 			$list["TM"] = "Time & Material";
 			$list["QU"] = "Quoted Repairs";
 			$list["SW"] = "Service Warranty";
 			$list["NC"] = "No Charge";
-			$list["CR"] = "Credit";
 
 			
 			//Return the type as per the list.
@@ -462,8 +504,14 @@ class tables_call_slips {
 			}
 
 			//Total
-			
-			$childString .= '<br><br><u><b>Total:</b> $<b>' . number_format($total_hours_sale+$total_materials_sale+$record->val('charge_consumables')+$record->val('charge_fuel'),2) . '</b></u>';
+			if($record->val('type') == "NC")
+				$total_charge_to_customer = "0.00 (No Charge)";
+			elseif($record->val('type') == "SW")
+				$total_charge_to_customer = "0.00 (Service Warranty)";
+			else
+				$total_charge_to_customer = number_format($total_hours_sale+$total_materials_sale+$record->val('charge_consumables')+$record->val('charge_fuel'),2);
+				
+			$childString .= '<br><br><u><b>Total:</b> $<b>' . $total_charge_to_customer . '</b></u>';
 
 
 		return array(
@@ -483,109 +531,51 @@ class tables_call_slips {
 			$query =& $app->getQuery();
 			$childString = '';
 
-			//If the shown button has been pressed.
+			//If the button in the 'Change Status' section has been pressed.
 			//Because both the $_GET and $query will be "" on a new record, check to insure that they are not empty.
 			if(($_GET['-status_change'] == $query['-recordid']) && ($query['-recordid'] != "")){
+				$status_button = $_GET['status_button'];
 
-				//Set status to "Complete"
-				if($record->val('status') == "NCO" || $record->val('status') == "NCP"){
-					$record->setValue('status',"CMP"); //Set status to Complete.
-					if($record->val('completion_date') == "")
-						$record->setValue('completion_date',date("Y-m-d")); //Set Job Completion Date.
-				}
-
-				//Create Credit
-				elseif($record->val('status') == "SNT"){
-					//Create Credit CS
-					$credit_call_id = $this->create_credit_cs($record);
-					$record->setValue('status',"CRD");
-					$record->setValue('credit',"Credited (Call ID " . $credit_call_id . ")");
-				}
-
-				//Set status to "Ready" - also, save all inventory material sale values (so that they don't change once the invoice has been printed)
-				else{
-					$record->setValue('status',"RDY"); //Set status to Ready.
-					
-					//Set item sale prices
-					
-					//Inventory Items
-					$inventoryRecords = df_get_records_array('call_slip_inventory', array('call_id'=>$record->val('call_id')));
-					foreach ($inventoryRecords as $cs_ir){
-						//Pull the item / cost out of the 'inventory' table
-						$inventory_record = df_get_record('inventory', array('inventory_id'=>$cs_ir->val('inventory_id')));
-						
-						$purchase_price = $cs_ir->val('purchase_price');
-						$sale_price = $cs_ir->val('sale_price'); //Pull sale price from record (will likely be null)
-
-						//If the sale price has not already been set in the callslip inventory record
-						if(!isset($sale_price)){
-						
-							//Check if the Inventory sale overide has been set, if so, use it
-							if($inventory_record->val('sale_method')=="overide"){
-								$sale_price = $inventory_record->val('sale_overide');
-							}
-							//Otherwise (most likely), calculate based on the purchase price and set customer markup rate
-							else{ 
-								//Get the custmer markup record
-								$customerRecord = df_get_record('customers', array('customer_id'=>$record->val('customer_id')));
-								$markupRecords = df_get_records_array('customer_markup_rates', array('markup_id'=>$record->val('markup')));
-
-								foreach ($markupRecords as $mr) {
-									if($mr->val('to') == null)
-										$no_limit = true;
-									
-									if( ($purchase_price >= $mr->val('from')) && ($purchase_price <= $mr->val('to') || $no_limit == true) ){
-										$markup = $mr->val('markup_percent');
-										break;
-									}
-								}
-								
-								$sale_price = round($purchase_price * (1+$markup),2);
-							}				
-
-							$cs_ir->setValue('sale_price',$sale_price);
-							$res = $cs_ir->save(null,true); //Save Record w/ permission check.
+				switch($status_button){
+					case("Void Call Slip"): //Pressed: Void Call Slip
+						$record->setValue('status',"VOID"); //Set status to Complete.
+						$status_msg = "Call Slip has been Voided";
+						break;
+					case("Complete Job"): //Pressed: Complete Job
+						$record->setValue('status',"CMP"); //Set status to Complete.
+						if($record->val('completion_date') == "")
+							$record->setValue('completion_date',date("Y-m-d")); //Set Job Completion Date.
+						$status_msg = "Call Slip has been set to Job Complete";
+						break;
+					case("Create Billing"): //Pressed: Create Billing
+						$billing_id = $this->create_billing($record); //Create Billing.
+						if($billing_id != -1){ //Check for errors with saving AR entry
+							$record->setValue('ar_billing_id',$billing_id);  //Set Status to Billing Pending & the associated AR entry.
+							$record->setValue('status',"BPD");
+							if($billing_id < 0) //Check for other errors
+								$status_msg .= 'WARNING: Billing Entry has been Created, However, the Customer Balance could not be Updated. Manual Correction may be needed. (ERROR ' . $billing_id . ')';
+							else
+								$status_msg = 'Billing Entry has been Created.';
 						}
-					}
-
-					//Purchase Order Items
-					$purchaseRecords = df_get_records_array('purchase_order_service', array('callslip_id'=>$record->val('call_id')));
-					foreach ($purchaseRecords as $cs_pr){
-						//Pull the items from the purchase order record
-						$itemRecords = df_get_records_array('purchase_order_service_items', array('purchase_order_id'=>$cs_pr->val('purchase_id')));
-						foreach ($itemRecords as $item){
-							$purchase_price = $item->val('purchase_price');
-							$sale_price = $item->val('sale_price'); //Pull sale price from record (will likely be null)
-
-							//If the sale price has not already been set in the po item record
-							if(!isset($sale_price)){
-								//Get the custmer markup record
-								$customerRecord = df_get_record('customers', array('customer_id'=>$record->val('customer_id')));
-								$markupRecords = df_get_records_array('customer_markup_rates', array('markup_id'=>$record->val('markup')));
-
-								foreach ($markupRecords as $mr) {
-									if($mr->val('to') == null)
-										$no_limit = true;
-									
-									if( ($purchase_price >= $mr->val('from')) && ($purchase_price <= $mr->val('to') || $no_limit == true) ){
-										$markup = $mr->val('markup_percent');
-										break;
-									}
-								}
-								
-								$sale_price = round($purchase_price * (1+$markup),2);
-
-								$item->setValue('sale_price',$sale_price);
-							}
-							
-							//If the "quantity used" field is empty, assign it to be the total quantity from purchase
-							if($item->val('quantity_used') == "")
-								$item->setValue('quantity_used',$item->val('quantity'));
-
-							$res = $item->save(null,true); //Save Record w/ permission check.
-
+						else
+							$status_msg = 'An error occured while trying to Create a Billing Entry. You may not have the proper permissions. (ERROR '. $billing_id .')';
+						break;
+					case("Unbill"): //Pressed: Unbill
+						$unbill = $this->unbill_cs($record); //Create a Credit Call Slip, and Reverse the billing entry on this one in Accounts Receivable.
+						if($unbill == 1){
+							$record->setValue('status',"CMP");
+							$record->setValue('ar_billing_id',null);
+							$status_msg = "Billing Entry has been removed.";
 						}
-					}
+						else
+							$status_msg = 'An error occured while trying to Unbill the Call Slip. You may not have the proper Accounts Receivable permissions. (ERROR '. $unbill .')';
+						break;
+					case("Credit Invoice"): //Pressed: Credit Invoice
+						$credit_call_id = $this->create_credit_cs($record); //Create a Credit Call Slip, and Reverse the billing entry on this one in Accounts Receivable.
+						$record->setValue('status',"CRD");
+						$record->setValue('credit',"Credited (Call ID " . $credit_call_id . ")");
+						$status_msg = "Call Slip has been Reversed, and a Credit Call Slip has been created.";
+						break;
 				}
 				
 				//Save record
@@ -596,18 +586,14 @@ class tables_call_slips {
 				if ( PEAR::isError($res) ){
 					// An error occurred
 					//throw new Exception($res->getMessage());
-					$msg = '<input type="hidden" name="--error" value="Unable to change status. This is most likely because you do not have the required permissions.">';
+					$msg = '<input type="hidden" name="--error" value="Unable to change status. This is most likely because you do not have the required permissions.'.$status_msg.'">';
 				}
 				else {
-					if($record->val('status') == "CMP")
-						$msg = '<input type="hidden" name="--msg" value="Status Changed to: Job Completed">';
-					elseif($record->val('status') == "RDY")
-						$msg = '<input type="hidden" name="--msg" value="Status Changed to: Invoice Ready to Print / Send">';
-					elseif($record->val('status') == "CRD")
-						$msg = '<input type="hidden" name="--msg" value="Credit Call Slip has been created.">';
-					else 
-						$msg = '<input type="hidden" name="--error" value="Something Broke: Status='.$record->val('status').'">';
+						$msg = '<input type="hidden" name="--msg" value="'.$status_msg.'">';
+					//else 
+					//	$msg = '<input type="hidden" name="--error" value="Something Broke: Status='.$record->val('status').'">';
 				}
+
 				
 				$childString .= '<form name="status_change">';
 				$childString .= '<input type="hidden" name="-table" value="'.$query['-table'].'">';
@@ -619,23 +605,24 @@ class tables_call_slips {
 				$childString .= '</form>';
 				$childString .= '<script language="Javascript">document.status_change.submit();</script>';
 			}
-			elseif(	$record->val('status') == 'NCO' || $record->val('status') == "NCP" || $record->val('status') == 'CMP' || $record->val('status') == "SNT" ){
+			//Show the appropriate buttons
+			else{
+				//$childString .= '<form onsubmit="return confirm(\'Are you sure you want to submit this form?\');">'; //This works for confirm popup, but works awkwardly with submithandler.js (i.e. if you hit cancel, it still counts as a "press")
 				$childString .= '<form>';
 				$childString .= '<input type="hidden" name="-table" value="'.$query['-table'].'">';
 				$childString .= '<input type="hidden" name="-action" value="'.$query['-action'].'">';
 				$childString .= '<input type="hidden" name="-recordid" value="'.$record->getID().'">';
-				
 				$childString .= '<input type="hidden" name="-status_change" value="'.$record->getID().'">';
 
-				//Job Complete Button
-				if($record->val('status') == "NCO" || $record->val('status') == "NCP")
-					$childString .= '<input type="submit" value="Change Status to: Job Completed">';
+				//Status: Not Complete
+				if($record->val('status') == "NCO" || $record->val('status') == "NCP"){
+					$childString .= '<input type="submit" name="status_button" value="Complete Job">'; //Complete Job Button
+					$childString .= '&nbsp;&nbsp;<input type="submit" name="status_button" value="Void Call Slip">'; //Void Button
+				}
 
-				//Invoice Ready Button
+				//Status: Job Complete
 				elseif($record->val('status') == "CMP"){
 					//Check if all purchase orders associated with the Call Slip have been posted.
-					//If so, allow to be set to RDY, else don't.
-
 					$purchaseorderRecords = $record->getRelatedRecords('call_slip_purchase_orders');
 					$po_not_posted = false;
 					foreach ($purchaseorderRecords as $cs_pr){
@@ -645,26 +632,32 @@ class tables_call_slips {
 						}
 							
 					}
+					//If not, show, but disable 'Create Billing' Button.
 					if($po_not_posted == true)
 						$childString .= '[Some Purchase Orders associated with this record have not yet been posted.]<br>
-										<input type="submit" value="Change Status to: Invoice Ready to Print / Send" disabled="disabled" style="color: grey;">';
+										<input type="submit" name="status_button" value="Create Billing" disabled="disabled" style="color: grey;">'; //Disabled Create Billing Button
 					else
-						$childString .= '<input type="submit" value="Change Status to: Invoice Ready to Print / Send">';
+						$childString .= '<input type="submit" name="status_button" value="Create Billing">'; //Create Billing Button
+
+					$childString .= '&nbsp;&nbsp;<input type="submit" name="status_button" value="Void Call Slip">'; //Void Button
 				}
 				
-				//Credit Invoice Button
-				elseif($record->val('status') == "SNT")
-					$childString .= '<input type="submit" value="Credit Invoice">';
+				//Status: Billing Pending
+				elseif($record->val('status') == "BPD"){
+					$childString .= '<input type="submit" name="status_button" value="Unbill"> (This will remove the associated Accounts Payable Entry)';
+				}
+				
+				//Status: Billed
+				elseif($record->val('status') == "BLD")
+					$childString .= '<input type="submit" name="status_button" value="Credit Invoice">';
+
+				else {
+					$childString .= "No further options available";
+				}
+
 				$childString .= '</form>';
 			}
-			//elseif(	$record->val('post_status') == 'Pending'){ //---can do this by linking to -action=ledger_post&selected="this_one"
-			//	$childString .= 'Post';
-			//}
-			else {
-				$childString .= "No further options available";
-			}
-
-			//if(	$record->val('post_status') == '')
+			
 			return array(
 				'content' => "$childString",
 				'class' => 'main',
@@ -672,6 +665,178 @@ class tables_call_slips {
 				'order' => 999
 			);
 		}
+	}
+
+
+	//Function to create a billing entry based on the call slip - returns the id of the billing record
+	//On error: (-1) Error with creating AR entry, (-2) Error saving the customer balance, (-3) Error loading customer record.
+	function create_billing($record){
+		
+		if($record->val('type') == "TM"){
+		
+			$cs_total = 0;
+			
+			//Collect Billing Details for Time Logs
+			$timelog_records = $record->getRelatedRecords('time_logs');
+			foreach ($timelog_records as $cs_tl){
+				//Convert arrive / depart times, & calculate 'hours'
+				$arrive = Dataface_converters_date::datetime_to_string($cs_tl['start_time']);
+				$depart = Dataface_converters_date::datetime_to_string($cs_tl['end_time']);
+				$hours = number_format(((strtotime($depart) - strtotime($arrive)) / 3600),1);
+
+				//Get "rate" details
+				$rate_record = df_get_record('rates', array('rate_id'=>$cs_tl['rate_id']));
+				$rate = $rate_record->val($cs_tl['rate_type']);
+				
+				$cs_total += $rate * $hours;
+			}
+				
+			//Collect Billing Details for Inventory Items
+			$inventoryRecords = df_get_records_array('call_slip_inventory', array('call_id'=>$record->val('call_id')));
+			foreach ($inventoryRecords as $cs_ir){
+				//Pull the item / cost out of the 'inventory' table
+				$inventory_record = df_get_record('inventory', array('inventory_id'=>$cs_ir->val('inventory_id')));
+							
+				$purchase_price = $cs_ir->val('purchase_price');
+				$sale_price = $cs_ir->val('sale_price'); //Pull sale price from record (will likely be null)
+				
+				//If the sale price has not already been set in the callslip inventory record
+				if(!isset($sale_price)){
+							
+					//Check if the Inventory sale overide has been set, if so, use it
+					if($inventory_record->val('sale_method')=="overide"){
+						$sale_price = $inventory_record->val('sale_overide');
+					}
+					//Otherwise (most likely), calculate based on the purchase price and set customer markup rate
+					else{ 
+						//Get the custmer markup record
+						$customerRecord = df_get_record('customers', array('customer_id'=>$record->val('customer_id')));
+						$markupRecords = df_get_records_array('customer_markup_rates', array('markup_id'=>$record->val('markup')));
+
+						foreach ($markupRecords as $mr) {
+							if($mr->val('to') == null)
+								$no_limit = true;
+								
+							if( ($purchase_price >= $mr->val('from')) && ($purchase_price <= $mr->val('to') || $no_limit == true) ){
+								$markup = $mr->val('markup_percent');
+								break;
+							}
+						}
+									
+						$sale_price = round($purchase_price * (1+$markup),2);
+					}				
+
+					$cs_ir->setValue('sale_price',$sale_price); //Set "Sale Price" to CS record - this is to ensure that the price doesn't change once the billing has been created.
+					$res = $cs_ir->save(null,true); //Save Record w/ permission check.
+				}
+				
+				//Save inventory sale price to total
+				$cs_total += $sale_price * $cs_ir->val('quantity');
+			}
+
+			//Collect Billing Details for Purchase Order Items
+			$purchaseRecords = df_get_records_array('purchase_order_service', array('callslip_id'=>$record->val('call_id')));
+			foreach ($purchaseRecords as $cs_pr){
+				//Pull the items from the purchase order record
+				$itemRecords = df_get_records_array('purchase_order_service_items', array('purchase_order_id'=>$cs_pr->val('purchase_id')));
+				foreach ($itemRecords as $item){
+					$purchase_price = $item->val('purchase_price');
+					$sale_price = $item->val('sale_price'); //Pull sale price from record (will likely be null)
+
+					//If the sale price has not already been set in the po item record
+					if(!isset($sale_price)){
+					//Get the custmer markup record
+						$customerRecord = df_get_record('customers', array('customer_id'=>$record->val('customer_id')));
+						$markupRecords = df_get_records_array('customer_markup_rates', array('markup_id'=>$record->val('markup')));
+
+						foreach ($markupRecords as $mr) {
+							if($mr->val('to') == null)
+								$no_limit = true;
+										
+							if( ($purchase_price >= $mr->val('from')) && ($purchase_price <= $mr->val('to') || $no_limit == true) ){
+								$markup = $mr->val('markup_percent');
+								break;
+							}
+						}
+									
+						$sale_price = round($purchase_price * (1+$markup),2); 
+
+						$item->setValue('sale_price',$sale_price); //Set "Sale Price" to the item record - this is to ensure that the price doesn't change once the billing has been created.
+					}
+								
+					//If the "quantity used" field is empty, assign it to be the total quantity from purchase
+					if($item->val('quantity_used') == "")
+						$item->setValue('quantity_used',$item->val('quantity'));
+
+					$res = $item->save(null,true); //Save Record w/ permission check.
+
+					//Save PO item sale price to total
+					$cs_total += $sale_price * $item->val('quantity_used');
+				}
+			}
+
+			//Collect Billing Details for Additional Material Items
+			$materialRecords = df_get_records_array('call_slip_additional_materials', array('call_id'=>$record->val('call_id')));
+			foreach ($materialRecords as $cs_mr){
+				$sale_price = $cs_mr->val('sale_price'); //Pull sale price from record
+				$quantity = $cs_mr->val('quantity'); //Pull quantity price from record
+				
+				$cs_total += $sale_price * $quantity;
+			}
+			
+			$cs_total += $record->val('charge_consumables');
+			$cs_total += $record->val('charge_fuel');
+		}
+		else{
+			$cs_total = $record->val("quoted_cost");
+		}
+		
+		//Create Accounts Receivable Entry
+		require_once('tables/accounts_receivable/accounts_receivable.php');
+		$new_ar_id = tables_accounts_receivable::create_accounts_receivable_entry($record->val('call_id'), $record->val('customer_id'), $cs_total, $record->val('customer_po'));
+
+		//If no errors with creating AR entry, add total to customer balance.
+		if($new_ar_id > 0){
+			$customer_record = df_get_record('customers',array('customer_id'=>$record->val('customer_id'))); //Get Customer Record
+			if(isset($customer_record)){
+				$customer_balance = $customer_record->val('balance'); //Get current customer balance
+				$customer_record->setValue('balance',$customer_balance+$cs_total); //Add call slip total to balance
+				$res = $customer_record->save(null, true); //Save balance, with permission check
+				if ( PEAR::isError($res) )
+					return -2;
+			}
+			else
+				return -3;
+		}
+		
+		return $new_ar_id;
+	
+	}
+
+	//Function to unbill a call slip - returns 1 on success, -1 on error.
+	function unbill_cs($record){
+		$ar_record = df_get_record('accounts_receivable',array('voucher_id'=>$record->val('ar_billing_id')));
+		
+		//Check for batch
+		if($ar_record->val('batch_id') != null){
+			//Delete record in accounts_receivable_batch_vouchers
+			$ar_batch_record = df_get_record('accounts_receivable_batch_vouchers',array('voucher_id'=>$record->val('ar_billing_id')));
+			$res = $ar_batch_record->delete(true);
+		}
+		if ( PEAR::isError($res) ){
+			// An error occurred
+			return -1;
+		}
+			
+		$res = $ar_record->delete(true);
+
+		if ( PEAR::isError($res) ){
+			// An error occurred
+			return -2;
+		}
+
+		
+		return 1;
 	}
 	
 	//Function to create a credit call slip - returns call_id of new credit call_slip, -1 on error.
@@ -926,13 +1091,13 @@ class tables_call_slips {
 	function beforeSave(&$record){
 		//$response =& Dataface_Application::getResponse();
 		//$rlist = 'a';
-		
+		/*
 		if($record->val('status') == '')
 			$record->setValue('status','NCO');
 		
 		if($record->val('call_datetime') == '')
 			$record->setValue('call_datetime',date('Y-m-d g:i a'));
-
+		*/
 		//*****************************************************************
 		//********************Inventory Management Code********************
 		//*****************************************************************
@@ -960,7 +1125,10 @@ class tables_call_slips {
 		//Copy "Site Instructions" from the Customer Site file.
 		$site_record = df_get_record('customer_sites', array('site_id'=>$record->val('site_id')));
 		$record->setValue('site_instructions', $site_record->val('site_instructions'));
-		//$record->setValue('status', "NCO");
+
+		//Set initial 'Status' and 'Call Date/Time'
+		$record->setValue('status','NCO');
+		$record->setValue('call_datetime',date('Y-m-d g:i a'));
 	}
 
 
