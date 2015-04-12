@@ -24,7 +24,7 @@
 			{/literal}
 			</script>
 	
-		<h1>Review and Post Purchase Orders</h1>
+		<h1>Review and Post {$po_type|ucfirst} Purchase Orders</h1>
 		
 		{if $confirm == "true"}
 			<p class="portalMessage">The following purchase orders have been posted. <a href="index.php?-table=dashboard"> Return to Dashboard.</a></p>
@@ -59,7 +59,8 @@
 
 			<!--form name="select_post" onSubmit='confirm_submit("select_post","confirm_post")'-->
 			<form name="select_post">
-				<input type="hidden" name="-action" value="{$po_type}">
+				<input type="hidden" name="-action" value="purchase_order_post">
+				<input type="hidden" name="-type" value="{$po_type}">
 				<input type="hidden" name="confirm_post" value="true">
 							
 				<table class="listing resultList">

@@ -76,6 +76,9 @@ ul
 .contentViews li a { text-transform: none; }
 .contentActions { text-transform: none; }
 
+/*Make the X in lookup popup windows visible ... sorta... not sure why this is broken*/
+.ui-icon-closethick { background-color: blue;}
+
 
 /*Temp fix until can figure out how to modify the actual content*/
 .dataface-view-description {

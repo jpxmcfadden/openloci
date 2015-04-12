@@ -3,6 +3,7 @@
 class tables_purchase_order_tool {
 
 	//Class Variables
+	private $po_prefix = "T";
 	private $total_item_purchase = array(); //Create a class variable to store the values for modifying the inventory
 
 	//Permissions
@@ -44,13 +45,13 @@ class tables_purchase_order_tool {
 
 		function post_status__permissions(&$record){
 			//Check permissions & if allowed, set edit permissions for "account_status"
-			if(get_userPerms('purchase_order_vehicle') == "receive" || get_userPerms('purchase_order_vehicle') == "post")
+			if(get_userPerms('purchase_order_tool') == "receive" || get_userPerms('purchase_order_tool') == "post")
 				return array("edit"=>1);
 		}
 
 		function received_date__permissions(&$record){
 			//Check permissions & if allowed, set edit permissions for "account_status"
-			if(get_userPerms('purchase_order_vehicle') == "receive" || get_userPerms('purchase_order_vehicle') == "post")
+			if(get_userPerms('purchase_order_tool') == "receive" || get_userPerms('purchase_order_tool') == "post")
 				return array("edit"=>1);
 		}
 	
@@ -62,7 +63,7 @@ class tables_purchase_order_tool {
 	}
 
 	function purchase_id__display(&$record){
-		return "T".$record->val('purchase_id');
+		return $this->po_prefix.$record->val('purchase_id');
 	}
 
 	function purchase_date__default(){
@@ -181,46 +182,184 @@ class tables_purchase_order_tool {
 		$query =& $app->getQuery();
 		$childString = '';
 
-		//If the "Change Status To: Received" button has been pressed.
-		//Because both the $_GET and $query will be "" on a new record, check to insure that they are not empty.
-		if(($_GET['-received'] == $query['-recordid']) && ($query['-recordid'] != "")){
-			$record->setValue('post_status',"Received"); //Set status to Received.
-			$res = $record->save(null, true); //Save Record w/ permission check.
+		//Check User Permissions
+		$userperms = get_userPerms('purchase_order_tool');
+		if($userperms == "receive" || $userperms == "post"){
+			//Get current record status - in case there is an error, so it's easy to revert back.
+			$initial_record_status = $record->val('post_status');
+			$initial_received_date = $record->val('received_date');
+			
+			//Pull the items in the PO
+			$item_records = $record->getRelatedRecords("purchase_order_tool_items");
+		
+			//If the "Change Status To: Received" button has been pressed.
+			//Because both the $_GET and $query will be "" on a new record, check to insure that they are not empty.
+			if(($_GET['-received'] == $query['-recordid']) && ($query['-recordid'] != "")){
 
-			//Check for errors.
-			if ( PEAR::isError($res) ){
-				// An error occurred
-				//throw new Exception($res->getMessage());
-				$msg = '<input type="hidden" name="--error" value="Unable to change status. This is most likely because you do not have the required permissions.">';
+				$record->setValue('post_status',"Received"); //Set status to Received.
+				if($record->val('received_date') == null)
+					$record->setValue('received_date',date("Y-m-d")); //Set received date, if not already entered.
+				$res = $record->save(null, true); //Save Record w/ permission check.
+
+				//Check for errors.
+				if ( PEAR::isError($res) ){ // Set error message
+					$msg = '<input type="hidden" name="--error" value="Unable to change status. This is most likely because you do not have the required permissions.">';
+				}
+				else{ //Process the PO items
+					$res_error = 0;
+					//$res_saved[]; //To keep track of which records have been updated in case of an error
+					//Process all the Items in the Purchase Order
+					foreach($item_records as $j=>$item_record){
+						//Pull inventory record, Calculate & Set new inventory 'quantity'
+							$inventory_table = 'tool_inventory';
+							$inventory_id = 'tool_id';
+							$inventory_record = df_get_record($inventory_table, array($inventory_id=>$item_record[$inventory_id]));
+							$current_inventory_quantity = $inventory_record->val('quantity');
+							$new_inventory_quantity = $current_inventory_quantity + $item_record['quantity'];
+							$inventory_record->setValue('quantity', $new_inventory_quantity);
+																		
+						//Save Records
+							$res = $inventory_record->save(null, true);			//calculates it's Average Purchase Price based on purchase history
+
+						//CHECK FOR ERRORS
+							if ( PEAR::isError($res) ){
+								$res_error = 1;
+								break;
+							}
+							else
+								$res_saved[$item_record[$inventory_id]] = $item_record["quantity"];
+					}
+					
+					//If there was an error
+					if($res_error != 0){
+						//Revert Status / Received Date
+						$record->setValue('post_status',$initial_record_status); //Set status back.
+						$record->setValue('received_date',$initial_received_date); //Set received date back.
+						$res = $record->save(null, true); //Save Record w/ permission check.
+						
+						//Create Error Message
+						$msg = '<input type="hidden" name="--error" value="Unable to change status due to a problem updating the tool inventory record. This is most likely because you do not have the required permissions.">';
+
+						//Auto revert any saved entries
+						//if(!isempty($res_saved)) //It is unlikely that if one item record didn't save that any others did, but just in case, there needs to be a condition for it. For right now, just print an error directing to user to manually fix the problem - eventually should automatically remove any entries that were added.
+						//	$msg = '<input type="hidden" name="--error" value="There following inventory items were modified and will need to be set back manually:"' .
+						//		foreach($res_saved as $id=>$quantity){
+						//			. " ID (" . $id . "), Quantity (" . $quantity . ")";
+						//		}
+						//	. '>';
+					}
+					else
+						$msg = '<input type="hidden" name="--msg" value="Status Changed to: Received">';
+				}	
+				
+				$childString .= '<form name="status_change">';
+				$childString .= '<input type="hidden" name="-table" value="'.$query['-table'].'">';
+				$childString .= '<input type="hidden" name="-action" value="'.$query['-action'].'">';
+				$childString .= '<input type="hidden" name="-recordid" value="'.$record->getID().'">';
+
+				$childString .= $msg;
+
+				$childString .= '</form>';
+				$childString .= '<script language="Javascript">document.status_change.submit();</script>';
 			}
-			else
-				$msg = '<input type="hidden" name="--msg" value="Status Changed to: Received">';
+			elseif(($_GET['-unreceive'] == $query['-recordid']) && ($query['-recordid'] != "")){
 			
-			$childString .= '<form name="status_change">';
-			$childString .= '<input type="hidden" name="-table" value="'.$query['-table'].'">';
-			$childString .= '<input type="hidden" name="-action" value="'.$query['-action'].'">';
-			$childString .= '<input type="hidden" name="-recordid" value="'.$record->getID().'">';
+				$record->setValue('post_status',""); //Set status to null.
+				$res = $record->save(null, true); //Save Record w/ permission check.
 
-			$childString .= $msg;
+				//Check for errors.
+				if ( PEAR::isError($res) ){
+					$msg = '<input type="hidden" name="--error" value="Unable to change status. This is most likely because you do not have the required permissions.">';
+				}
+				else{ //Process the PO items
+					$res_error = 0;
+					//$res_saved[]; //To keep track of which records have been updated in case of an error
+					//Process all the Items in the Purchase Order
+					foreach($item_records as $j=>$item_record){
+						//Pull inventory record, Calculate & Set new inventory 'quantity'
+							$inventory_table = 'tool_inventory';
+							$inventory_id = 'tool_id';
+							$inventory_record = df_get_record($inventory_table, array($inventory_id=>$item_record[$inventory_id]));
+							$current_inventory_quantity = $inventory_record->val('quantity');
+							$new_inventory_quantity = $current_inventory_quantity - $item_record['quantity'];
+							$inventory_record->setValue('quantity', $new_inventory_quantity);
+																		
+						//Save Records
+							$res = $inventory_record->save(null, true);			//calculates it's Average Purchase Price based on purchase history
 
-			$childString .= '</form>';
-			$childString .= '<script language="Javascript">document.status_change.submit();</script>';
-		}
-		elseif(	$record->val('post_status') == ''){
-			$childString .= '<form>';
-			$childString .= '<input type="hidden" name="-table" value="'.$query['-table'].'">';
-			$childString .= '<input type="hidden" name="-action" value="'.$query['-action'].'">';
-			$childString .= '<input type="hidden" name="-recordid" value="'.$record->getID().'">';
-			
-			$childString .= '<input type="hidden" name="-received" value="'.$record->getID().'">';
-			$childString .= '<input type="submit" value="Change Status to: Received">';
+						//CHECK FOR ERRORS
+							if ( PEAR::isError($res) ){
+								$res_error = 1;
+								break;
+							}
+							else
+								$res_saved[$item_record[$inventory_id]] = $item_record["quantity"];
+					}
+					
+					//If there was an error
+					if($res_error != 0){
+						//Revert Status
+						$record->setValue('post_status',$initial_record_status); //Set status back.
+						$res = $record->save(null, true); //Save Record w/ permission check.
+						
+						//Create Error Message
+						$msg = '<input type="hidden" name="--error" value="Unable to change status due to a problem updating the tool inventory record. This is most likely because you do not have the required permissions.">';
 
-			$childString .= '</form>';
+						//Auto revert any saved entries
+						//if(!isempty($res_saved)) //It is unlikely that if one item record didn't save that any others did, but just in case, there needs to be a condition for it. For right now, just print an error directing to user to manually fix the problem - eventually should automatically remove any entries that were added.
+						//	$msg = '<input type="hidden" name="--error" value="There following inventory items were modified and will need to be set back manually:"' .
+						//		foreach($res_saved as $id=>$quantity){
+						//			. " ID (" . $id . "), Quantity (" . $quantity . ")";
+						//		}
+						//	. '>';
+					}
+					else
+						$msg = '<input type="hidden" name="--msg" value="PO has been Un-Received">';
+				}
+					
+				
+				$childString .= '<form name="status_change">';
+				$childString .= '<input type="hidden" name="-table" value="'.$query['-table'].'">';
+				$childString .= '<input type="hidden" name="-action" value="'.$query['-action'].'">';
+				$childString .= '<input type="hidden" name="-recordid" value="'.$record->getID().'">';
+
+				$childString .= $msg;
+
+				$childString .= '</form>';
+				$childString .= '<script language="Javascript">document.status_change.submit();</script>';
+			}
+			elseif($record->val('post_status') == ''){
+				$childString .= '<form>';
+				$childString .= '<input type="hidden" name="-table" value="'.$query['-table'].'">';
+				$childString .= '<input type="hidden" name="-action" value="'.$query['-action'].'">';
+				$childString .= '<input type="hidden" name="-recordid" value="'.$record->getID().'">';
+				
+				$childString .= '<input type="hidden" name="-received" value="'.$record->getID().'">';
+				$childString .= '<input type="submit" value="Change Status to: Received">';
+
+				$childString .= '</form>';
+			}
+			elseif($record->val('post_status') == 'Received'){
+				$childString .= '<form>';
+				$childString .= '<input type="hidden" name="-table" value="'.$query['-table'].'">';
+				$childString .= '<input type="hidden" name="-action" value="'.$query['-action'].'">';
+				$childString .= '<input type="hidden" name="-recordid" value="'.$record->getID().'">';
+				
+				$childString .= '<input type="hidden" name="-unreceive" value="'.$record->getID().'">';
+				$childString .= '<input type="submit" value="Change Status to: Un-Receive">';
+
+				$childString .= '</form>';
+			}
+			else {
+				$childString .= "No further options available";
+			}
 		}
 		else {
 			$childString .= "No further options available";
 		}
 		
+		
+		//if(	$record->val('post_status') == '')
 		return array(
 			'content' => "$childString",
 			'class' => 'main',
@@ -249,7 +388,7 @@ class tables_purchase_order_tool {
 
 	function afterInsert(&$record){
 		//PO Full ID: prefix+purchase_id
-		$record->setValue('purchase_order_id', "T".$record->val('purchase_id'));
+		$record->setValue('purchase_order_id', $this->po_prefix.$record->val('purchase_id'));
 		$record->save();
 	}	
 	

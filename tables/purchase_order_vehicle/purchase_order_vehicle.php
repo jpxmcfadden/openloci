@@ -3,6 +3,7 @@
 class tables_purchase_order_vehicle {
 
 	//Class Variables
+	private $po_prefix = "V";
 	private $total_item_purchase = array(); //Create a class variable to store the values for modifying the inventory
 
 	//Permissions
@@ -60,7 +61,7 @@ class tables_purchase_order_vehicle {
 	}
 
 	function purchase_id__display(&$record){
-		return "V".$record->val('purchase_id');
+		return $this->po_prefix.$record->val('purchase_id');
 	}
 
 	function purchase_date__default(){
@@ -282,7 +283,7 @@ class tables_purchase_order_vehicle {
 
 	function afterInsert(&$record){
 		//PO Full ID: prefix+purchase_id
-		$record->setValue('purchase_order_id', "V".$record->val('purchase_id'));
+		$record->setValue('purchase_order_id', $this->po_prefix.$record->val('purchase_id'));
 		$record->save();
 	}	
 	

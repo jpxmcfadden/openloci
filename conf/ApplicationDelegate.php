@@ -114,7 +114,7 @@ function getNavItem($key, $label){
 			}
 			
 			//When the Dashboard page is clicked - load action.
-			if( $query['-table'] == 'dashboard' and ($query['-action'] == 'browse' or $query['-action'] == 'list') ){
+			if( $query['-table'] == 'dashboard' and ($query['-action'] == 'browse' or $query['-action'] == 'list' or $query['-action'] == 'new' or $query['-action'] == 'view' or $query['-action'] == 'edit') ){
 				$query['-action'] = 'dashboard';
 			}
 

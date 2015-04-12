@@ -3,6 +3,7 @@
 class tables_purchase_order_service {
 
 	//Class Variables
+	private $po_prefix = "S";
 	private $total_item_purchase = array(); //Create a class variable to store the values for modifying the inventory
 
 	//Permissions
@@ -38,19 +39,20 @@ class tables_purchase_order_service {
 			
 			//Only on the 'view' page. Otherwise, causes issues with looking at the entire table (i.e. user sees a blank page).
 			//If record exists & the status is set such that the record shouldn't be editable.
-			if($query['-action'] == 'view' && ( isset($record) && ($record->val('post_status') == 'Posted' || $record->val('post_status') == 'Received') ))
+			//if($query['-action'] == 'view' && ( isset($record) && ($record->val('post_status') == 'Posted' || $record->val('post_status') == 'Received') ))
+			if($query['-action'] == 'view' && ( isset($record) && ($record->val('post_status') == 'Posted') ))
 				echo "<style>#record-tabs-edit{display: none;}</style>";
 		}
 
 		function post_status__permissions(&$record){
 			//Check permissions & if allowed, set edit permissions for "account_status"
-			if(get_userPerms('purchase_order_vehicle') == "receive" || get_userPerms('purchase_order_vehicle') == "post")
+			if(get_userPerms('purchase_order_service') == "receive" || get_userPerms('purchase_order_service') == "post")
 				return array("edit"=>1);
 		}
 
 		function received_date__permissions(&$record){
 			//Check permissions & if allowed, set edit permissions for "account_status"
-			if(get_userPerms('purchase_order_vehicle') == "receive" || get_userPerms('purchase_order_vehicle') == "post")
+			if(get_userPerms('purchase_order_service') == "receive" || get_userPerms('purchase_order_service') == "post")
 				return array("edit"=>1);
 		}	
 		
@@ -61,7 +63,7 @@ class tables_purchase_order_service {
 	}
 
 	function purchase_id__display(&$record){
-		return "S".$record->val('purchase_id');
+		return $this->po_prefix.$record->val('purchase_id');
 	}
 	
 	function purchase_date__default(){
@@ -71,7 +73,7 @@ class tables_purchase_order_service {
 	function callslip_id__display(&$record){
 		if($record->val("callslip_id") != null){
 			$callslip_record = df_get_record("call_slips", array('call_id'=>$record->val('callslip_id')));
-			//return $callslip_record->getTitle();
+			return $callslip_record->getTitle();
 		}
 		//return $record->val("callslip_id");
 	}
@@ -188,46 +190,91 @@ class tables_purchase_order_service {
 		$query =& $app->getQuery();
 		$childString = '';
 
-		//If the "Change Status To: Received" button has been pressed.
-		//Because both the $_GET and $query will be "" on a new record, check to insure that they are not empty.
-		if(($_GET['-received'] == $query['-recordid']) && ($query['-recordid'] != "")){
-			$record->setValue('post_status',"Received"); //Set status to Received.
-			$res = $record->save(null, true); //Save Record w/ permission check.
+		//Check User Permissions
+		$userperms = get_userPerms('purchase_order_service');
+		if($userperms == "receive" || $userperms == "post"){
+			//If the "Change Status To: Received" button has been pressed.
+			//Because both the $_GET and $query will be "" on a new record, check to insure that they are not empty.
+			if(($_GET['-received'] == $query['-recordid']) && ($query['-recordid'] != "")){
+				$record->setValue('post_status',"Received"); //Set status to Received.
+				if($record->val('received_date') == null)
+					$record->setValue('received_date',date("Y-m-d")); //Set received date, if not already entered.
+				$res = $record->save(null, true); //Save Record w/ permission check.
 
-			//Check for errors.
-			if ( PEAR::isError($res) ){
-				// An error occurred
-				//throw new Exception($res->getMessage());
-				$msg = '<input type="hidden" name="--error" value="Unable to change status. This is most likely because you do not have the required permissions.">';
+				//Check for errors.
+				if ( PEAR::isError($res) ){
+					// An error occurred
+					//throw new Exception($res->getMessage());
+					$msg = '<input type="hidden" name="--error" value="Unable to change status. This is most likely because you do not have the required permissions.">';
+				}
+				else
+					$msg = '<input type="hidden" name="--msg" value="Status Changed to: Received">';
+				
+				$childString .= '<form name="status_change">';
+				$childString .= '<input type="hidden" name="-table" value="'.$query['-table'].'">';
+				$childString .= '<input type="hidden" name="-action" value="'.$query['-action'].'">';
+				$childString .= '<input type="hidden" name="-recordid" value="'.$record->getID().'">';
+
+				$childString .= $msg;
+
+				$childString .= '</form>';
+				$childString .= '<script language="Javascript">document.status_change.submit();</script>';
 			}
-			else
-				$msg = '<input type="hidden" name="--msg" value="Status Changed to: Received">';
-			
-			$childString .= '<form name="status_change">';
-			$childString .= '<input type="hidden" name="-table" value="'.$query['-table'].'">';
-			$childString .= '<input type="hidden" name="-action" value="'.$query['-action'].'">';
-			$childString .= '<input type="hidden" name="-recordid" value="'.$record->getID().'">';
+			elseif(($_GET['-unreceive'] == $query['-recordid']) && ($query['-recordid'] != "")){
+				$record->setValue('post_status',""); //Set status to null.
+				$res = $record->save(null, true); //Save Record w/ permission check.
 
-			$childString .= $msg;
+				//Check for errors.
+				if ( PEAR::isError($res) ){
+					// An error occurred
+					//throw new Exception($res->getMessage());
+					$msg = '<input type="hidden" name="--error" value="Unable to change status. This is most likely because you do not have the required permissions.">';
+				}
+				else
+					$msg = '<input type="hidden" name="--msg" value="PO has been Un-Received">';
+				
+				$childString .= '<form name="status_change">';
+				$childString .= '<input type="hidden" name="-table" value="'.$query['-table'].'">';
+				$childString .= '<input type="hidden" name="-action" value="'.$query['-action'].'">';
+				$childString .= '<input type="hidden" name="-recordid" value="'.$record->getID().'">';
 
-			$childString .= '</form>';
-			$childString .= '<script language="Javascript">document.status_change.submit();</script>';
-		}
-		elseif(	$record->val('post_status') == ''){
-			$childString .= '<form>';
-			$childString .= '<input type="hidden" name="-table" value="'.$query['-table'].'">';
-			$childString .= '<input type="hidden" name="-action" value="'.$query['-action'].'">';
-			$childString .= '<input type="hidden" name="-recordid" value="'.$record->getID().'">';
-			
-			$childString .= '<input type="hidden" name="-received" value="'.$record->getID().'">';
-			$childString .= '<input type="submit" value="Change Status to: Received">';
+				$childString .= $msg;
 
-			$childString .= '</form>';
+				$childString .= '</form>';
+				$childString .= '<script language="Javascript">document.status_change.submit();</script>';
+			}
+			elseif($record->val('post_status') == ''){
+				$childString .= '<form>';
+				$childString .= '<input type="hidden" name="-table" value="'.$query['-table'].'">';
+				$childString .= '<input type="hidden" name="-action" value="'.$query['-action'].'">';
+				$childString .= '<input type="hidden" name="-recordid" value="'.$record->getID().'">';
+				
+				$childString .= '<input type="hidden" name="-received" value="'.$record->getID().'">';
+				$childString .= '<input type="submit" value="Change Status to: Received">';
+
+				$childString .= '</form>';
+			}
+			elseif($record->val('post_status') == 'Received'){
+				$childString .= '<form>';
+				$childString .= '<input type="hidden" name="-table" value="'.$query['-table'].'">';
+				$childString .= '<input type="hidden" name="-action" value="'.$query['-action'].'">';
+				$childString .= '<input type="hidden" name="-recordid" value="'.$record->getID().'">';
+				
+				$childString .= '<input type="hidden" name="-unreceive" value="'.$record->getID().'">';
+				$childString .= '<input type="submit" value="Change Status to: Un-Receive">';
+
+				$childString .= '</form>';
+			}
+			else {
+				$childString .= "No further options available";
+			}
 		}
 		else {
 			$childString .= "No further options available";
 		}
 		
+		
+		//if(	$record->val('post_status') == '')
 		return array(
 			'content' => "$childString",
 			'class' => 'main',
@@ -255,7 +302,7 @@ class tables_purchase_order_service {
 
 	function afterInsert(&$record){
 		//PO Full ID: prefix+purchase_id
-		$record->setValue('purchase_order_id', "S".$record->val('purchase_id'));
+		$record->setValue('purchase_order_id', $this->po_prefix.$record->val('purchase_id'));
 		$record->save();
 	}
 

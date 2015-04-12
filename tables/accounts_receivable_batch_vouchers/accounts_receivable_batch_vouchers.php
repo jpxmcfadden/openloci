@@ -22,7 +22,12 @@ class tables_accounts_receivable_batch_vouchers {
 		$voucher_record = df_get_record('accounts_receivable', array('voucher_id'=>$record->val('voucher_id')));
 		$voucher_record->setValue('batch_id',$record->val('batch_id'));
 		$voucher_record->save();
+	}
 
+	function beforeDelete(&$record){
+		$voucher_record = df_get_record('accounts_receivable', array('voucher_id'=>$record->val('voucher_id')));
+		$voucher_record->setValue('batch_id',"");
+		$voucher_record->save();
 	}
 	
 }

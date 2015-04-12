@@ -19,14 +19,14 @@ jQuery(document).ready(function(){
 	//Increment
 	jQuery("input[type='submit']").click(function(){
 		pressed++;
-		button_title = jQuery(this).attr("value")
+		button_title = jQuery(this).attr("value")	
 	});
 
 	//Reset
 	jQuery(":input").change(function(){
 		reset_submit();
 	});
-	
+		
 });
 
 //Reset the pressed variable - this also gets called by the navigate away script.

@@ -20,6 +20,15 @@ class tables_tool_inventory {
 		return Dataface_PermissionsTool::NO_ACCESS();
 	}
 
+	function rel_purchase_history__permissions($record){
+		return array(
+			'add new related record' => 0,
+			'add existing related record' => 0,
+			'remove related record' => 0,
+			'delete related record' => 0			
+		);
+	}
+
 	
 	function block__before_record_actions(){
 		$app =& Dataface_Application::getInstance(); 
