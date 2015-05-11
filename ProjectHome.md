@@ -1,0 +1,1 @@
+OpenLoci is a full scale multi-user web-based ERP & Field Service software package. It is being designed initially for the field service industry, but will eventually include construction & retail modules.
